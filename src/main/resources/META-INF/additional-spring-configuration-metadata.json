@@ -1,0 +1,47 @@
+{"properties": [
+  {
+    "name": "management.endpoints.web.exposure.include",
+    "type": "java.lang.String",
+    "description": "A description for 'management.endpoints.web.exposure.include'"
+  },
+  {
+    "name": "management.endpoint.health.show-details",
+    "type": "java.lang.String",
+    "description": "A description for 'management.endpoint.health.show-details'"
+  },
+  {
+    "name": "app.cors.allowed-origins",
+    "type": "java.lang.String",
+    "description": "A description for 'app.cors.allowed-origins'"
+  },
+  {
+    "name": "app.cors.allowed-headers",
+    "type": "java.lang.String",
+    "description": "A description for 'app.cors.allowed-headers'"
+  },
+  {
+    "name": "app.cors.allowed-methods",
+    "type": "java.lang.String",
+    "description": "A description for 'app.cors.allowed-methods'"
+  },
+  {
+    "name": "spring.api-docs.enabled",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.api-docs.enabled'"
+  },
+  {
+    "name": "spring.swagger-ui.enabled",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.swagger-ui.enabled'"
+  },
+  {
+    "name": "spring.api-docs.path",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.api-docs.path'"
+  },
+  {
+    "name": "spring.swagger-ui.path",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.swagger-ui.path'"
+  }
+]}
