@@ -2,11 +2,13 @@ package com.example.Alotrabong.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -45,22 +47,60 @@ public class SecurityConfig {
         return new JwtAuthenticationFilter();
     }
 
+    // ====================== API CHAIN (JWT) ======================
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(1)
+    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(Customizer.withDefaults())
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/items/**", "/api/categories/**", "/api/branches/**", 
-                               "/assets/**", "/actuator/health", "/ping", "/v3/api-docs/**", 
-                               "/swagger-ui/**", "/swagger-ui.html", "/docs/**").permitAll()
-                .requestMatchers("/api/cart/**", "/api/orders/**", "/api/users/profile").hasRole("USER")
-                .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER")
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .securityMatcher("/api/**") // <-- QUAN TRỌNG: chỉ áp cho /api/**
+                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/items/**", "/api/categories/**", "/api/branches/**",
+                                "/actuator/health", "/ping",
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs/**")
+                        .permitAll()
+                        .requestMatchers("/api/cart/**", "/api/orders/**", "/api/users/profile").hasRole("USER")
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER")
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
+        return http.build();
+    }
+
+    // ====================== WEB CHAIN (FORM LOGIN) ======================
+    @Bean
+    @Order(2)
+    public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/**") // <-- bắt phần còn lại
+                // CSRF: giữ bật cho form login; ignore H2 nếu dùng
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
+                .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/auth", "/register", "/forgot-password",
+                                "/css/**", "/js/**", "/images/**", "/webjars/**", "/h2-console/**",
+                                "/", "/login" // trang public
+                        ).permitAll()
+                        .anyRequest().authenticated())
+                .formLogin(login -> login
+                        .loginPage("/auth")
+                        .loginProcessingUrl("/login")
+                        .usernameParameter("username")
+                        .passwordParameter("password")
+                        .defaultSuccessUrl("/", true)
+                        .failureUrl("/auth?error"))
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/auth?logout"))
+                // web dùng session (form login)
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+
+        // KHÔNG add JWT filter ở chain web
         return http.build();
     }
 }

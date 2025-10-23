@@ -18,7 +18,7 @@ body {
 .container {
     position: relative;
     width: 850px;
-    height: 550px;
+    height: 600px;
     background: #fff;
     border-radius: 30px;
     box-shadow: 0 0 30px rgba(0, 0, 0, .2);
@@ -199,3 +199,6 @@ form {
   box-shadow: none;
 }
 
+.msg{min-height:18px;margin:6px 0 10px;font-size:.92rem}
+.msg.success{color:#10b981} /* xanh ngọc */
+.msg.error{color:#ef4444}   /* đỏ */
