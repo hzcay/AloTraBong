@@ -4,9 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "inventory",
-       uniqueConstraints = @UniqueConstraint(name = "uk_inv_branch_item", columnNames = {"branch_id", "item_id"}))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "inventory", uniqueConstraints = @UniqueConstraint(name = "uk_inv_branch_item", columnNames = {
+        "branch_id", "item_id" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Inventory extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

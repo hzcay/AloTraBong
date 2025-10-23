@@ -4,9 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "shippers",
-       uniqueConstraints = @UniqueConstraint(name = "uk_shipper_user", columnNames = {"user_id"}))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "shippers", uniqueConstraints = @UniqueConstraint(name = "uk_shipper_user", columnNames = { "user_id" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Shipper extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

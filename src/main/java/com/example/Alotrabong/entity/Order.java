@@ -8,7 +8,11 @@ import java.util.*;
 
 @Entity
 @Table(name = "orders")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Order extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

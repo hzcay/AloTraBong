@@ -5,7 +5,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "item_options")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ItemOption {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

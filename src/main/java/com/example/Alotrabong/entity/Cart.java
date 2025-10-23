@@ -7,7 +7,11 @@ import java.util.*;
 
 @Entity
 @Table(name = "carts")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Cart extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

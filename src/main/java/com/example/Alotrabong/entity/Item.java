@@ -6,9 +6,12 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "items",
-       indexes = @Index(name = "ix_items_code", columnList = "item_code", unique = true))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "items", indexes = @Index(name = "ix_items_code", columnList = "item_code", unique = true))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Item extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

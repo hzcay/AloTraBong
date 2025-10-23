@@ -4,9 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "favorites",
-       uniqueConstraints = @UniqueConstraint(name = "uk_fav_user_item", columnNames = {"user_id", "item_id"}))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "favorites", uniqueConstraints = @UniqueConstraint(name = "uk_fav_user_item", columnNames = { "user_id",
+        "item_id" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Favorite extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface RecentViewRepository extends JpaRepository<RecentView, Integer> {
-    List<RecentView> findByUser_UserIdOrderByViewedAtDesc(Integer userId);
+    List<RecentView> findByUser_UserIdOrderByViewedAtDesc(String userId);
 }
