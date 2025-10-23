@@ -61,7 +61,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/items/**", "/api/categories/**", "/api/branches/**",
                                 "/actuator/health", "/ping",
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs/**")
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs/**",
+                                "/swagger-ui.html", "/swagger-ui/index.html", "/swagger-ui/")
                         .permitAll()
                         .requestMatchers("/api/cart/**", "/api/orders/**", "/api/users/profile").hasRole("USER")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER")
@@ -84,6 +85,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth", "/register", "/forgot-password",
                                 "/css/**", "/js/**", "/images/**", "/webjars/**", "/h2-console/**",
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs/**",
                                 "/", "/login" // trang public
                         ).permitAll()
                         .anyRequest().authenticated())
