@@ -7,7 +7,11 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "cart_item_options")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CartItemOption {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

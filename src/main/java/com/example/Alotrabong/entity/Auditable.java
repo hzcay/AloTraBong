@@ -6,7 +6,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-@Getter @Setter
+@Getter
+@Setter
 public abstract class Auditable {
     @Column(name = "created_at")
     protected LocalDateTime createdAt;

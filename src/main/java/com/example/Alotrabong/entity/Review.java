@@ -4,9 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "reviews",
-       uniqueConstraints = @UniqueConstraint(name = "uk_review_order_item", columnNames = {"order_id", "item_id", "user_id"}))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "reviews", uniqueConstraints = @UniqueConstraint(name = "uk_review_order_item", columnNames = {
+        "order_id", "item_id", "user_id" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Review extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

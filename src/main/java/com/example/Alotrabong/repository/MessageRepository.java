@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, String> {
-    List<Message> findByConversation_ConvoIdOrderByCreatedAtAsc(String convoId);
+    List<Message> findByConversation_ConvoIdOrderBySentAtAsc(String convoId);
 }

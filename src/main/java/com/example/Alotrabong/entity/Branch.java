@@ -6,9 +6,13 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "branches",
-       uniqueConstraints = @UniqueConstraint(name = "uk_branch_code", columnNames = {"branch_code"}))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "branches", uniqueConstraints = @UniqueConstraint(name = "uk_branch_code", columnNames = {
+        "branch_code" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Branch extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

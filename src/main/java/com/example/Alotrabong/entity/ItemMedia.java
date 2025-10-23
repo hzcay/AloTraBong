@@ -5,7 +5,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "item_media")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ItemMedia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

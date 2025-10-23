@@ -5,7 +5,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "notifications")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Notification extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

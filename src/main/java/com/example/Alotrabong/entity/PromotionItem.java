@@ -4,9 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "promotion_items",
-       uniqueConstraints = @UniqueConstraint(name = "uk_promo_item", columnNames = {"promo_id", "item_id"}))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "promotion_items", uniqueConstraints = @UniqueConstraint(name = "uk_promo_item", columnNames = {
+        "promo_id", "item_id" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PromotionItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

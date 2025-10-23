@@ -5,7 +5,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "categories")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Category extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

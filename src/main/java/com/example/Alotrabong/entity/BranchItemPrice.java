@@ -6,9 +6,13 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "branch_item_prices",
-       uniqueConstraints = @UniqueConstraint(name = "uk_branch_item", columnNames = {"branch_id", "item_id"}))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "branch_item_prices", uniqueConstraints = @UniqueConstraint(name = "uk_branch_item", columnNames = {
+        "branch_id", "item_id" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BranchItemPrice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

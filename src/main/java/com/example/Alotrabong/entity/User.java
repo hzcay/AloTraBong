@@ -7,41 +7,44 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
-@Table(name = "users",
-        indexes = {
+@Table(name = "users", indexes = {
                 @Index(name = "ix_users_email", columnList = "email", unique = true),
                 @Index(name = "ix_users_phone", columnList = "phone", unique = true)
-        })
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User extends Auditable {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "user_id", length = 36)
-    private String userId;
+        @Id
+        @GeneratedValue(strategy = GenerationType.UUID)
+        @Column(name = "user_id", length = 36)
+        private String userId;
 
-    @Column(name = "full_name", length = 120)
-    private String fullName;
+        @Column(name = "full_name", length = 120)
+        private String fullName;
 
-    @Column(name = "email", length = 190, unique = true)
-    private String email;
+        @Column(name = "email", length = 190, unique = true)
+        private String email;
 
-    @Column(name = "phone", length = 20, unique = true)
-    private String phone;
+        @Column(name = "phone", length = 20, unique = true)
+        private String phone;
 
-    @Column(name = "password_hash", length = 255)
-    private String password;
+        @Column(name = "password_hash", length = 255)
+        private String password;
 
-    @Column(name = "address", length = 500)
-    private String address;
+        @Column(name = "address", length = 500)
+        private String address;
 
-    // 0: khóa, 1: hoạt động
-    @Column(name = "is_active")
-    private Boolean isActive;
+        // 0: khóa, 1: hoạt động
+        @Column(name = "is_active")
+        private Boolean isActive;
 
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
+        @Column(name = "last_login_at")
+        private LocalDateTime lastLoginAt;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<UserRole> userRoles = new ArrayList<>();
+        @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+        @Builder.Default
+        private List<UserRole> userRoles = new ArrayList<>();
 }

@@ -7,9 +7,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "coupons",
-       indexes = @Index(name = "ix_coupons_code", columnList = "code", unique = true))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "coupons", indexes = @Index(name = "ix_coupons_code", columnList = "code", unique = true))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Coupon extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

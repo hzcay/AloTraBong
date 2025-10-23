@@ -6,9 +6,13 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "coupon_redemptions",
-       uniqueConstraints = @UniqueConstraint(name = "uk_coupon_user_order", columnNames = {"coupon_id", "user_id", "order_id"}))
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "coupon_redemptions", uniqueConstraints = @UniqueConstraint(name = "uk_coupon_user_order", columnNames = {
+        "coupon_id", "user_id", "order_id" }))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CouponRedemption extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
