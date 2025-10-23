@@ -1,0 +1,74 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    restart: unless-stopped
+    environment:
+      SA_PASSWORD: "123456@Abc"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - springnet
+
+  db-init:
+    image: mcr.microsoft.com/mssql-tools
+    depends_on:
+      - sqlserver
+    entrypoint: ["/bin/bash", "-c"]
+    command: >
+      "
+      echo '⌛ Waiting for SQL Server...';
+      for i in {1..30}; do
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P '123456@Abc' -Q 'SELECT 1' && break;
+        echo '   … SQL not ready yet'; sleep 2;
+      done;
+      echo '🚀 Creating database if not exists';
+      /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P '123456@Abc' -Q \"
+        IF DB_ID('Alotrabong') IS NULL
+          CREATE DATABASE Alotrabong;
+      \";
+      echo '✅ DB ready';
+      "
+    networks:
+      - springnet
+    restart: "no"
+
+  app:
+    build: .
+    container_name: alotrabong
+    restart: unless-stopped
+    depends_on:
+      - sqlserver
+      - db-init
+      - redis
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:sqlserver://sqlserver:1433;databaseName=Alotrabong;encrypt=false"
+      SPRING_DATASOURCE_USERNAME: "sa"
+      SPRING_DATASOURCE_PASSWORD: "123456@Abc"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+      SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.SQLServerDialect"
+      SPRING_PROFILES_ACTIVE: "docker"
+      JAVA_OPTS: "-Xms128m -Xmx480m -XX:+UseSerialGC -XX:+UseStringDeduplication -Dserver.tomcat.max-threads=50"
+    ports:
+      - "8080:8080"
+    networks:
+      - springnet
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - springnet
+
+volumes:
+  sqlserver_data:
+
+networks:
+  springnet:
