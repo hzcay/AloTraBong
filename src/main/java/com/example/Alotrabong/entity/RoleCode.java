@@ -36,6 +36,4 @@ enum NotificationType {
     ORDER_STATUS, PROMO
 }
 
-enum OtpPurpose {
-    SIGNUP, RESET_PWD
-}
+// OtpPurpose enum đã được tạo riêng trong file OtpPurpose.java

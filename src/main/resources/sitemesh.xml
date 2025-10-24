@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemesh>
+    <!-- Single layout for all pages -->
+    <mapping path="/*" decorator="/layouts/main-layout" />
+    
+    <!-- API endpoints (no decoration) -->
+    <mapping path="/api/*" decorator="" />
+    <mapping path="/swagger-ui/*" decorator="" />
+    <mapping path="/v3/api-docs/*" decorator="" />
+    
+    <!-- Exclude static resources -->
+    <mapping path="/css/*" decorator="" />
+    <mapping path="/js/*" decorator="" />
+    <mapping path="/images/*" decorator="" />
+    <mapping path="/webjars/*" decorator="" />
+</sitemesh>

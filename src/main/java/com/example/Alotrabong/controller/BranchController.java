@@ -1,63 +1,37 @@
 package com.example.Alotrabong.controller;
 
-import com.example.Alotrabong.dto.ApiResponse;
-import com.example.Alotrabong.dto.BranchDTO;
-import com.example.Alotrabong.service.BranchService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/branches")
-@RequiredArgsConstructor
-@Tag(name = "Branch", description = "Branch management APIs")
+@Controller
+@RequestMapping("/branch")
+@PreAuthorize("hasAnyRole('ADMIN', 'BRANCH_MANAGER')")
 public class BranchController {
 
-    private final BranchService branchService;
-
-    @GetMapping
-    @Operation(summary = "Get all branches")
-    public ResponseEntity<ApiResponse<List<BranchDTO>>> getAllBranches() {
-        List<BranchDTO> branches = branchService.getAllBranches();
-        return ResponseEntity.ok(ApiResponse.success("Branches retrieved", branches));
+    @GetMapping("/dashboard")
+    public String branchDashboard(Model model) {
+        model.addAttribute("title", "Branch Dashboard");
+        return "branch/dashboard";
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get branch by ID")
-    public ResponseEntity<ApiResponse<BranchDTO>> getBranchById(@PathVariable String id) {
-        BranchDTO branch = branchService.getBranchById(id);
-        return ResponseEntity.ok(ApiResponse.success("Branch retrieved", branch));
+    @GetMapping("/orders")
+    public String branchOrders(Model model) {
+        model.addAttribute("title", "Branch Orders");
+        return "branch/orders";
     }
 
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create new branch")
-    public ResponseEntity<ApiResponse<BranchDTO>> createBranch(@Valid @RequestBody BranchDTO branchDTO) {
-        BranchDTO created = branchService.createBranch(branchDTO);
-        return ResponseEntity.ok(ApiResponse.success("Branch created successfully", created));
+    @GetMapping("/menu")
+    public String branchMenu(Model model) {
+        model.addAttribute("title", "Branch Menu");
+        return "branch/menu";
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BRANCH_MANAGER')")
-    @Operation(summary = "Update branch")
-    public ResponseEntity<ApiResponse<BranchDTO>> updateBranch(
-            @PathVariable String id,
-            @Valid @RequestBody BranchDTO branchDTO) {
-        BranchDTO updated = branchService.updateBranch(id, branchDTO);
-        return ResponseEntity.ok(ApiResponse.success("Branch updated successfully", updated));
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Delete branch")
-    public ResponseEntity<ApiResponse<Void>> deleteBranch(@PathVariable String id) {
-        branchService.deleteBranch(id);
-        return ResponseEntity.ok(ApiResponse.success("Branch deleted successfully", null));
+    @GetMapping("/staff")
+    public String branchStaff(Model model) {
+        model.addAttribute("title", "Branch Staff");
+        return "branch/staff";
     }
 }

@@ -4,10 +4,13 @@ import com.example.Alotrabong.dto.LoginRequest;
 import com.example.Alotrabong.dto.LoginResponse;
 import com.example.Alotrabong.dto.RegisterRequest;
 import com.example.Alotrabong.dto.UserDTO;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
 
-public interface UserService {
+public interface UserService extends UserDetailsService {
     
     UserDTO register(RegisterRequest request);
     

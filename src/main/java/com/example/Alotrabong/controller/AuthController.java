@@ -4,7 +4,9 @@ import com.example.Alotrabong.dto.ApiResponse;
 import com.example.Alotrabong.dto.LoginRequest;
 import com.example.Alotrabong.dto.LoginResponse;
 import com.example.Alotrabong.dto.RegisterRequest;
+import com.example.Alotrabong.dto.ResetPasswordRequest;
 import com.example.Alotrabong.dto.UserDTO;
+import com.example.Alotrabong.dto.VerifyOtpRequest;
 import com.example.Alotrabong.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,10 +39,8 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     @Operation(summary = "Verify OTP")
-    public ResponseEntity<ApiResponse<UserDTO>> verifyOtp(
-            @RequestParam String email,
-            @RequestParam String otp) {
-        UserDTO user = userService.verifyOtp(email, otp);
+    public ResponseEntity<ApiResponse<UserDTO>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        UserDTO user = userService.verifyOtp(request.getEmail(), request.getOtp());
         return ResponseEntity.ok(ApiResponse.success("Account verified successfully", user));
     }
 
@@ -53,11 +53,16 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     @Operation(summary = "Reset password with OTP")
-    public ResponseEntity<ApiResponse<UserDTO>> resetPassword(
-            @RequestParam String email,
-            @RequestParam String otp,
-            @RequestParam String newPassword) {
-        UserDTO user = userService.resetPassword(email, otp, newPassword);
+    public ResponseEntity<ApiResponse<UserDTO>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        UserDTO user = userService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully", user));
+    }
+
+    @GetMapping("/user-roles/{userId}")
+    @Operation(summary = "Get user roles")
+    public ResponseEntity<ApiResponse<Object>> getUserRoles(@PathVariable String userId) {
+        // This endpoint is for testing purposes to check user roles
+        return ResponseEntity.ok(ApiResponse.success("User roles retrieved", 
+            "Check database user_roles table for user: " + userId));
     }
 }

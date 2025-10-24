@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import com.example.Alotrabong.service.impl.UserServiceImpl;
 
 @Configuration
 @EnableMethodSecurity
@@ -28,14 +29,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        UserDetails devUser = User.withUsername("dev")
-                .password(encoder.encode("dev123"))
-                .roles("USER", "ADMIN")
-                .build();
-        return new InMemoryUserDetailsManager(devUser);
-    }
+    // UserServiceImpl already implements UserDetailsService
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
@@ -47,62 +41,50 @@ public class SecurityConfig {
         return new JwtAuthenticationFilter();
     }
 
-    // ====================== API CHAIN (JWT) ======================
+    // ====================== UNIFIED SECURITY CHAIN (JWT + FORM LOGIN) ======================
     @Bean
-    @Order(1)
-    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/**") // <-- QUAN TRỌNG: chỉ áp cho /api/**
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**"))
                 .cors(Customizer.withDefaults())
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/items/**", "/api/categories/**", "/api/branches/**",
-                                "/actuator/health", "/ping",
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs/**",
-                                "/swagger-ui.html", "/swagger-ui/index.html", "/swagger-ui/")
-                        .permitAll()
-                        .requestMatchers("/api/cart/**", "/api/orders/**", "/api/users/profile").hasRole("USER")
-                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER")
-                        .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
-    }
-
-    // ====================== WEB CHAIN (FORM LOGIN) ======================
-    @Bean
-    @Order(2)
-    public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/**") // <-- bắt phần còn lại
-                // CSRF: giữ bật cho form login; ignore H2 nếu dùng
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
                 .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
                         .requestMatchers(
                                 "/auth", "/register", "/forgot-password",
                                 "/css/**", "/js/**", "/images/**", "/webjars/**", "/h2-console/**",
                                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs/**",
-                                "/", "/login" // trang public
+                                "/test/**", // Test endpoints
+                                "/", "/login", "/index" // trang public
                         ).permitAll()
+                        // API endpoints
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/items/**", "/api/categories/**", "/api/branches/**"
+                        ).permitAll()
+                        // Role-based access
+                        .requestMatchers("/dashboard").authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/branch/**").hasAnyRole("ADMIN", "BRANCH_MANAGER")
+                        .requestMatchers("/shipper/**").hasAnyRole("ADMIN", "SHIPPER")
+                        .requestMatchers("/user/**").hasRole("USER")
+                        // API role-based access
+                        .requestMatchers("/api/cart/**", "/api/orders/**", "/api/users/profile").hasRole("USER")
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER")
                         .anyRequest().authenticated())
                 .formLogin(login -> login
                         .loginPage("/auth")
                         .loginProcessingUrl("/login")
-                        .usernameParameter("username")
+                        .usernameParameter("email")
                         .passwordParameter("password")
-                        .defaultSuccessUrl("/", true)
+                        .defaultSuccessUrl("/dashboard", true)
                         .failureUrl("/auth?error"))
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/auth?logout"))
-                // web dùng session (form login)
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
-        // KHÔNG add JWT filter ở chain web
         return http.build();
     }
 }

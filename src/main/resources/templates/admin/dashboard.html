@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AloTraBong</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container-fluid {
+            padding-top: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .admin-info-card {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+        }
+        .admin-info-card .card-body {
+            text-align: center;
+        }
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-crown me-2"></i>AloTraBong Admin
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/users">
+                            <i class="fas fa-users me-1"></i>Quản lý User
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/branches">
+                            <i class="fas fa-store me-1"></i>Quản lý Chi nhánh
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/reports">
+                            <i class="fas fa-chart-bar me-1"></i>Báo cáo
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-crown me-1"></i><span sec:authentication="name">Admin</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/admin/profile">
+                                <i class="fas fa-user me-2"></i>Profile
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/logout}" method="post">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-crown text-danger me-2"></i>Admin Dashboard
+                </h1>
+            </div>
+        </div>
+
+        <!-- Admin Info Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card admin-info-card">
+                    <div class="card-body">
+                        <div class="user-avatar">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <h3>Chào mừng, <span sec:authentication="name">Admin</span>!</h3>
+                        <p class="mb-3">Bạn đang sử dụng tài khoản Admin - Toàn quyền hệ thống</p>
+                        <span class="role-badge">
+                            <i class="fas fa-crown me-1"></i>ADMIN
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Actions -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <h5>Quản lý User</h5>
+                        <p class="mb-0">Quản lý người dùng</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-store fa-3x mb-3"></i>
+                        <h5>Quản lý Chi nhánh</h5>
+                        <p class="mb-0">Quản lý chi nhánh</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                        <h5>Thống kê</h5>
+                        <p class="mb-0">Báo cáo thống kê</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-cog fa-3x mb-3"></i>
+                        <h5>Cài đặt</h5>
+                        <p class="mb-0">Cấu hình hệ thống</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Features -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-shield-alt me-2"></i>Quyền hạn Admin</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <i class="fas fa-check text-success me-2"></i>Quản lý tất cả người dùng
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="fas fa-check text-success me-2"></i>Quản lý chi nhánh và shipper
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="fas fa-check text-success me-2"></i>Xem tất cả báo cáo thống kê
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <i class="fas fa-check text-success me-2"></i>Cấu hình hệ thống
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="fas fa-check text-success me-2"></i>Quản lý sản phẩm và menu
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="fas fa-check text-success me-2"></i>Phân quyền và bảo mật
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Footer -->
+    <footer class="footer bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <span>&copy; 2024 AloTraBong Admin Panel. All rights reserved.</span>
+                </div>
+                <div class="col-md-6">
+                    <span><i class="fas fa-shield-alt me-1"></i>Admin Access Only</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
