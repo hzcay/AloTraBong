@@ -12,6 +12,7 @@ public class CategoryDTO {
     private String name;
     private String description;
     private Boolean isActive;
+    private String parentId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

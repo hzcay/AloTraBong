@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipping Rates - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #ff6b35;
+            --secondary-color: #f7931e;
+            --dark-color: #1a1a1a;
+            --light-color: #f5f5f5;
+        }
+        body {
+            background-color: var(--light-color);
+        }
+        .sidebar {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
+            min-height: 100vh;
+        }
+        .sidebar .nav-link {
+            color: #ccc;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link.active {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            text-align: center;
+        }
+        .main-content {
+            padding: 30px;
+        }
+        .page-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+        .card-custom {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .table-responsive {
+            border-radius: 10px;
+        }
+        table {
+            margin-bottom: 0;
+        }
+        thead th {
+            border-bottom: 2px solid var(--primary-color);
+            padding: 15px;
+            font-weight: 600;
+        }
+        tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar">
+            <div class="sidebar-header">
+                <h4><i class="bi bi-speedometer2"></i> Admin Panel</h4>
+            </div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
+                <a class="nav-link" href="/admin/users"><i class="bi bi-people"></i> Users</a>
+                <a class="nav-link" href="/admin/branches"><i class="bi bi-building"></i> Branches</a>
+                <a class="nav-link" href="/admin/menu"><i class="bi bi-list-ul"></i> Categories</a>
+                <a class="nav-link" href="/admin/promotions"><i class="bi bi-tag"></i> Promotions</a>
+                <a class="nav-link active" href="/admin/shipping"><i class="bi bi-truck"></i> Shipping</a>
+                <a class="nav-link" href="/admin/reports"><i class="bi bi-bar-chart"></i> Reports</a>
+                <a class="nav-link" href="/admin/settings"><i class="bi bi-gear"></i> Settings</a>
+                <hr style="background-color: #444; margin: 20px 0;">
+                <a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 main-content">
+            <div class="page-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1><i class="bi bi-truck"></i> Shipping Rates Management</h1>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" onclick="openCreateRateModal()">
+                            <i class="bi bi-plus"></i> New Rate
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Rates Table -->
+            <div class="card-custom">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>District</th>
+                                <th>City</th>
+                                <th>Base Rate</th>
+                                <th>Per Km Rate</th>
+                                <th>Max Distance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ratesBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">Loading shipping rates...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <nav>
+                    <ul class="pagination" id="pagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Rate Modal -->
+<div class="modal fade" id="rateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Shipping Rate</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rateForm">
+                    <input type="hidden" id="rateId">
+                    <div class="mb-3">
+                        <label class="form-label">District</label>
+                        <input type="text" id="district" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">City</label>
+                        <input type="text" id="city" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Base Rate</label>
+                                <input type="number" id="baseRate" class="form-control" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Per Km Rate</label>
+                                <input type="number" id="perKmRate" class="form-control" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Max Distance</label>
+                                <input type="number" id="maxDistance" class="form-control" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveRate()">Save Rate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentPage = 0;
+
+    function loadRates() {
+        fetch(`/api/admin/shipping-rates?page=${currentPage}&size=20`)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('ratesBody');
+                tbody.innerHTML = '';
+                if (data.content && data.content.length > 0) {
+                    data.content.forEach(rate => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${rate.district}</td>
+                                <td>${rate.city}</td>
+                                <td>${rate.baseRate}</td>
+                                <td>${rate.perKmRate}</td>
+                                <td>${rate.maxDistance}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="editRate('${rate.rateId}')">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteRate('${rate.rateId}')">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No shipping rates found</td></tr>';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function openCreateRateModal() {
+        document.getElementById('rateForm').reset();
+        document.getElementById('rateId').value = '';
+        new bootstrap.Modal(document.getElementById('rateModal')).show();
+    }
+
+    function editRate(rateId) {
+        fetch(`/api/admin/shipping-rates/${rateId}`)
+            .then(response => response.json())
+            .then(rate => {
+                document.getElementById('rateId').value = rate.rateId;
+                document.getElementById('district').value = rate.district;
+                document.getElementById('city').value = rate.city;
+                document.getElementById('baseRate').value = rate.baseRate;
+                document.getElementById('perKmRate').value = rate.perKmRate;
+                document.getElementById('maxDistance').value = rate.maxDistance;
+                new bootstrap.Modal(document.getElementById('rateModal')).show();
+            });
+    }
+
+    function saveRate() {
+        const rateId = document.getElementById('rateId').value;
+        const data = {
+            district: document.getElementById('district').value,
+            city: document.getElementById('city').value,
+            baseRate: parseFloat(document.getElementById('baseRate').value),
+            perKmRate: parseFloat(document.getElementById('perKmRate').value),
+            maxDistance: parseFloat(document.getElementById('maxDistance').value)
+        };
+
+        const method = rateId ? 'PUT' : 'POST';
+        const url = rateId ? `/api/admin/shipping-rates/${rateId}` : '/api/admin/shipping-rates';
+
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('rateModal')).hide();
+            loadRates();
+            alert(rateId ? 'Rate updated' : 'Rate created');
+        })
+        .catch(error => alert('Error: ' + error));
+    }
+
+    function deleteRate(rateId) {
+        if (confirm('Are you sure?')) {
+            fetch(`/api/admin/shipping-rates/${rateId}`, { method: 'DELETE' })
+                .then(() => {
+                    loadRates();
+                    alert('Rate deleted');
+                });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadRates);
+</script>
+</body>
+</html>
+

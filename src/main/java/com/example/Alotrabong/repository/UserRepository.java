@@ -30,4 +30,6 @@ public interface UserRepository extends JpaRepository<User, String> {
             where lower(u.email) = lower(:login) or u.phone = :login
             """)
     boolean existsByLogin(@Param("login") String login);
+
+    long countByIsActive(Boolean isActive);
 }

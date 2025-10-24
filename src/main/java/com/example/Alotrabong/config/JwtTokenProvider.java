@@ -24,7 +24,6 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // ✅ Generate token
     public String generateToken(Authentication authentication) {
         String username = authentication.getName();
         Date now = new Date();
@@ -34,7 +33,7 @@ public class JwtTokenProvider {
                 .subject(username)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSigningKey()) // no SignatureAlgorithm needed in 0.12.x
+                .signWith(getSigningKey())
                 .compact();
     }
     public String generateTokenFromUsername(String username) {

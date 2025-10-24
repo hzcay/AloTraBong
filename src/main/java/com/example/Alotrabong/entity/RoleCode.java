@@ -8,32 +8,32 @@ enum MediaType {
     image, video
 }
 
-enum PaymentMethod {
-    COD, VNPAY, MOMO
-}
+// enum PaymentMethod {
+//     COD, VNPAY, MOMO
+// }
 
-enum PaymentStatus {
-    UNPAID, PAID, REFUNDED
-} // 0,1,2
+// enum PaymentStatus {
+//     UNPAID, PAID, REFUNDED
+// } // 0,1,2
 
-enum OrderStatus {
-    NEW, CONFIRMED, SHIPPING, DELIVERED, CANCELED, REFUNDED
-} // 0..5
+// enum OrderStatus {
+//     NEW, CONFIRMED, SHIPPING, DELIVERED, CANCELED, REFUNDED
+// } // 0..5
 
 enum ShipmentStatus {
     ASSIGNED, IN_TRANSIT, DELIVERED, CANCELED
 } // 0..3
 
-enum PromoType {
-    PERCENT, AMOUNT, COMBO, FREESHIP
-}
+// enum PromoType {
+//     PERCENT, AMOUNT, COMBO, FREESHIP
+// }
 
-enum DiscountType {
-    PERCENT, AMOUNT
-}
+// enum DiscountType {
+//     PERCENT, AMOUNT
+// }
 
-enum NotificationType {
-    ORDER_STATUS, PROMO
-}
+// enum NotificationType {
+//     ORDER_STATUS, PROMO
+// }
 
 // OtpPurpose enum đã được tạo riêng trong file OtpPurpose.java

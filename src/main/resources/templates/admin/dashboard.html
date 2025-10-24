@@ -1,238 +1,313 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" 
+<html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - AloTraBong</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary-color: #ff6b35;
+            --secondary-color: #f7931e;
+            --dark-color: #1a1a1a;
+            --light-color: #f5f5f5;
+        }
+
         body {
-            background-color: #f8f9fa;
+            background-color: var(--light-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .container-fluid {
-            padding-top: 20px;
+
+        .sidebar {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
+            min-height: 100vh;
+            padding: 0;
         }
-        .card {
-            margin-bottom: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+
+        .sidebar .nav-link {
+            color: #ccc;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+            margin: 5px 0;
+            transition: all 0.3s ease;
         }
-        .admin-info-card {
-            background: linear-gradient(135deg, #dc3545, #c82333);
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
-            border: none;
-        }
-        .admin-info-card .card-body {
             text-align: center;
         }
-        .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 2rem;
-        }
-        .role-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
+
+        .sidebar-header h4 {
+            margin: 0;
             font-weight: 600;
-            font-size: 0.9rem;
-            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+
+        .page-header h1 {
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--primary-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 40px;
+            color: var(--secondary-color);
+            opacity: 0.3;
+            text-align: right;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .table-card table {
+            margin-bottom: 0;
+        }
+
+        .table-card thead {
+            background-color: var(--light-color);
+        }
+
+        .table-card thead th {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--dark-color);
+            font-weight: 600;
+            padding: 15px;
+        }
+
+        .table-card tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+
+        .badge-active {
+            background-color: #28a745;
             color: white;
+        }
+
+        .badge-inactive {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 5px;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
         }
     </style>
 </head>
 <body>
-    <!-- Admin Header -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-crown me-2"></i>AloTraBong Admin
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/dashboard">
-                            <i class="fas fa-home me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/users">
-                            <i class="fas fa-users me-1"></i>Quản lý User
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/branches">
-                            <i class="fas fa-store me-1"></i>Quản lý Chi nhánh
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/reports">
-                            <i class="fas fa-chart-bar me-1"></i>Báo cáo
-                        </a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-crown me-1"></i><span sec:authentication="name">Admin</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/admin/profile">
-                                <i class="fas fa-user me-2"></i>Profile
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form th:action="@{/logout}" method="post">
-                                    <button type="submit" class="dropdown-item">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar">
+            <div class="sidebar-header">
+                <h4><i class="bi bi-speedometer2"></i> Admin Panel</h4>
             </div>
-        </div>
-    </nav>
-
-    <div class="container-fluid">
-        <!-- Header -->
-        <div class="row">
-            <div class="col-12">
-                <h1 class="mb-4">
-                    <i class="fas fa-crown text-danger me-2"></i>Admin Dashboard
-                </h1>
-            </div>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
+                <a class="nav-link" href="/admin/users"><i class="bi bi-people"></i> User Management</a>
+                <a class="nav-link" href="/admin/branches"><i class="bi bi-building"></i> Branches</a>
+                <a class="nav-link" href="/admin/menu"><i class="bi bi-list-ul"></i> Categories</a>
+                <a class="nav-link" href="/admin/promotions"><i class="bi bi-tag"></i> Promotions</a>
+                <a class="nav-link" href="/admin/shipping"><i class="bi bi-truck"></i> Shipping Rates</a>
+                <a class="nav-link" href="/admin/reports"><i class="bi bi-bar-chart"></i> Reports</a>
+                <a class="nav-link" href="/admin/settings"><i class="bi bi-gear"></i> Settings</a>
+                <hr style="background-color: #444; margin: 20px 0;">
+                <a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </nav>
         </div>
 
-        <!-- Admin Info Card -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card admin-info-card">
-                    <div class="card-body">
-                        <div class="user-avatar">
-                            <i class="fas fa-crown"></i>
-                        </div>
-                        <h3>Chào mừng, <span sec:authentication="name">Admin</span>!</h3>
-                        <p class="mb-3">Bạn đang sử dụng tài khoản Admin - Toàn quyền hệ thống</p>
-                        <span class="role-badge">
-                            <i class="fas fa-crown me-1"></i>ADMIN
-                        </span>
+        <!-- Main Content -->
+        <div class="col-md-10 main-content">
+            <div class="page-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1><i class="bi bi-speedometer2"></i> Admin Dashboard</h1>
+                    </div>
+                    <div class="col-auto">
+                        <span th:text="${#dates.format(#dates.createNow(), 'dd/MM/yyyy HH:mm')}"></span>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Admin Actions -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-danger text-white">
-                    <div class="card-body text-center">
-                        <i class="fas fa-users fa-3x mb-3"></i>
-                        <h5>Quản lý User</h5>
-                        <p class="mb-0">Quản lý người dùng</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body text-center">
-                        <i class="fas fa-store fa-3x mb-3"></i>
-                        <h5>Quản lý Chi nhánh</h5>
-                        <p class="mb-0">Quản lý chi nhánh</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body text-center">
-                        <i class="fas fa-chart-bar fa-3x mb-3"></i>
-                        <h5>Thống kê</h5>
-                        <p class="mb-0">Báo cáo thống kê</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body text-center">
-                        <i class="fas fa-cog fa-3x mb-3"></i>
-                        <h5>Cài đặt</h5>
-                        <p class="mb-0">Cấu hình hệ thống</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Admin Features -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-shield-alt me-2"></i>Quyền hạn Admin</h5>
-                    </div>
-                    <div class="card-body">
+            <!-- Statistics -->
+            <div class="row" id="statistics">
+                <div class="col-md-3">
+                    <div class="stat-card">
                         <div class="row">
-                            <div class="col-md-6">
-                                <ul class="list-group list-group-flush">
-                                    <li class="list-group-item">
-                                        <i class="fas fa-check text-success me-2"></i>Quản lý tất cả người dùng
-                                    </li>
-                                    <li class="list-group-item">
-                                        <i class="fas fa-check text-success me-2"></i>Quản lý chi nhánh và shipper
-                                    </li>
-                                    <li class="list-group-item">
-                                        <i class="fas fa-check text-success me-2"></i>Xem tất cả báo cáo thống kê
-                                    </li>
-                                </ul>
+                            <div class="col">
+                                <h3>Total Users</h3>
+                                <div class="stat-value" id="totalUsers">-</div>
                             </div>
-                            <div class="col-md-6">
-                                <ul class="list-group list-group-flush">
-                                    <li class="list-group-item">
-                                        <i class="fas fa-check text-success me-2"></i>Cấu hình hệ thống
-                                    </li>
-                                    <li class="list-group-item">
-                                        <i class="fas fa-check text-success me-2"></i>Quản lý sản phẩm và menu
-                                    </li>
-                                    <li class="list-group-item">
-                                        <i class="fas fa-check text-success me-2"></i>Phân quyền và bảo mật
-                                    </li>
-                                </ul>
+                            <div class="col-auto stat-icon">
+                                <i class="bi bi-people"></i>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="row">
+                            <div class="col">
+                                <h3>Active Users</h3>
+                                <div class="stat-value" id="activeUsers">-</div>
+                            </div>
+                            <div class="col-auto stat-icon">
+                                <i class="bi bi-person-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="row">
+                            <div class="col">
+                                <h3>Total Branches</h3>
+                                <div class="stat-value" id="totalBranches">-</div>
+                            </div>
+                            <div class="col-auto stat-icon">
+                                <i class="bi bi-building"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="row">
+                            <div class="col">
+                                <h3>Active Promotions</h3>
+                                <div class="stat-value" id="activePromotions">-</div>
+                            </div>
+                            <div class="col-auto stat-icon">
+                                <i class="bi bi-tag"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mt-4 mb-4">
+                <div class="col-12">
+                    <div class="table-card">
+                        <h5 class="mb-3">Quick Actions</h5>
+                        <button class="btn btn-primary" onclick="location.href='/admin/users'">
+                            <i class="bi bi-plus"></i> Manage Users
+                        </button>
+                        <button class="btn btn-primary" onclick="location.href='/admin/branches'">
+                            <i class="bi bi-plus"></i> Manage Branches
+                        </button>
+                        <button class="btn btn-primary" onclick="location.href='/admin/promotions'">
+                            <i class="bi bi-plus"></i> Create Promotion
+                        </button>
+                        <button class="btn btn-primary" onclick="location.href='/admin/reports'">
+                            <i class="bi bi-bar-chart"></i> View Reports
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Admin Footer -->
-    <footer class="footer bg-dark text-white text-center py-3 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <span>&copy; 2024 AloTraBong Admin Panel. All rights reserved.</span>
-                </div>
-                <div class="col-md-6">
-                    <span><i class="fas fa-shield-alt me-1"></i>Admin Access Only</span>
-                </div>
-            </div>
-        </div>
-    </footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Load dashboard statistics
+    function loadStatistics() {
+        fetch('/api/admin/reports/dashboard-summary')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('totalUsers').textContent = data.totalUsers || 0;
+                document.getElementById('activeUsers').textContent = data.activeUsers || 0;
+                document.getElementById('totalBranches').textContent = data.totalBranches || 0;
+                document.getElementById('activePromotions').textContent = data.activePromotions || 0;
+            })
+            .catch(error => console.error('Error loading statistics:', error));
+    }
 
-    <!-- Bootstrap JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    // Load statistics when page loads
+    document.addEventListener('DOMContentLoaded', loadStatistics);
+</script>
 </body>
 </html>
+

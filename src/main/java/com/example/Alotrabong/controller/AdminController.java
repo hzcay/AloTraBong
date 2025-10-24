@@ -58,4 +58,16 @@ public class AdminController {
         model.addAttribute("title", "System Settings");
         return "admin/settings";
     }
+
+    @GetMapping("/promotions")
+    public String promotions(Model model) {
+        model.addAttribute("title", "Promotion Management");
+        return "admin/promotions";
+    }
+
+    @GetMapping("/shipping")
+    public String shipping(Model model) {
+        model.addAttribute("title", "Shipping Rates Management");
+        return "admin/shipping";
+    }
 }
