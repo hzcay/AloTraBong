@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<body>
+<footer th:fragment="siteFooter" class="site-footer gradient-hero">
+
+  <!-- CONTACT -->
+  <section id="contact" class="container" style="padding: 40px 0">
+    <h2 style="font-size:22px;font-weight:900;text-transform:uppercase;margin:0 0 12px">
+      Liên hệ
+    </h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div>
+        <p>Hotline: <b>0123 456 789</b></p>
+        <p>Email: <a href="mailto:support@alotrabong.vn"><b>support@alotrabong.vn</b></a></p>
+        <p>Zalo: <a href="https://zalo.me/alotrabong" target="_blank" rel="noopener"><b>zalo.me/alotrabong</b></a></p>
+      </div>
+
+      <form th:action="@{/contact}" method="post">
+        <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+        <input name="name" placeholder="Tên của bạn"
+               style="width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px" required>
+        <input name="contact" placeholder="Email hoặc SĐT"
+               style="width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px" required>
+        <textarea name="message" rows="3" placeholder="Nội dung..."
+                  style="width:100%;padding:12px;border:1px solid var(--line);border-radius:8px" required></textarea>
+        <div style="margin-top:10px">
+          <button type="submit" class="btn">Gửi</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- BOTTOM BAR -->
+  <div class="container inner" style="display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-top:1px solid #eee">
+    <div>© <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2025</span> AloTraBong — Eat Fast, Live Happy</div>
+    <nav class="nav" style="gap:12px">
+      <a href="#" aria-label="Facebook">Facebook</a>
+      <a href="#" aria-label="Instagram">Instagram</a>
+      <a href="#" aria-label="TikTok">TikTok</a>
+      <a href="#contact">Liên hệ</a>
+    </nav>
+  </div>
+
+</footer>
+</body>
+</html>

@@ -1,0 +1,157 @@
+/* === THEME ORANGE — TOKENS & UTILS === */
+:root {
+  /* Brand */
+  --brand-1: #f6d365;
+  --brand-2: #fda085;
+  --brand-solid: #ff7a3d;
+
+  /* Ink & surfaces */
+  --ink-1: #111;
+  --ink-2: #555;
+  --ink-3: #777;
+  --surface: #fff;
+  --muted: #888;
+
+  /* Lines & states */
+  --line: #e6e6e6;
+  --focus: rgba(255, 122, 61, 0.25);
+  --success: #10b981;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --warning: #f59e0b;
+
+  /* Radius & spacing */
+  --r: 10px;
+  --space: 20px;
+
+  /* Fonts */
+  --font: "Montserrat", "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* Container */
+  --container: 1200px;
+}
+
+/* Reset nhẹ nhàng */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Base */
+html,
+body {
+  background: #fff;
+  color: var(--ink-1);
+  font: 16px/1.55 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: var(--ink-1);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Layout helper */
+.container {
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+/* Brand surfaces */
+.gradient-hero {
+  background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+}
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+/* Utils */
+.hide {
+  display: none !important;
+}
+.m-0 {
+  margin: 0 !important;
+}
+.mb-1 {
+  margin-bottom: 6px !important;
+}
+.mb-2 {
+  margin-bottom: 12px !important;
+}
+.mb-3 {
+  margin-bottom: 18px !important;
+}
+.mb-4 {
+  margin-bottom: 24px !important;
+}
+.p-1 {
+  padding: 8px !important;
+}
+.p-2 {
+  padding: 12px !important;
+}
+.p-3 {
+  padding: 18px !important;
+}
+.grid {
+  display: grid;
+  gap: 18px;
+}
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+.center-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.round {
+  border-radius: var(--r);
+}
+.shadow-0 {
+  box-shadow: none;
+}
+.text-muted {
+  color: var(--ink-2);
+}
+.text-upper {
+  text-transform: uppercase;
+}
+.bold {
+  font-weight: 800;
+}
+.italic {
+  font-style: italic;
+}

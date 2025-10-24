@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<body>
+<header th:fragment="siteHeader" class="site-header gradient-hero">
+  <div class="container inner">
+    <!-- Brand -->
+    <div class="brand">
+      <div class="mark"></div>
+      <strong class="name">AloTraBong</strong>
+    </div>
+
+    <!-- Nav (đã map về /user/...) -->
+    <nav class="nav">
+      <a th:href="@{/user/home}">Trang chủ</a>
+      <a th:href="@{/user/product/list}">Menu</a>
+      <a th:href="@{/user/coupon/list}">Ưu đãi</a>
+      <a th:href="@{/branches/list}">Chi nhánh</a> 
+      <a href="#contact" class="btn btn-primary cta">Liên hệ</a>
+    </nav>
+
+    <!-- Tools (đã map đúng theo cấu trúc /user/...) -->
+    <div class="header-tools">
+      <a th:href="@{/user/cart}" class="cart-badge">🛒 <b th:text="${cartCount} ?: 0">0</b></a>
+      <a th:href="@{/user/order/history}">Đơn hàng</a>
+      <a th:href="@{/user/address/manage}">Địa chỉ</a>
+      <a th:href="@{/user/favorite/list}">Yêu thích</a>
+      <div class="avatar" title="Tài khoản" th:text="${#strings.substring((userName?:'U'),0,1)}">U</div>
+    </div>
+  </div>
+</header>
+</body>
+</html>

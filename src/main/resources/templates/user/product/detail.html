@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi"
+      th:replace="~{fragments/layout :: layout(~{::content}, ${product != null ? product.name : 'Chi tiết món'})}">
+<div th:fragment="content">
+
+  <!-- BREADCRUMB (option) -->
+  <section class="section">
+    <div class="container center-between">
+      <nav class="text-muted">
+        <a th:href="@{/}" class="nav">Trang chủ</a> /
+        <a th:href="@{/menu}" class="nav">Menu</a> /
+        <span th:text="${product?.name}">Tên món</span>
+      </nav>
+      <a th:href="@{/menu}" class="btn">← Quay lại Menu</a>
+    </div>
+  </section>
+
+  <!-- PRODUCT DETAIL -->
+  <section class="section">
+    <div class="container grid" style="grid-template-columns:1.05fr .95fr;align-items:start;gap:28px">
+
+      <!-- LEFT: MEDIA -->
+      <div class="grid" style="gap:12px">
+        <div class="card">
+          <img th:src="${product?.mainImageUrl}" alt="" />
+        </div>
+
+        <!-- gallery thumbs -->
+        <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:8px" th:if="${#lists.size(product?.gallery) > 0}">
+          <button class="card" style="padding:0;border:none;background:transparent;cursor:pointer"
+                  th:each="m : ${product.gallery}"
+                  th:attr="data-src=${m.url}"
+                  onclick="document.querySelector('#pd-main').src=this.dataset.src">
+            <img th:src="${m.thumbnailUrl != null ? m.thumbnailUrl : m.url}" alt="">
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: INFO & CTA -->
+      <article>
+        <h1 class="m-0 mb-2 bold" style="font-size:28px" th:text="${product?.name}">Tên món</h1>
+
+        <div class="center" style="gap:10px;justify-content:flex-start" th:if="${product?.rating != null}">
+          <div title="Đánh giá trung bình">
+            ⭐ <b th:text="${#numbers.formatDecimal(product.rating,1,1)}">4.8</b>
+          </div>
+          <span class="text-muted">|</span>
+          <a href="#reviews" class="text-muted" th:text="${product?.reviewCount + ' đánh giá'}">12 đánh giá</a>
+        </div>
+
+        <div class="mb-2" style="margin-top:10px">
+          <strong style="font-size:22px" th:text="${#numbers.formatInteger(product?.price)} + 'đ'">59.000đ</strong>
+          <span class="badge" th:if="${product?.isBestSeller}">Bán chạy</span>
+          <span class="badge" th:if="${product?.isNew}">Mới</span>
+          <span class="badge" th:if="${product?.isFavorite}">Yêu thích</span>
+        </div>
+
+        <p class="text-muted mb-3" th:text="${product?.shortDesc}">
+          Mô tả ngắn gọn món ăn, khẩu vị, thành phần nổi bật…
+        </p>
+
+        <!-- CTA row -->
+        <div class="center" style="gap:10px;justify-content:flex-start" th:if="${product?.available}">
+          <form th:action="@{/cart}" method="post" class="center" style="gap:10px">
+            <input type="hidden" name="productId" th:value="${product?.id}">
+            <input class="input" type="number" name="qty" value="1" min="1" style="max-width:110px">
+            <button class="btn btn-primary" type="submit">+ Thêm vào giỏ</button>
+          </form>
+
+          <form th:action="@{/favorites}" method="post">
+            <input type="hidden" name="productId" th:value="${product?.id}">
+            <button class="btn" type="submit" title="Thêm vào yêu thích">❤️</button>
+          </form>
+        </div>
+        <div th:if="${!product?.available}" class="text-muted">Tạm hết hàng tại chi nhánh này.</div>
+
+        <!-- NUTRITION / DESCRIPTION / REVIEWS TABS -->
+        <div class="mb-2" style="margin-top:18px;border-bottom:1px solid var(--line);display:flex;gap:14px">
+          <button class="tab is-active" data-tab="desc">Mô tả</button>
+          <button class="tab" data-tab="nutri">Dinh dưỡng</button>
+          <button class="tab" data-tab="reviews">Đánh giá</button>
+        </div>
+
+        <!-- Panel: Mô tả -->
+        <div data-panel="desc">
+          <p th:utext="${product?.longDesc}">
+            Nội dung mô tả chi tiết món, nguồn gốc, khẩu vị, cách chế biến, lưu ý dị ứng…
+          </p>
+        </div>
+
+        <!-- Panel: Dinh dưỡng -->
+        <div data-panel="nutri" hidden>
+          <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+            <div class="card pad">
+              <div class="center-between"><span>Năng lượng</span><b th:text="${product?.nutrition?.cal} + ' kcal'">350 kcal</b></div>
+              <div class="center-between"><span>Đạm</span><b th:text="${product?.nutrition?.protein} + ' g'">12 g</b></div>
+              <div class="center-between"><span>Béo</span><b th:text="${product?.nutrition?.fat} + ' g'">15 g</b></div>
+              <div class="center-between"><span>Carb</span><b th:text="${product?.nutrition?.carb} + ' g'">28 g</b></div>
+              <div class="center-between"><span>Natri</span><b th:text="${product?.nutrition?.sodium} + ' mg'">420 mg</b></div>
+            </div>
+            <div class="card pad">
+              <p class="m-0 text-muted">* Thông tin có thể thay đổi theo chi nhánh / thời điểm.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Đánh giá -->
+        <div data-panel="reviews" id="reviews" hidden>
+          <!-- Write review CTA -->
+          <div class="center-between mb-2">
+            <h3 class="m-0 bold">Đánh giá từ khách hàng</h3>
+            <a th:href="@{'/review/write'(productId=${product?.id})}" class="btn">Viết đánh giá</a>
+          </div>
+
+          <!-- Review list -->
+          <div class="grid" style="gap:12px">
+            <article class="card pad" th:each="rv : ${reviews}">
+              <div class="center-between mb-1">
+                <div class="center" style="gap:8px;justify-content:flex-start">
+                  <div class="avatar" th:text="${#strings.substring(rv.userName,0,1)}">U</div>
+                  <div>
+                    <b th:text="${rv.userName}">User</b>
+                    <div class="text-muted" th:text="${#temporals.format(rv.createdAt, 'dd/MM/yyyy HH:mm')}">12/10/2025 12:21</div>
+                  </div>
+                </div>
+                <div title="Điểm">
+                  ⭐ <b th:text="${rv.rating}">5</b>/5
+                </div>
+              </div>
+
+              <p th:text="${rv.content}">Nội dung đánh giá (≥ 50 ký tự).</p>
+
+              <!-- media -->
+              <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:8px" th:if="${#lists.size(rv.media) > 0}">
+                <a class="card" th:each="m : ${rv.media}" th:href="${m.url}" target="_blank" rel="noopener">
+                  <img th:src="${m.thumbnailUrl != null ? m.thumbnailUrl : m.url}" alt="">
+                </a>
+              </div>
+            </article>
+
+            <!-- empty -->
+            <div th:if="${#lists.isEmpty(reviews)}" class="text-muted p-2">Chưa có đánh giá. Hãy là người đầu tiên!</div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- RELATED PRODUCTS -->
+  <section class="section" th:if="${#lists.size(related) > 0}">
+    <div class="container">
+      <header class="section-head">
+        <h2 class="section-title">Món tương tự</h2>
+        <a th:href="@{/menu}" class="btn">Xem Menu</a>
+      </header>
+
+      <div class="grid grid-4">
+        <article class="card pad" th:each="p : ${related}">
+          <img th:src="${p.thumbnailUrl}" alt="">
+          <h3 class="m-0 mb-1 bold" th:text="${p.name}">Tên món</h3>
+          <div class="center-between">
+            <strong th:text="${#numbers.formatInteger(p.price)} + 'đ'">49.000đ</strong>
+            <div class="center" style="gap:8px">
+              <form th:action="@{/favorites}" method="post">
+                <input type="hidden" name="productId" th:value="${p.id}">
+                <button class="btn" type="submit" title="Yêu thích">❤️</button>
+              </form>
+              <form th:action="@{/cart}" method="post">
+                <input type="hidden" name="productId" th:value="${p.id}">
+                <button class="btn" type="submit">+ Giỏ</button>
+              </form>
+            </div>
+          </div>
+          <a th:href="@{'/p/' + ${p.slug}}" class="text-muted">Xem chi tiết →</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Tabs JS (desc/nutri/reviews) -->
+<script>
+  (function(){
+    const tabs=[...document.querySelectorAll('.tab')];
+    const panels={
+      desc:document.querySelector('[data-panel="desc"]'),
+      nutri:document.querySelector('[data-panel="nutri"]'),
+      reviews:document.querySelector('[data-panel="reviews"]')
+    };
+    tabs.forEach(t=>{
+      t.addEventListener('click',()=>{
+        tabs.forEach(x=>x.classList.remove('is-active'));
+        t.classList.add('is-active');
+        Object.values(panels).forEach(p=>p.hidden=true);
+        panels[t.dataset.tab].hidden=false;
+      });
+    });
+
+    // gallery main switcher (if using custom id)
+    const main=document.querySelector('#pd-main');
+    document.querySelectorAll('[data-src]')?.forEach(b=>{
+      b.addEventListener('click',()=>{ if(main) main.src=b.dataset.src; });
+    });
+  })();
+</script>
+</html>

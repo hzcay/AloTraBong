@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi"
+      th:replace="~{fragments/layout :: layout(~{::content}, 'Chat với chi nhánh')}">
+<div th:fragment="content">
+
+  <section class="section">
+    <div class="container" style="max-width:960px">
+      <header class="section-head">
+        <h2 class="section-title m-0">Chat với <span th:text="${branchName}">Chi nhánh</span></h2>
+        <a th:href="@{/orders}" class="btn">← Đơn hàng</a>
+      </header>
+
+      <div class="card" style="height:520px;display:grid;grid-template-rows:auto 1fr auto">
+        <!-- Header chat -->
+        <div class="center-between pad" style="padding:12px 14px;border-bottom:1px solid var(--line)">
+          <div class="center" style="gap:10px;justify-content:flex-start">
+            <div class="avatar" th:text="${#strings.substring(branchName?:'B',0,1)}">B</div>
+            <div>
+              <b th:text="${branchName}">Chi nhánh ABC</b>
+              <div class="text-muted" th:text="${branchStatus ?: 'Online'}">Online</div>
+            </div>
+          </div>
+          <a th:href="@{'/chat/' + ${branchId} + '/close'}" class="btn">Kết thúc</a>
+        </div>
+
+        <!-- Messages -->
+        <div id="chat-scroll" style="padding:12px;overflow:auto;display:flex;flex-direction:column;gap:8px;background:#fff">
+          <div th:each="m : ${messages}">
+            <!-- my message -->
+            <div th:if="${m.sender == 'USER'}" style="display:flex;justify-content:flex-end">
+              <div class="card pad" style="max-width:70%;background:#fff8f1;border-color:#fed7aa">
+                <div th:text="${m.text}">...</div>
+                <div class="text-muted" style="font-size:12px" th:text="${#temporals.format(m.at,'HH:mm')}">--:--</div>
+              </div>
+            </div>
+            <!-- branch message -->
+            <div th:if="${m.sender == 'BRANCH'}" style="display:flex;justify-content:flex-start">
+              <div class="card pad" style="max-width:70%">
+                <div th:text="${m.text}">...</div>
+                <div class="text-muted" style="font-size:12px" th:text="${#temporals.format(m.at,'HH:mm')}">--:--</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Composer -->
+        <form th:action="@{'/chat/' + ${branchId} + '/send'}" method="post"
+              style="display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)">
+          <input class="input" name="text" placeholder="Nhập tin nhắn…" autocomplete="off" required>
+          <button class="btn btn-primary" type="submit">Gửi</button>
+          <a th:href="@{'/orders/' + ${orderCode}}" class="btn">Tới đơn #<span th:text="${orderCode}">ALB123</span></a>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- auto scroll to bottom -->
+<script>
+  (function(){
+    const el=document.getElementById('chat-scroll');
+    if(el){ el.scrollTop = el.scrollHeight; }
+  })();
+</script>
+</html>

@@ -1,0 +1,229 @@
+/* === COMPONENTS — Buttons, Tabs, Cards, Forms, Badges === */
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  border: 2px solid #000;
+  background: #fff;
+  color: #000;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.06s ease, filter 0.2s ease, background 0.2s ease,
+    border-color 0.2s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--brand-solid);
+  border-color: var(--brand-solid);
+  color: #fff;
+}
+.btn-primary:hover {
+  filter: brightness(0.96);
+}
+.btn-outline {
+  background: #fff;
+  color: var(--brand-solid);
+  border-color: var(--brand-solid);
+}
+.btn-outline:hover {
+  background: rgba(255, 122, 61, 0.08);
+}
+
+/* Tabs */
+.tab {
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+}
+.tab.is-active {
+  border-color: var(--brand-solid);
+  color: var(--brand-solid);
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.card.pad {
+  padding: 12px;
+}
+
+/* Forms */
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink-1);
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: 3px solid var(--focus);
+  border-color: var(--brand-solid);
+}
+
+/* Badges / Tags */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* Order status tags (nếu dùng ở orders) */
+.tag {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 12px;
+  border: 1px solid;
+}
+.tag-new {
+  color: #b45309;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+.tag-confirm {
+  color: #065f46;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+.tag-ship {
+  color: #1e3a8a;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.tag-done {
+  color: #065f46;
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+.tag-cancel {
+  color: #991b1b;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+.tag-refund {
+  color: #7c2d12;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+/* Payment tiles (checkout) */
+.pay-method {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pay-tile {
+  flex: 1 1 160px;
+  min-width: 160px;
+  border: 2px solid #000;
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff;
+}
+.pay-tile.is-selected {
+  border-color: var(--brand-solid);
+  outline: 3px solid var(--focus);
+}
+
+/* Tables (cart) */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.table th {
+  text-align: left;
+  font-weight: 800;
+  background: #fff8f1;
+}
+
+/* Toast (optional) */
+.toast {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.toast-item {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+.toast-item.success {
+  border-color: #d1fae5;
+}
+.toast-item.error {
+  border-color: #fee2e2;
+}
+
+/* Modal (optional) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+}
+.modal {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  width: min(560px, 92%);
+  padding: 18px;
+}
+.modal-backdrop.show {
+  display: flex;
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi"
+      th:replace="~{fragments/layout :: layout(~{::content}, 'Mã giảm giá')}">
+<div th:fragment="content">
+
+  <section class="section">
+    <div class="container">
+      <header class="section-head">
+        <h2 class="section-title m-0">Mã giảm giá</h2>
+
+        <!-- Nhập mã thủ công -->
+        <form th:action="@{/coupons/apply}" method="post" class="center" style="gap:10px;flex-wrap:wrap">
+          <input class="input" name="code" placeholder="Nhập mã…" style="max-width:260px;border-style:dashed">
+          <button class="btn btn-primary" type="submit">Áp dụng</button>
+          <div th:if="${error != null}" class="text-muted" style="color:var(--danger)"><b th:text="${error}">Mã không hợp lệ</b></div>
+          <div th:if="${applied != null}" class="badge">Đã áp dụng: <b th:text="${applied.code}">ALO20</b></div>
+        </form>
+      </header>
+
+      <!-- Empty -->
+      <div th:if="${#lists.isEmpty(coupons)}" class="card pad text-muted">
+        Hiện chưa có coupon khả dụng.
+      </div>
+
+      <!-- List coupon -->
+      <div class="grid grid-3" th:if="${!#lists.isEmpty(coupons)}">
+        <article class="card pad" th:each="c : ${coupons}" style="border-style:dashed">
+          <div class="center-between mb-1">
+            <h3 class="m-0 bold" th:text="${c.title}">Giảm 20%</h3>
+            <span class="badge" th:text="${c.code}">ALO20</span>
+          </div>
+          <p class="text-muted m-0 mb-2" th:text="${c.description}">Áp dụng đơn từ 100k.</p>
+          <div class="center-between">
+            <span class="text-muted">HSD: <b th:text="${#temporals.format(c.expiredAt,'dd/MM/yyyy')}">--</b></span>
+            <form th:action="@{/coupons/use}" method="post">
+              <input type="hidden" name="code" th:value="${c.code}">
+              <button class="btn" type="submit">Dùng ngay</button>
+            </form>
+          </div>
+        </article>
+      </div>
+
+      <div class="center" style="gap:8px;margin-top:16px">
+        <a th:href="@{/cart}" class="btn">Về giỏ hàng</a>
+        <a th:href="@{/checkout}" class="btn btn-primary">Tới thanh toán →</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+</html>

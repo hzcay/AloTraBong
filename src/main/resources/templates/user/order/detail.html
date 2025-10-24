@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi"
+      th:replace="~{fragments/layout :: layout(~{::content}, 'Chi tiết đơn')}">
+<div th:fragment="content">
+
+  <!-- Breadcrumb -->
+  <section class="section">
+    <div class="container center-between">
+      <nav class="text-muted">
+        <a th:href="@{/}" class="nav">Trang chủ</a> /
+        <a th:href="@{/orders}" class="nav">Đơn hàng</a> /
+        <span>#<span th:text="${order.code}">ALB12345</span></span>
+      </nav>
+      <a th:href="@{/orders}" class="btn">← Quay lại</a>
+    </div>
+  </section>
+
+  <!-- Detail -->
+  <section class="section">
+    <div class="container grid" style="grid-template-columns:1fr .55fr;align-items:start;gap:20px">
+
+      <!-- LEFT: Info + Items + Timeline -->
+      <section class="grid" style="gap:14px">
+
+        <!-- Status + meta -->
+        <div class="card pad">
+          <div class="center-between mb-1">
+            <h3 class="m-0 bold">Đơn #<span th:text="${order.code}">ALB12345</span></h3>
+            <div th:switch="${order.status}">
+              <div th:case="'NEW'"       class="tag tag-new">MỚI</div>
+              <div th:case="'CONFIRMED'" class="tag tag-confirm">ĐÃ XÁC NHẬN</div>
+              <div th:case="'SHIPPING'"  class="tag tag-ship">ĐANG GIAO</div>
+              <div th:case="'DELIVERED'" class="tag tag-done">ĐÃ GIAO</div>
+              <div th:case="'CANCELLED'" class="tag tag-cancel">HỦY</div>
+              <div th:case="'REFUNDED'"  class="tag tag-refund">HOÀN TIỀN</div>
+            </div>
+          </div>
+          <div class="text-muted">
+            Đặt lúc <b th:text="${#temporals.format(order.createdAt,'dd/MM/yyyy HH:mm')}">--</b> •
+            Chi nhánh: <b th:text="${order.branchName}">--</b> •
+            Thanh toán: <b th:text="${order.paymentMethod}">COD</b>
+          </div>
+        </div>
+
+        <!-- Items -->
+        <div class="card pad">
+          <h4 class="m-0 mb-2 bold">Sản phẩm</h4>
+          <div class="grid" style="gap:10px">
+            <div class="center-between" th:each="it : ${order.items}">
+              <div class="center" style="gap:10px;justify-content:flex-start">
+                <div class="card" style="width:56px;height:56px;overflow:hidden">
+                  <img th:src="${it.thumbnailUrl}" alt="" style="width:100%;height:100%;object-fit:cover">
+                </div>
+                <div>
+                  <b th:text="${it.name}">Tên món</b>
+                  <div class="text-muted"><span th:text="${it.qty}">1</span> x
+                    <span th:text="${#numbers.formatInteger(it.unitPrice)} + 'đ'">0đ</span></div>
+                </div>
+              </div>
+              <b th:text="${#numbers.formatInteger(it.subtotal)} + 'đ'">0đ</b>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline trạng thái -->
+        <div class="card pad">
+          <h4 class="m-0 mb-2 bold">Tiến trình đơn</h4>
+          <ol class="grid" style="gap:8px">
+            <li th:each="t : ${order.timeline}">
+              <div class="center-between">
+                <div>
+                  <b th:text="${t.label}">Trạng thái</b>
+                  <div class="text-muted" th:text="${t.note}">ghi chú…</div>
+                </div>
+                <div class="text-muted" th:text="${#temporals.format(t.at,'dd/MM/yyyy HH:mm')}">--</div>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Actions -->
+        <div class="center" style="gap:10px;justify-content:flex-start">
+          <a th:if="${order.status=='DELIVERED'}"
+             th:href="@{'/review/write'(orderCode=${order.code})}" class="btn">Đánh giá món</a>
+          <a th:if="${order.status=='NEW' || order.status=='CONFIRMED'}"
+             th:href="@{'/orders/' + ${order.code} + '/cancel'}" class="btn">Hủy đơn</a>
+          <a th:href="@{/menu}" class="btn">Đặt thêm</a>
+          <a th:href="@{'/chat/' + ${order.branchId}}" class="btn">Chat chi nhánh</a>
+        </div>
+      </section>
+
+      <!-- RIGHT: Address + Summary -->
+      <aside class="grid" style="gap:14px">
+        <div class="card pad">
+          <h4 class="m-0 mb-2 bold">Địa chỉ giao hàng</h4>
+          <div><b th:text="${order.address.fullName}">Nguyễn Văn A</b></div>
+          <div class="text-muted" th:text="${order.address.phone}">090...</div>
+          <div th:text="${order.address.line} + ', ' + ${order.address.ward} + ', ' + ${order.address.district} + ', ' + ${order.address.city}">...</div>
+          <div class="text-muted" th:if="${order.note != null}" style="margin-top:6px">Ghi chú: <span th:text="${order.note}">...</span></div>
+        </div>
+
+        <div class="card pad">
+          <h4 class="m-0 mb-2 bold">Tổng kết</h4>
+          <div class="center-between mb-1"><span>Tạm tính</span><b th:text="${#numbers.formatInteger(order.subtotal)} + 'đ'">0đ</b></div>
+          <div class="center-between mb-1" th:if="${order.discount>0}"><span>Giảm giá</span><b th:text="'- ' + ${#numbers.formatInteger(order.discount)} + 'đ'">-0đ</b></div>
+          <div class="center-between mb-1"><span>Phí giao</span><b th:text="${#numbers.formatInteger(order.shippingFee)} + 'đ'">0đ</b></div>
+          <div class="center-between" style="margin:10px 0;border-top:1px solid var(--line);padding-top:10px">
+            <span class="bold">Tổng thanh toán</span>
+            <b style="font-size:20px" th:text="${#numbers.formatInteger(order.grandTotal)} + 'đ'">0đ</b>
+          </div>
+          <div class="text-muted">Thanh toán: <b th:text="${order.paymentStatus}">PAID/PENDING</b></div>
+          <div class="text-muted">Mã hóa đơn: <b th:text="${order.invoiceNo}">INV-...</b></div>
+        </div>
+      </aside>
+
+    </div>
+  </section>
+
+</div>
+</html>

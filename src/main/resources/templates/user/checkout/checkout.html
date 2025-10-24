@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi"
+      th:replace="~{fragments/layout :: layout(~{::content}, 'Thanh toán')}">
+<div th:fragment="content">
+
+  <!-- BREADCRUMB (optional) -->
+  <section class="section">
+    <div class="container center-between">
+      <nav class="text-muted">
+        <a th:href="@{/}" class="nav">Trang chủ</a> /
+        <a th:href="@{/cart}" class="nav">Giỏ hàng</a> /
+        <span>Thanh toán</span>
+      </nav>
+      <a th:href="@{/cart}" class="btn">← Quay lại giỏ</a>
+    </div>
+  </section>
+
+  <!-- CHECKOUT -->
+  <section class="section">
+    <div class="container grid" style="grid-template-columns:1fr .55fr;align-items:start">
+
+      <!-- LEFT: Address + Payment -->
+      <section class="grid" style="gap:14px">
+
+        <!-- 1) ĐỊA CHỈ GIAO HÀNG -->
+        <div class="card pad">
+          <div class="center-between mb-2">
+            <h3 class="m-0 bold text-upper">Địa chỉ giao hàng</h3>
+            <a th:href="@{/addresses}" class="btn">Quản lý địa chỉ</a>
+          </div>
+
+          <!-- Danh sách địa chỉ -->
+          <form th:action="@{/checkout/address}" method="post" class="grid" style="gap:10px">
+            <label class="center-between card pad" th:each="ad : ${addresses}">
+              <div class="center" style="gap:10px;justify-content:flex-start">
+                <input type="radio" name="addressId" th:value="${ad.id}" th:checked="${ad.default}">
+                <div>
+                  <b th:text="${ad.fullName}">Nguyễn Văn A</b>
+                  <div class="text-muted" th:text="${ad.phone}">0900000000</div>
+                  <div th:text="${ad.line} + ', ' + ${ad.ward} + ', ' + ${ad.district} + ', ' + ${ad.city}">Số 1, P.X, Q.Y, TP.Z</div>
+                </div>
+              </div>
+              <span class="badge" th:if="${ad.default}">Mặc định</span>
+            </label>
+
+            <!-- nếu chưa có địa chỉ -->
+            <div th:if="${#lists.isEmpty(addresses)}" class="text-muted">
+              Chưa có địa chỉ. <a th:href="@{/addresses}">Thêm ngay →</a>
+            </div>
+
+            <div class="center" style="justify-content:flex-start;gap:8px">
+              <button class="btn btn-primary" type="submit">Chọn địa chỉ này</button>
+              <a th:href="@{/addresses}" class="btn">Thêm địa chỉ mới</a>
+            </div>
+          </form>
+        </div>
+
+        <!-- 2) PHƯƠNG THỨC THANH TOÁN -->
+        <div class="card pad">
+          <h3 class="m-0 mb-2 bold text-upper">Phương thức thanh toán</h3>
+          <form th:action="@{/checkout/payment}" method="post" id="payment-form">
+            <div class="pay-method">
+              <label class="pay-tile" data-code="COD">
+                <input type="radio" name="payment" value="COD" hidden
+                       th:checked="${selectedPayment == 'COD'}">
+                <span>COD</span>
+              </label>
+              <label class="pay-tile" data-code="VNPAY">
+                <input type="radio" name="payment" value="VNPAY" hidden
+                       th:checked="${selectedPayment == 'VNPAY'}">
+                <span>VNPAY</span>
+              </label>
+              <label class="pay-tile" data-code="MOMO">
+                <input type="radio" name="payment" value="MOMO" hidden
+                       th:checked="${selectedPayment == 'MOMO'}">
+                <span>MOMO</span>
+              </label>
+            </div>
+
+            <!-- ghi chú cho shipper -->
+            <label class="grid" style="margin-top:12px">
+              <span class="text-muted">Ghi chú đơn hàng (tuỳ chọn)</span>
+              <textarea class="textarea" name="note" rows="3"
+                        th:text="${note}"></textarea>
+            </label>
+
+            <div class="center" style="justify-content:flex-start;gap:8px;margin-top:10px">
+              <button class="btn btn-primary" type="submit">Chọn phương thức</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 3) MÃ GIẢM GIÁ (optional) -->
+        <div class="card pad">
+          <h3 class="m-0 mb-2 bold text-upper">Mã giảm giá</h3>
+          <form th:action="@{/checkout/apply-coupon}" method="post" class="center" style="gap:10px;justify-content:flex-start;flex-wrap:wrap">
+            <input class="input" name="code" th:value="${appliedCoupon?.code}" placeholder="Nhập mã…"
+                   style="max-width:260px;border-style:dashed">
+            <button class="btn" type="submit">Áp dụng</button>
+
+            <div th:if="${appliedCoupon != null}" class="badge">
+              Đã áp dụng: <b th:text="${appliedCoupon.code}">ALO20</b>
+              <a th:href="@{/coupons}" class="nav">Xem thêm mã</a>
+            </div>
+
+            <div th:if="${couponError != null}" class="text-muted" style="color:var(--danger)">
+              <b th:text="${couponError}">Mã không hợp lệ</b>
+            </div>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- RIGHT: Order summary + Place order -->
+      <aside class="card pad">
+        <h3 class="m-0 mb-2 bold text-upper">Tóm tắt đơn</h3>
+
+        <!-- Items mini list -->
+        <div class="grid mb-2" style="gap:10px">
+          <div class="center-between" th:each="it : ${items}">
+            <div class="center" style="gap:8px;justify-content:flex-start">
+              <div class="card" style="width:48px;height:48px;overflow:hidden">
+                <img th:src="${it.thumbnailUrl}" alt="" style="width:100%;height:100%;object-fit:cover">
+              </div>
+              <div>
+                <b th:text="${it.name}">Tên món</b>
+                <div class="text-muted"><span th:text="${it.qty}">1</span> x <span th:text="${#numbers.formatInteger(it.unitPrice)} + 'đ'">0đ</span></div>
+              </div>
+            </div>
+            <b th:text="${#numbers.formatInteger(it.subtotal)} + 'đ'">0đ</b>
+          </div>
+
+          <div th:if="${#lists.isEmpty(items)}" class="text-muted">
+            Chưa có món nào. <a th:href="@{/menu}">Thêm món →</a>
+          </div>
+        </div>
+
+        <!-- price lines -->
+        <div class="center-between mb-1">
+          <span>Tạm tính</span>
+          <b th:text="${#numbers.formatInteger(summary?.subtotal)} + 'đ'">0đ</b>
+        </div>
+        <div class="center-between mb-1" th:if="${summary?.discount > 0}">
+          <span>Giảm giá</span>
+          <b th:text="'- ' + ${#numbers.formatInteger(summary.discount)} + 'đ'">-0đ</b>
+        </div>
+        <div class="center-between mb-1">
+          <span>Phí giao</span>
+          <b th:text="${#numbers.formatInteger(summary?.shippingFee)} + 'đ'">0đ</b>
+        </div>
+        <div class="center-between" style="margin:10px 0;border-top:1px solid var(--line);padding-top:10px">
+          <span class="bold">Tổng thanh toán</span>
+          <b style="font-size:20px" th:text="${#numbers.formatInteger(summary?.grandTotal)} + 'đ'">0đ</b>
+        </div>
+
+        <!-- confirm -->
+        <form th:action="@{/checkout/confirm}" method="post" class="grid" style="gap:10px;margin-top:10px">
+          <input type="hidden" name="addressId" th:value="${selectedAddressId}">
+          <input type="hidden" name="payment" th:value="${selectedPayment}">
+          <input type="hidden" name="note" th:value="${note}">
+          <button class="btn btn-primary" type="submit"
+                  th:disabled="${#lists.isEmpty(items) || selectedAddressId == null || selectedPayment == null}">
+            Xác nhận đặt hàng →
+          </button>
+          <p class="text-muted m-0">* Bằng cách xác nhận, bạn đồng ý với điều khoản & chính sách.</p>
+        </form>
+      </aside>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- JS: chọn tile thanh toán -->
+<script>
+  (function(){
+    const tiles=[...document.querySelectorAll('.pay-tile')];
+    function sync(){
+      tiles.forEach(t=>{
+        const input=t.querySelector('input[type="radio"]');
+        t.classList.toggle('is-selected', input.checked);
+      });
+    }
+    tiles.forEach(t=>{
+      t.addEventListener('click', ()=>{
+        const inp=t.querySelector('input[type="radio"]');
+        inp.checked=true;
+        sync();
+      });
+    });
+    sync();
+  })();
+</script>
+</html>

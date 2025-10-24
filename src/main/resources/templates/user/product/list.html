@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi"
+      th:replace="~{fragments/layout :: layout(~{::content}, 'Menu')}">
+<div th:fragment="content">
+
+  <section class="section">
+    <div class="container grid" style="grid-template-columns:260px 1fr">
+
+      <!-- SIDEBAR: Bộ lọc -->
+      <aside class="card pad">
+        <h3 class="m-0 mb-2 bold text-upper">Bộ lọc</h3>
+
+        <form th:action="@{/user/product/list}" method="get" class="grid" style="gap:12px">
+          <!-- Từ khóa -->
+          <label class="grid">
+            <span class="text-muted">Từ khóa</span>
+            <input class="input" type="text" name="q" th:value="${q ?: ''}">
+          </label>
+
+          <!-- Danh mục -->
+          <label class="grid">
+            <span class="text-muted">Danh mục</span>
+            <select class="select" name="categoryId">
+              <option value="" th:selected="${categoryId == null or categoryId == ''}">Tất cả</option>
+              <option th:each="c : ${categories ?: {}}"
+                      th:value="${c.id}"
+                      th:text="${c.name}"
+                      th:selected="${categoryId != null and categoryId == c.id}">Danh mục</option>
+            </select>
+          </label>
+
+          <!-- Chi nhánh -->
+          <label class="grid">
+            <span class="text-muted">Chi nhánh</span>
+            <select class="select" name="branchId">
+              <option value="" th:selected="${branchId == null or branchId == ''}">Tất cả</option>
+              <option th:each="b : ${branches ?: {}}"
+                      th:value="${b.id}"
+                      th:text="${b.name}"
+                      th:selected="${branchId != null and branchId == b.id}">Chi nhánh</option>
+            </select>
+          </label>
+
+          <!-- Giá -->
+          <div class="grid">
+            <span class="text-muted">Khoảng giá (đ)</span>
+            <div class="center" style="gap:8px;justify-content:flex-start">
+              <input class="input" type="number" name="minPrice" placeholder="Min"
+                     th:value="${minPrice ?: ''}" style="max-width:120px">
+              <span>—</span>
+              <input class="input" type="number" name="maxPrice" placeholder="Max"
+                     th:value="${maxPrice ?: ''}" style="max-width:120px">
+            </div>
+          </div>
+
+          <div class="center" style="gap:8px;justify-content:flex-start">
+            <button class="btn btn-primary" type="submit">Áp dụng</button>
+            <a th:href="@{/user/product/list}" class="btn">Xóa lọc</a>
+          </div>
+        </form>
+      </aside>
+
+      <!-- CONTENT: Danh sách món -->
+      <section>
+
+        <!-- Top bar -->
+        <div class="center-between mb-2">
+          <h2 class="m-0 section-title">Menu</h2>
+
+          <form th:action="@{/user/product/list}" method="get" class="center" style="gap:8px">
+            <!-- giữ tham số lọc hiện tại -->
+            <input type="hidden" name="q" th:value="${q ?: ''}">
+            <input type="hidden" name="categoryId" th:value="${categoryId ?: ''}">
+            <input type="hidden" name="branchId" th:value="${branchId ?: ''}">
+            <input type="hidden" name="minPrice" th:value="${minPrice ?: ''}">
+            <input type="hidden" name="maxPrice" th:value="${maxPrice ?: ''}">
+            <select class="select" name="sort">
+              <option value="" th:selected="${sort == null or sort == ''}">Mặc định</option>
+              <option value="best" th:selected="${sort == 'best'}">Bán chạy</option>
+              <option value="new" th:selected="${sort == 'new'}">Mới</option>
+              <option value="price_asc" th:selected="${sort == 'price_asc'}">Giá ↑</option>
+              <option value="price_desc" th:selected="${sort == 'price_desc'}">Giá ↓</option>
+            </select>
+            <button class="btn" type="submit">Sắp xếp</button>
+          </form>
+        </div>
+
+        <!-- Grid sản phẩm -->
+        <div class="grid grid-4"
+             th:if="${page != null ? page.totalElements > 0 : false}">
+          <article class="card pad"
+                   th:each="p : ${page != null ? page.content : {}}">
+            <img th:src="${p.thumbnailUrl != null and p.thumbnailUrl != '' ? p.thumbnailUrl : @{/img/placeholder.png}}"
+                 alt="" style="width:100%;height:180px;object-fit:cover">
+            <h3 class="m-0 mb-1 bold" th:text="${p.name ?: 'Tên món'}">Tên món</h3>
+
+            <div class="center-between">
+              <strong th:text="${#numbers.formatInteger(p.price ?: 0)} + 'đ'">0đ</strong>
+              <div class="center" style="gap:8px">
+                <!-- Yêu thích -->
+                <form th:action="@{/favorites}" method="post">
+                  <input type="hidden" name="productId" th:value="${p.id}">
+                  <button class="btn" type="submit" title="Yêu thích">❤️</button>
+                </form>
+                <!-- Thêm giỏ -->
+                <form th:action="@{/cart}" method="post">
+                  <input type="hidden" name="productId" th:value="${p.id}">
+                  <button class="btn" type="submit">+ Giỏ</button>
+                </form>
+              </div>
+            </div>
+
+            <a th:href="@{'/user/product/detail/' + ${p.slug != null && p.slug != '' ? p.slug : p.id}}"
+               class="text-muted">Xem chi tiết →</a>
+          </article>
+        </div>
+
+        <!-- Empty -->
+        <div th:if="${page == null or page.totalElements == 0}" class="text-muted p-2">
+          Không có kết quả phù hợp.
+        </div>
+
+        <!-- Pagination -->
+        <div th:if="${page != null and page.totalPages > 1}" class="center" style="gap:8px;margin-top:16px">
+          <a class="btn" th:if="${!page.first}"
+             th:href="@{/user/product/list(
+                page=${page.number-1},
+                q=${q},
+                categoryId=${categoryId},
+                branchId=${branchId},
+                minPrice=${minPrice},
+                maxPrice=${maxPrice},
+                sort=${sort}
+             )}">← Trước</a>
+
+          <span>Trang <b th:text="${page.number+1}">1</b>/<b th:text="${page.totalPages}">1</b></span>
+
+          <a class="btn" th:if="${!page.last}"
+             th:href="@{/user/product/list(
+                page=${page.number+1},
+                q=${q},
+                categoryId=${categoryId},
+                branchId=${branchId},
+                minPrice=${minPrice},
+                maxPrice=${maxPrice},
+                sort=${sort}
+             )}">Sau →</a>
+        </div>
+
+      </section>
+    </div>
+  </section>
+
+</div>
+</html>

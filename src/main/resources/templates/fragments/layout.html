@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi" th:fragment="layout(content, title)">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title th:text="${title} ?: 'AloTraBong'">AloTraBong</title>
+
+    <link rel="stylesheet" th:href="@{/css/theme-orange.css}"/>
+    <link rel="stylesheet" th:href="@{/css/layout.css}"/>
+    <link rel="stylesheet" th:href="@{/css/components.css}"/>
+  </head>
+  <body>
+    <div th:replace="~{fragments/header :: siteHeader}"></div>
+
+    <main>
+      <div th:replace="${content}"></div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: siteFooter}"></div>
+
+    <script>
+      // scroll mượt tới Liên hệ
+      document.querySelectorAll('a[href^="#contact"]').forEach(a=>{
+        a.addEventListener("click",e=>{
+          const target=document.querySelector("#contact");
+          if(target){ e.preventDefault(); target.scrollIntoView({behavior:"smooth",block:"start"}); }
+        });
+      });
+    </script>
+  </body>
+</html>
