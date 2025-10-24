@@ -14,7 +14,7 @@
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -37,14 +37,14 @@
         }
 
         .welcome-title {
-            color: #333;
+            color: #2d3436;
             font-size: 2.5rem;
             margin-bottom: 15px;
             font-weight: 700;
         }
 
         .welcome-subtitle {
-            color: #666;
+            color: #636e72;
             font-size: 1.2rem;
             margin-bottom: 40px;
             line-height: 1.6;
@@ -75,23 +75,23 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #ff7e5f, #feb47b);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 15px 30px rgba(255, 126, 95, 0.4);
         }
 
         .btn-secondary {
-            background: #f8f9fa;
+            background: #fff5ec;
             color: #333;
-            border: 2px solid #e9ecef;
+            border: 2px solid #ffd7b5;
         }
 
         .btn-secondary:hover {
-            background: #e9ecef;
+            background: #ffd7b5;
             transform: translateY(-3px);
         }
 
@@ -106,41 +106,41 @@
             text-align: center;
             padding: 20px;
             border-radius: 15px;
-            background: #f8f9fa;
+            background: #fff8f2;
         }
 
         .feature i {
             font-size: 2.5rem;
-            color: #667eea;
+            color: #ff7043;
             margin-bottom: 15px;
         }
 
         .feature h3 {
-            color: #333;
+            color: #2d3436;
             margin-bottom: 10px;
             font-size: 1.1rem;
         }
 
         .feature p {
-            color: #666;
+            color: #636e72;
             font-size: 0.9rem;
         }
 
         .api-info {
-            background: #e3f2fd;
+            background: #fff3e0;
             border-radius: 15px;
             padding: 30px;
             margin: 40px 0;
-            border-left: 5px solid #2196f3;
+            border-left: 5px solid #fb8c00;
         }
 
         .api-info h3 {
-            color: #1976d2;
+            color: #e65100;
             margin-bottom: 15px;
         }
 
         .api-info p {
-            color: #666;
+            color: #6d6d6d;
             margin-bottom: 15px;
         }
 
@@ -153,7 +153,7 @@
 
         .api-link {
             padding: 10px 20px;
-            background: #1976d2;
+            background: #fb8c00;
             color: white;
             text-decoration: none;
             border-radius: 20px;
@@ -162,7 +162,7 @@
         }
 
         .api-link:hover {
-            background: #1565c0;
+            background: #ef6c00;
             transform: translateY(-2px);
         }
 
@@ -171,16 +171,16 @@
                 padding: 40px 20px;
                 margin: 20px;
             }
-            
+
             .welcome-title {
                 font-size: 2rem;
             }
-            
+
             .action-buttons {
                 flex-direction: column;
                 align-items: center;
             }
-            
+
             .btn {
                 width: 100%;
                 max-width: 300px;
@@ -241,11 +241,9 @@
     </div>
 
     <script>
-        // Kiểm tra nếu đã đăng nhập thì redirect đến dashboard
         document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('AT');
             if (token) {
-                // Kiểm tra token có hợp lệ không
                 fetch('/api/users/profile', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -258,7 +256,6 @@
                     }
                 })
                 .catch(() => {
-                    // Token không hợp lệ, xóa khỏi localStorage
                     localStorage.removeItem('AT');
                 });
             }
