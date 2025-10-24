@@ -1,20 +1,17 @@
-const container = document.querySelector('.container');
-const registerBtn = document.querySelector('.register-btn');
-const loginBtn = document.querySelector('.login-btn');
+// ====== TOGGLE LOGIN / REGISTER ======
+const container   = document.querySelector(".container");
+const registerBtn = document.querySelector(".register-btn");
+const loginBtn    = document.querySelector(".login-btn");
 
-registerBtn.addEventListener('click', () => {
-  container.classList.add('active');
-});
+registerBtn?.addEventListener("click", () => container?.classList.add("active"));
+loginBtn?.addEventListener("click", () => container?.classList.remove("active"));
 
-loginBtn.addEventListener('click', () => {
-  container.classList.remove('active');
-});
-// ===== FORM ELEMENTS (không cần id) =====
-const loginForm = document.querySelector(".form-box.login form");
+// ====== FORM ELEMENTS ======
+const loginForm    = document.querySelector(".form-box.login form");
 const registerForm = document.querySelector(".form-box.register form");
-const forgotLink = document.querySelector(".form-box.login .forgot-link a");
+const forgotLink   = document.querySelector(".form-box.login .forgot-link a");
 
-// ===== helper =====
+// ====== HELPERS ======
 const api = async (url, body, method = "POST") => {
   const res = await fetch(url, {
     method,
@@ -27,7 +24,7 @@ const api = async (url, body, method = "POST") => {
 };
 
 const qs = (obj) =>
-  Object.entries(obj).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  Object.entries(obj).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
 
 const flash = (form, type, msg) => {
   if (!form) return;
@@ -35,13 +32,79 @@ const flash = (form, type, msg) => {
   if (!box) {
     box = document.createElement("p");
     box.className = "msg";
-    form.querySelector("h1")?.after(box);
+    form.querySelector("h1,h3")?.after(box);
   }
   box.textContent = msg || "";
-  box.className = `msg ${type}`; // cần CSS: .msg, .msg.success, .msg.error
+  box.className = `msg ${type || ""}`; // cần CSS: .msg, .msg.success, .msg.error
 };
 
-// ===== REGISTER =====
+// ====== CENTERED NOTIFICATION CARD (no dark overlay) ======
+const MODAL_SEL = ".otp-modal";
+
+function ensureSingleModal() {
+  document.querySelectorAll(MODAL_SEL).forEach((m) => m.remove());
+}
+
+function openModal(innerHTML, title = "Xác thực", subtitle = "") {
+  ensureSingleModal();
+
+  const modal = document.createElement("div");
+  modal.className = "otp-modal";
+  modal.style.cssText = `
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: transparent; z-index: 1000; pointer-events: none; /* không chặn click nền */
+  `;
+
+  // card nhỏ ở giữa
+  modal.innerHTML = `
+    <div class="otp-modal-content"
+         style="
+          max-width:480px; width: min(92vw, 480px);
+          background: #fff; border-radius: 16px; box-shadow: 0 18px 50px rgba(0,0,0,.25);
+          padding: 18px 20px; pointer-events: auto; /* chỉ card nhận click */
+         ">
+      <!-- Header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:#ffb347; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700;">!</div>
+          <div>
+            <h3 style="margin:0; color:#333;">${title}</h3>
+            ${subtitle ? `<p style="margin:2px 0 0; color:#666; font-size:14px;">${subtitle}</p>` : ""}
+          </div>
+        </div>
+        <button data-close aria-label="Đóng"
+          style="background:transparent;border:none;font-size:22px;line-height:1;cursor:pointer;color:#666;">×</button>
+      </div>
+
+      ${innerHTML}
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // ESC để đóng
+  const onEsc = (e) => { if (e.key === "Escape") closeModal(); };
+  document.addEventListener("keydown", onEsc, { once: true });
+
+  // nút ×
+  modal.querySelector("[data-close]")?.addEventListener("click", closeModal);
+
+  // auto-focus control đầu tiên
+  setTimeout(() => modal.querySelector("input,button,select,textarea")?.focus(), 10);
+
+  return modal;
+}
+
+function closeModal() {
+  document.querySelector(MODAL_SEL)?.remove();
+}
+
+
+function closeModal() {
+  document.querySelector(MODAL_SEL)?.remove();
+}
+
+// ====== REGISTER FLOW ======
 registerForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const f = e.target;
@@ -49,11 +112,10 @@ registerForm?.addEventListener("submit", async (e) => {
   const payload = {
     email:    f.email?.value?.trim(),
     password: f.password?.value,
-    fullName: f.fullName?.value?.trim(),       // <-- BẮT BUỘC
-    phone: f.phone?.value?.trim() || null,     // optional
+    fullName: f.fullName?.value?.trim(),
+    phone:    f.phone?.value?.trim() || null,
   };
 
-  // client-side guard để khỏi spam request fail
   if (!payload.fullName) {
     flash(f, "error", "Điền Full name giùm cái nè!");
     return;
@@ -66,183 +128,171 @@ registerForm?.addEventListener("submit", async (e) => {
   flash(f, "", "");
   const json = await api("/api/auth/register", payload);
   if (json.success) {
-    flash(f, "success", json.message || "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.");
-    // Hiển thị form nhập OTP
-    showOtpForm(f.email?.value?.trim());
+    flash(f, "success", json.message || "Đăng ký thành công! Check mail lấy OTP nha.");
+    // mở modal xác thực OTP (UI đồng bộ)
+    renderOtpVerifyForRegister(payload.email);
   } else {
     flash(f, "error", json.message || "Đăng ký thất bại");
   }
 });
 
-
-// ===== LOGIN =====
-// LƯU Ý: DTO của bạn là email + password -> input name phải là "email"
-// Form login sẽ submit thông thường, không cần JavaScript
-// Spring Security sẽ xử lý authentication và redirect
-
-// ===== OTP VERIFICATION =====
-function showOtpForm(email) {
-  const otpModal = document.createElement('div');
-  otpModal.className = 'otp-modal';
-  otpModal.innerHTML = `
-    <div class="otp-modal-content">
-      <h3>Xác thực OTP</h3>
-      <p>Mã OTP đã được gửi đến email: <strong>${email}</strong></p>
-      <form id="otpForm">
-        <div class="input-box">
-          <input type="text" name="otp" placeholder="Nhập mã OTP" maxlength="6" required>
-          <i class='bx bx-key'></i>
-        </div>
-        <button type="submit" class="btn">Xác thực</button>
-        <button type="button" class="btn btn-secondary" onclick="closeOtpModal()">Hủy</button>
-      </form>
-    </div>
+// ====== OTP VERIFY (xài cho đăng ký) ======
+function renderOtpVerifyForRegister(email) {
+  const html = `
+    <form id="otpForm">
+      <div class="input-box">
+        <input type="text" name="otp" placeholder="Nhập mã OTP (6 số)" maxlength="6" required>
+        <i class='bx bx-key'></i>
+      </div>
+      <p class="msg"></p>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn" id="cancelOtp" style="flex:1; opacity:.9;">Hủy</button>
+        <button type="submit" class="btn" style="flex:1;">Xác thực</button>
+      </div>
+    </form>
   `;
-  
-  // Thêm CSS cho modal
-  const style = document.createElement('style');
-  style.textContent = `
-    .otp-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    .otp-modal-content {
-      background: white;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-    }
-    .otp-modal-content h3 {
-      margin-bottom: 15px;
-      color: #333;
-    }
-    .otp-modal-content p {
-      margin-bottom: 20px;
-      color: #666;
-    }
-  `;
-  document.head.appendChild(style);
-  document.body.appendChild(otpModal);
-  
-  // Xử lý form OTP
-  document.getElementById('otpForm').addEventListener('submit', async (e) => {
+  const modal = openModal(
+    html,
+    "Xác thực OTP",
+    `Mã OTP đã được gửi đến: <strong style="color:#333;">${email}</strong>`
+  );
+
+  const form = modal.querySelector("#otpForm");
+  modal.querySelector("#cancelOtp")?.addEventListener("click", closeModal);
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const otp = e.target.otp.value.trim();
-    
-    if (!otp || otp.length !== 6) {
-      flash(e.target, "error", "Mã OTP phải có 6 chữ số!");
-      return;
-    }
-    
-    flash(e.target, "", "");
+    const otp = form.otp.value.trim();
+    if (!otp || otp.length !== 6) return flash(form, "error", "Mã OTP phải có 6 chữ số!");
+
+    flash(form, "", "");
     const json = await api("/api/auth/verify-otp", { email, otp });
-    
     if (json.success) {
-      flash(e.target, "success", "Xác thực thành công! Bạn có thể đăng nhập ngay bây giờ.");
-      setTimeout(() => {
-        closeOtpModal();
-        loginBtn?.click();
-      }, 1500);
+      flash(form, "success", "Xác thực thành công! Bạn có thể đăng nhập ngay.");
+      setTimeout(() => { closeModal(); loginBtn?.click(); }, 1200);
     } else {
-      flash(e.target, "error", json.message || "Mã OTP không đúng hoặc đã hết hạn");
+      flash(form, "error", json.message || "Mã OTP không đúng hoặc đã hết hạn");
     }
   });
 }
 
-function closeOtpModal() {
-  const modal = document.querySelector('.otp-modal');
-  if (modal) {
-    modal.remove();
-  }
-}
+// ====== LOGIN FLOW ======
+// Login form submit để Spring Security xử lý (không JS). Chỉ bắt "Quên mật khẩu".
 
-// ===== FORGOT PASSWORD (gửi OTP reset) =====
-forgotLink?.addEventListener("click", async (e) => {
+// ====== FORGOT PASSWORD — 1 MODAL / 2 STEPS ======
+forgotLink?.addEventListener("click", (e) => {
   e.preventDefault();
-  const f = loginForm;
-  const email = f?.email?.value?.trim();
-  if (!email) {
-    flash(f, "error", "Nhập email trước đã nha!");
-    return;
-  }
-
-  flash(f, "", "");
-  const json = await fetch(`/api/auth/forgot-password?${qs({ email })}`, {
-    method: "POST",
-  }).then(r => r.json()).catch(() => ({ success: false }));
-
-  if (json?.success) {
-    flash(f, "success", json.message || "Đã gửi OTP reset về email. Vào mail kiểm tra nha!");
-    // Hiển thị form nhập OTP cho reset password
-    showPasswordResetForm(email);
-  } else {
-    flash(f, "error", json?.message || "Gửi OTP thất bại");
-  }
+  const prefill = loginForm?.email?.value?.trim() || "";
+  renderForgotStepEmail(prefill);
 });
 
-// ===== PASSWORD RESET FORM =====
-function showPasswordResetForm(email) {
-  const resetModal = document.createElement('div');
-  resetModal.className = 'otp-modal';
-  resetModal.innerHTML = `
-    <div class="otp-modal-content">
-      <h3>Đặt lại mật khẩu</h3>
-      <p>Mã OTP đã được gửi đến email: <strong>${email}</strong></p>
-      <form id="resetPasswordForm">
-        <div class="input-box">
-          <input type="text" name="otp" placeholder="Nhập mã OTP" maxlength="6" required>
-          <i class='bx bx-key'></i>
-        </div>
-        <div class="input-box">
-          <input type="password" name="newPassword" placeholder="Mật khẩu mới" required>
-          <i class='bx bxs-lock-alt'></i>
-        </div>
-        <button type="submit" class="btn">Đặt lại mật khẩu</button>
-        <button type="button" class="btn btn-secondary" onclick="closeOtpModal()">Hủy</button>
-      </form>
-    </div>
+/** STEP 1 — Nhập email để nhận OTP */
+function renderForgotStepEmail(prefillEmail = "") {
+  const stepDots = `
+    <div style="display:flex; gap:6px; align-items:center; margin:10px 0 16px;">
+      <span style="width:8px;height:8px;border-radius:999px;background:#ffb347;"></span>
+      <span style="width:8px;height:8px;border-radius:999px;background:#ddd;"></span>
+    </div>`;
+
+  const html = `
+    ${stepDots}
+    <form id="sendOtpForm" style="margin-top:6px;">
+      <div class="input-box">
+        <input type="email" name="email" placeholder="Email của bạn" required value="${prefillEmail}">
+        <i class='bx bx-envelope'></i>
+      </div>
+      <p class="msg"></p>
+      <button type="submit" class="btn">Gửi OTP</button>
+    </form>
   `;
-  
-  document.body.appendChild(resetModal);
-  
-  // Xử lý form reset password
-  document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
+
+  const modal = openModal(
+    html,
+    "Quên mật khẩu",
+    "Nhập email để nhận mã OTP đặt lại mật khẩu"
+  );
+
+  const form = modal.querySelector("#sendOtpForm");
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const otp = e.target.otp.value.trim();
-    const newPassword = e.target.newPassword.value;
-    
-    if (!otp || otp.length !== 6) {
-      flash(e.target, "error", "Mã OTP phải có 6 chữ số!");
-      return;
+    const email = form.email.value.trim();
+    if (!email) return flash(form, "error", "Nhập email trước đã nha!");
+
+    flash(form, "", "");
+    try {
+      const res = await fetch(`/api/auth/forgot-password?${qs({ email })}`, { method: "POST" });
+      const json = await res.json();
+      if (json?.success) {
+        renderForgotStepReset(email);
+      } else {
+        flash(form, "error", json?.message || "Gửi OTP thất bại");
+      }
+    } catch {
+      flash(form, "error", "Có lỗi mạng, thử lại sau nha!");
     }
-    
-    if (newPassword.length < 6) {
-      flash(e.target, "error", "Mật khẩu phải có ít nhất 6 ký tự!");
-      return;
-    }
-    
-    flash(e.target, "", "");
-    const json = await api("/api/auth/reset-password", { email, otp, newPassword });
-    
+  });
+}
+
+/** STEP 2 — Nhập OTP + mật khẩu mới */
+function renderForgotStepReset(email) {
+  const stepDots = `
+    <div style="display:flex; gap:6px; align-items:center; margin:10px 0 16px;">
+      <span style="width:8px;height:8px;border-radius:999px;background:#ddd;"></span>
+      <span style="width:8px;height:8px;border-radius:999px;background:#ffb347;"></span>
+    </div>`;
+
+  const html = `
+    ${stepDots}
+    <div style="margin:-4px 0 10px; color:#666; font-size:14px;">
+      Mã OTP đã gửi tới: <strong style="color:#333;">${email}</strong>
+    </div>
+    <form id="resetPasswordForm">
+      <div class="input-box">
+        <input type="text" name="otp" placeholder="Nhập mã OTP (6 số)" maxlength="6" required>
+        <i class='bx bx-key'></i>
+      </div>
+      <div class="input-box">
+        <input type="password" name="newPassword" placeholder="Mật khẩu mới (≥ 6 ký tự)" required>
+        <i class='bx bxs-lock-alt'></i>
+      </div>
+      <div class="input-box">
+        <input type="password" name="confirmPassword" placeholder="Nhập lại mật khẩu mới" required>
+        <i class='bx bxs-lock'></i>
+      </div>
+      <p class="msg"></p>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn" id="backToEmail" style="flex:1; opacity:.9;">Quay lại</button>
+        <button type="submit" class="btn" style="flex:1;">Xác nhận</button>
+      </div>
+    </form>
+  `;
+
+  const modal = openModal(
+    html,
+    "Đặt lại mật khẩu",
+    "Nhập OTP và tạo mật khẩu mới"
+  );
+
+  const form = modal.querySelector("#resetPasswordForm");
+  modal.querySelector("#backToEmail")?.addEventListener("click", () => renderForgotStepEmail(email));
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const otp  = form.otp.value.trim();
+    const pass = form.newPassword.value;
+    const pass2 = form.confirmPassword.value;
+
+    if (!otp || otp.length !== 6) return flash(form, "error", "Mã OTP phải có 6 chữ số!");
+    if (!pass || pass.length < 6) return flash(form, "error", "Mật khẩu phải có ít nhất 6 ký tự!");
+    if (pass !== pass2) return flash(form, "error", "Mật khẩu nhập lại không khớp!");
+
+    flash(form, "", "");
+    const json = await api("/api/auth/reset-password", { email, otp, newPassword: pass });
     if (json.success) {
-      flash(e.target, "success", "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập với mật khẩu mới.");
-      setTimeout(() => {
-        closeOtpModal();
-        loginBtn?.click();
-      }, 1500);
+      flash(form, "success", "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay.");
+      setTimeout(() => { closeModal(); loginBtn?.click(); }, 1200);
     } else {
-      flash(e.target, "error", json.message || "Đặt lại mật khẩu thất bại");
+      flash(form, "error", json.message || "Đặt lại mật khẩu thất bại");
     }
   });
 }
