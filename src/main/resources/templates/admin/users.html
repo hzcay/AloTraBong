@@ -14,33 +14,121 @@
             --dark-color: #1a1a1a;
             --light-color: #f5f5f5;
         }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             background-color: var(--light-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Sidebar */
         .sidebar {
+            width: 250px;
             background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
             min-height: 100vh;
             padding: 0;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
-        .sidebar .nav-link {
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.5);
+            border-radius: 3px;
+        }
+        .sidebar-header {
+            padding: 25px 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+        .sidebar-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        .sidebar-menu .menu-section {
+            margin-bottom: 20px;
+        }
+        .sidebar-menu .menu-title {
+            padding: 10px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sidebar-menu .nav-link {
             color: #ccc;
             padding: 12px 20px;
             border-left: 3px solid transparent;
-            margin: 5px 0;
+            margin: 0;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            text-decoration: none;
         }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
+        .sidebar-menu .nav-link:hover {
             color: var(--primary-color);
             border-left-color: var(--primary-color);
             background-color: rgba(255, 107, 53, 0.1);
         }
-        .sidebar-header {
+        .sidebar-menu .nav-link.active {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.15);
+            font-weight: 600;
+        }
+        .sidebar-footer {
             padding: 20px;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            text-align: center;
+            border-top: 1px solid #444;
+            position: sticky;
+            bottom: 0;
+            background: rgba(0,0,0,0.2);
+        }
+        .sidebar-footer .nav-link {
+            padding: 10px 15px;
+            margin: 0;
+            border-radius: 5px;
+        }
+        .sidebar-footer .nav-link:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+        /* Main Content */
+        .main-content-wrapper {
+            margin-left: 250px;
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--light-color);
         }
         .main-content {
             padding: 30px;
@@ -53,6 +141,24 @@
         .page-header h1 {
             color: var(--dark-color);
             font-weight: 600;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .stats-card h3 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin: 0;
+        }
+        .stats-card p {
+            color: #666;
+            margin: 5px 0 0 0;
+            font-size: 14px;
         }
         .table-card {
             background: white;
@@ -95,11 +201,13 @@
         .action-buttons {
             display: flex;
             gap: 5px;
+            flex-wrap: wrap;
         }
         .action-btn {
             padding: 5px 10px;
             font-size: 12px;
             border-radius: 5px;
+            white-space: nowrap;
         }
         .modal-header {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -113,32 +221,110 @@
         .search-box {
             margin-bottom: 20px;
         }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .role-admin {
+            background-color: #dc3545;
+            color: white;
+        }
+        .role-branch-manager {
+            background-color: #007bff;
+            color: white;
+        }
+        .role-shipper {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .role-user {
+            background-color: #6c757d;
+            color: white;
+        }
     </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar">
-            <div class="sidebar-header">
-                <h4><i class="bi bi-speedometer2"></i> Admin Panel</h4>
-            </div>
-            <nav class="nav flex-column">
-                <a class="nav-link" href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
-                <a class="nav-link active" href="/admin/users"><i class="bi bi-people"></i> User Management</a>
-                <a class="nav-link" href="/admin/branches"><i class="bi bi-building"></i> Branches</a>
-                <a class="nav-link" href="/admin/menu"><i class="bi bi-list-ul"></i> Categories</a>
-                <a class="nav-link" href="/admin/promotions"><i class="bi bi-tag"></i> Promotions</a>
-                <a class="nav-link" href="/admin/shipping"><i class="bi bi-truck"></i> Shipping Rates</a>
-                <a class="nav-link" href="/admin/reports"><i class="bi bi-bar-chart"></i> Reports</a>
-                <a class="nav-link" href="/admin/settings"><i class="bi bi-gear"></i> Settings</a>
-                <hr style="background-color: #444; margin: 20px 0;">
-                <a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
-            </nav>
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="bi bi-speedometer2"></i> AloTraBong Admin</h4>
+            <p>Management System</p>
         </div>
 
-        <!-- Main Content -->
-        <div class="col-md-10 main-content">
+        <nav class="sidebar-menu">
+            <!-- Dashboard Section -->
+            <div class="menu-section">
+                <div class="menu-title">Main</div>
+                <a class="nav-link" href="/admin/dashboard">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+
+            <!-- Management Section -->
+            <div class="menu-section">
+                <div class="menu-title">Management</div>
+                <a class="nav-link active" href="/admin/users">
+                    <i class="bi bi-people"></i>
+                    <span>User Management</span>
+                </a>
+                <a class="nav-link" href="/admin/branches">
+                    <i class="bi bi-building"></i>
+                    <span>Branches</span>
+                </a>
+                <a class="nav-link" href="/admin/menu">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Menu & Categories</span>
+                </a>
+            </div>
+
+            <!-- Business Section -->
+            <div class="menu-section">
+                <div class="menu-title">Business</div>
+                <a class="nav-link" href="/admin/promotions">
+                    <i class="bi bi-tag"></i>
+                    <span>Promotions</span>
+                </a>
+                <a class="nav-link" href="/admin/shipping">
+                    <i class="bi bi-truck"></i>
+                    <span>Shipping Rates</span>
+                </a>
+                <a class="nav-link" href="/admin/orders">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Orders</span>
+                </a>
+            </div>
+
+            <!-- Reports Section -->
+            <div class="menu-section">
+                <div class="menu-title">Analytics</div>
+                <a class="nav-link" href="/admin/reports">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Reports</span>
+                </a>
+                <a class="nav-link" href="/admin/settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a class="nav-link" href="/logout">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content-wrapper">
+        <div class="main-content">
             <div class="page-header">
                 <div class="row align-items-center">
                     <div class="col">
@@ -147,14 +333,49 @@
                 </div>
             </div>
 
+            <!-- Statistics -->
+            <div class="row" id="statsContainer">
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h3 id="activeUsers">0</h3>
+                        <p>Active Users</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h3 id="lockedUsers">0</h3>
+                        <p>Locked Users</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert Messages -->
+            <div id="alertContainer"></div>
+
             <!-- Search and Filter -->
             <div class="table-card search-box">
                 <div class="row">
-                    <div class="col-md-6">
-                        <input type="text" id="searchInput" class="form-control" placeholder="Search by name, email, or phone...">
+                    <div class="col-md-8">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search by name, email, phone..."
+                               onkeyup="if(event.key === 'Enter') searchUsers()">
                     </div>
-                    <div class="col-md-6 text-end">
-                        <button class="btn btn-primary" onclick="loadUsers()"><i class="bi bi-search"></i> Search</button>
+                    <div class="col-md-2">
+                        <select id="roleFilter" class="form-select" onchange="filterByRole()">
+                            <option value="">All Roles</option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="BRANCH_MANAGER">Branch Manager</option>
+                            <option value="SHIPPER">Shipper</option>
+                            <option value="USER">User</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-primary" onclick="searchUsers()"><i class="bi bi-search"></i> Search</button>
                     </div>
                 </div>
             </div>
@@ -165,8 +386,8 @@
                     <table class="table table-hover" id="usersTable">
                         <thead>
                             <tr>
-                                <th>User ID</th>
-                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Full Name</th>
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th>Roles</th>
@@ -177,12 +398,16 @@
                         </thead>
                         <tbody id="usersBody">
                             <tr>
-                                <td colspan="8" class="text-center py-4">Loading...</td>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <nav>
+                <nav aria-label="Page navigation">
                     <ul class="pagination" id="pagination"></ul>
                 </nav>
             </div>
@@ -195,7 +420,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit User</h5>
+                <h5 class="modal-title">Edit User Information</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -203,7 +428,7 @@
                     <input type="hidden" id="editUserId">
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
-                        <input type="text" id="editFullName" class="form-control">
+                        <input type="text" id="editFullName" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email</label>
@@ -220,7 +445,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="saveUserChanges()">Save Changes</button>
             </div>
         </div>
@@ -239,16 +464,59 @@
                 <input type="hidden" id="resetUserId">
                 <div class="mb-3">
                     <label class="form-label">New Password</label>
-                    <input type="password" id="newPassword" class="form-control">
+                    <input type="password" id="newPassword" class="form-control" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Confirm Password</label>
-                    <input type="password" id="confirmPassword" class="form-control">
+                    <input type="password" id="confirmPassword" class="form-control" required>
+                </div>
+                <small class="text-muted">Password must be at least 8 characters long</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="resetPassword()">Reset Password</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Roles Modal -->
+<div class="modal fade" id="manageRolesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage User Roles</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rolesUserId">
+                <label class="form-label mb-3">Select roles for this user:</label>
+                <div class="role-checkboxes">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="roleAdmin" value="ADMIN">
+                        <label class="form-check-label" for="roleAdmin">Admin</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="roleBranchManager" value="BRANCH_MANAGER">
+                        <label class="form-check-label" for="roleBranchManager">Branch Manager</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="roleShipper" value="SHIPPER">
+                        <label class="form-check-label" for="roleShipper">Shipper</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="roleUser" value="USER">
+                        <label class="form-check-label" for="roleUser">User</label>
+                    </div>
+                </div>
+                <div id="currentRolesDisplay" class="mt-3">
+                    <small class="text-muted">Current roles:</small>
+                    <div id="currentRoles"></div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="resetPassword()">Reset Password</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateUserRoles()">Update Roles</button>
             </div>
         </div>
     </div>
@@ -258,75 +526,168 @@
 <script>
     const itemsPerPage = 20;
     let currentPage = 0;
+    let editModal, resetPasswordModal, manageRolesModal;
 
-    function loadUsers() {
-        const search = document.getElementById('searchInput').value;
-        fetch(`/api/admin/users?page=${currentPage}&size=${itemsPerPage}&search=${search}`)
+    document.addEventListener('DOMContentLoaded', function() {
+        editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        resetPasswordModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+        manageRolesModal = new bootstrap.Modal(document.getElementById('manageRolesModal'));
+        loadUserStats();
+        loadUsers();
+    });
+
+    function loadUserStats() {
+        fetch('/api/admin/users/stats/summary')
             .then(response => response.json())
             .then(data => {
-                const tbody = document.getElementById('usersBody');
-                tbody.innerHTML = '';
-
-                if (data.content && data.content.length > 0) {
-                    data.content.forEach(user => {
-                        const statusBadge = user.isActive ?
-                            '<span class="badge badge-active">Active</span>' :
-                            '<span class="badge badge-inactive">Locked</span>';
-
-                        const row = `
-                            <tr>
-                                <td>${user.userId.substring(0, 8)}...</td>
-                                <td>${user.fullName}</td>
-                                <td>${user.email}</td>
-                                <td>${user.phone}</td>
-                                <td>
-                                    ${user.roles.map(r => `<span class="badge bg-info">${r}</span>`).join(' ')}
-                                </td>
-                                <td>${statusBadge}</td>
-                                <td>${user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : '-'}</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-sm btn-info action-btn" onclick="editUser('${user.userId}')">
-                                            <i class="bi bi-pencil"></i> Edit
-                                        </button>
-                                        <button class="btn btn-sm btn-warning action-btn" onclick="openResetPassword('${user.userId}')">
-                                            <i class="bi bi-key"></i> Reset Pass
-                                        </button>
-                                        <button class="btn btn-sm action-btn" onclick="toggleUserStatus('${user.userId}', ${user.isActive})">
-                                            <i class="bi ${user.isActive ? 'bi-lock' : 'bi-unlock'}"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                        tbody.innerHTML += row;
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No users found</td></tr>';
-                }
-
-                // Load pagination
-                loadPagination(data.totalPages);
+                document.getElementById('totalUsers').textContent = data.totalUsers || 0;
+                document.getElementById('activeUsers').textContent = data.activeUsers || 0;
+                document.getElementById('lockedUsers').textContent = data.lockedUsers || 0;
             })
-            .catch(error => console.error('Error loading users:', error));
+            .catch(error => console.error('Error loading stats:', error));
+    }
+
+    function loadUsers(page = 0) {
+        currentPage = page;
+        const search = document.getElementById('searchInput').value;
+        let url = `/api/admin/users?page=${page}&size=${itemsPerPage}`;
+        if (search) {
+            url += `&search=${encodeURIComponent(search)}`;
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                renderUsersTable(data.content);
+                renderPagination(data.totalPages, page);
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                showAlert('Error loading users', 'danger');
+            });
+    }
+
+    function renderUsersTable(users) {
+        const tbody = document.getElementById('usersBody');
+        tbody.innerHTML = '';
+
+        if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No users found</td></tr>';
+            return;
+        }
+
+        users.forEach(user => {
+            const statusBadge = user.isActive ?
+                '<span class="badge badge-active"><i class="bi bi-check-circle"></i> Active</span>' :
+                '<span class="badge badge-inactive"><i class="bi bi-x-circle"></i> Locked</span>';
+
+            const rolesHtml = user.roles && user.roles.length > 0 ?
+                user.roles.map(r => `<span class="role-badge role-${r.toLowerCase().replace('_', '-')}">${r}</span>`).join(' ') :
+                '<span class="text-muted">No roles</span>';
+
+            const lastLogin = user.lastLoginAt ?
+                new Date(user.lastLoginAt).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) :
+                '-';
+
+            const row = `
+                <tr>
+                    <td><small>${user.userId.substring(0, 8)}...</small></td>
+                    <td><strong>${user.fullName || 'N/A'}</strong></td>
+                    <td>${user.email}</td>
+                    <td>${user.phone || '-'}</td>
+                    <td>${rolesHtml}</td>
+                    <td>${statusBadge}</td>
+                    <td><small>${lastLogin}</small></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-info action-btn" onclick="editUser('${user.userId}')" title="Edit User">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning action-btn" onclick="openResetPassword('${user.userId}')" title="Reset Password">
+                                <i class="bi bi-key"></i>
+                            </button>
+                            <button class="btn btn-sm btn-secondary action-btn" onclick="openManageRoles('${user.userId}')" title="Manage Roles">
+                                <i class="bi bi-lock"></i>
+                            </button>
+                            <button class="btn btn-sm action-btn" onclick="toggleUserStatus('${user.userId}', ${user.isActive})"
+                                    style="background-color: ${user.isActive ? '#dc3545' : '#28a745'}; color: white;" title="${user.isActive ? 'Lock User' : 'Unlock User'}">
+                                <i class="bi ${user.isActive ? 'bi-lock' : 'bi-unlock'}"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function renderPagination(totalPages, currentPage) {
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';
+
+        if (currentPage > 0) {
+            const li = document.createElement('li');
+            li.className = 'page-item';
+            li.innerHTML = `<a class="page-link" href="#" onclick="loadUsers(${currentPage - 1}); return false;">Previous</a>`;
+            pagination.appendChild(li);
+        }
+
+        for (let i = 0; i < totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="loadUsers(${i}); return false;">${i + 1}</a>`;
+            pagination.appendChild(li);
+        }
+
+        if (currentPage < totalPages - 1) {
+            const li = document.createElement('li');
+            li.className = 'page-item';
+            li.innerHTML = `<a class="page-link" href="#" onclick="loadUsers(${currentPage + 1}); return false;">Next</a>`;
+            pagination.appendChild(li);
+        }
+    }
+
+    function searchUsers() {
+        loadUsers(0);
+    }
+
+    function filterByRole() {
+        const roleFilter = document.getElementById('roleFilter').value;
+        if (roleFilter) {
+            fetch(`/api/admin/users/role/${roleFilter}`)
+                .then(response => response.json())
+                .then(data => {
+                    renderUsersTable(data);
+                })
+                .catch(error => {
+                    console.error('Error filtering users:', error);
+                    showAlert('Error filtering users', 'danger');
+                });
+        } else {
+            loadUsers(0);
+        }
     }
 
     function editUser(userId) {
         fetch(`/api/admin/users/${userId}`)
             .then(response => response.json())
-            .then(user => {
-                document.getElementById('editUserId').value = user.userId;
-                document.getElementById('editFullName').value = user.fullName;
-                document.getElementById('editEmail').value = user.email;
-                document.getElementById('editPhone').value = user.phone;
-                document.getElementById('editAddress').value = user.address || '';
-                new bootstrap.Modal(document.getElementById('editUserModal')).show();
+            .then(data => {
+                document.getElementById('editUserId').value = data.userId;
+                document.getElementById('editFullName').value = data.fullName || '';
+                document.getElementById('editEmail').value = data.email;
+                document.getElementById('editPhone').value = data.phone || '';
+                document.getElementById('editAddress').value = data.address || '';
+                editModal.show();
+            })
+            .catch(error => {
+                console.error('Error loading user:', error);
+                showAlert('Error loading user', 'danger');
             });
     }
 
     function saveUserChanges() {
         const userId = document.getElementById('editUserId').value;
-        const data = {
+        const userData = {
             fullName: document.getElementById('editFullName').value,
             phone: document.getElementById('editPhone').value,
             address: document.getElementById('editAddress').value
@@ -334,21 +695,50 @@
 
         fetch(`/api/admin/users/${userId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
         })
         .then(response => response.json())
-        .then(() => {
-            bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
-            loadUsers();
-            alert('User updated successfully');
+        .then(data => {
+            editModal.hide();
+            showAlert('User information updated successfully', 'success');
+            loadUsers(currentPage);
+            loadUserStats();
         })
-        .catch(error => alert('Error updating user: ' + error));
+        .catch(error => {
+            console.error('Error updating user:', error);
+            showAlert('Error updating user', 'danger');
+        });
+    }
+
+    function toggleUserStatus(userId, isActive) {
+        const action = isActive ? 'lock' : 'unlock';
+        const message = isActive ? 'Are you sure you want to lock this user?' : 'Are you sure you want to unlock this user?';
+
+        if (confirm(message)) {
+            fetch(`/api/admin/users/${userId}/${action}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert(data.message, 'success');
+                loadUsers(currentPage);
+                loadUserStats();
+            })
+            .catch(error => {
+                console.error('Error toggling user status:', error);
+                showAlert('Error toggling user status', 'danger');
+            });
+        }
     }
 
     function openResetPassword(userId) {
         document.getElementById('resetUserId').value = userId;
-        new bootstrap.Modal(document.getElementById('resetPasswordModal')).show();
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+        resetPasswordModal.show();
     }
 
     function resetPassword() {
@@ -357,59 +747,138 @@
         const confirmPassword = document.getElementById('confirmPassword').value;
 
         if (newPassword !== confirmPassword) {
-            alert('Passwords do not match');
+            showAlert('Passwords do not match', 'warning');
             return;
         }
 
-        if (newPassword.length < 6) {
-            alert('Password must be at least 6 characters');
+        if (newPassword.length < 8) {
+            showAlert('Password must be at least 8 characters long', 'warning');
             return;
         }
 
         fetch(`/api/admin/users/${userId}/reset-password`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ newPassword: newPassword })
         })
         .then(response => response.json())
-        .then(() => {
-            bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-            alert('Password reset successfully');
+        .then(data => {
+            resetPasswordModal.hide();
+            showAlert('Password reset successfully', 'success');
         })
-        .catch(error => alert('Error resetting password: ' + error));
+        .catch(error => {
+            console.error('Error resetting password:', error);
+            showAlert('Error resetting password', 'danger');
+        });
     }
 
-    function toggleUserStatus(userId, isActive) {
-        const endpoint = isActive ? 'lock' : 'unlock';
-        fetch(`/api/admin/users/${userId}/${endpoint}`, { method: 'POST' })
+    function openManageRoles(userId) {
+        document.getElementById('rolesUserId').value = userId;
+
+        fetch(`/api/admin/users/${userId}`)
             .then(response => response.json())
-            .then(() => {
-                loadUsers();
-                alert(isActive ? 'User locked' : 'User unlocked');
+            .then(data => {
+                document.getElementById('roleAdmin').checked = false;
+                document.getElementById('roleBranchManager').checked = false;
+                document.getElementById('roleShipper').checked = false;
+                document.getElementById('roleUser').checked = false;
+
+                if (data.roles && data.roles.length > 0) {
+                    data.roles.forEach(role => {
+                        if (role === 'ADMIN') document.getElementById('roleAdmin').checked = true;
+                        if (role === 'BRANCH_MANAGER') document.getElementById('roleBranchManager').checked = true;
+                        if (role === 'SHIPPER') document.getElementById('roleShipper').checked = true;
+                        if (role === 'USER') document.getElementById('roleUser').checked = true;
+                    });
+                }
+
+                const rolesDisplay = data.roles && data.roles.length > 0 ?
+                    data.roles.map(r => `<span class="role-badge role-${r.toLowerCase().replace('_', '-')}">${r}</span>`).join(' ') :
+                    '<span class="text-muted">No roles assigned</span>';
+                document.getElementById('currentRoles').innerHTML = rolesDisplay;
+
+                manageRolesModal.show();
             })
-            .catch(error => alert('Error: ' + error));
+            .catch(error => {
+                console.error('Error loading user roles:', error);
+                showAlert('Error loading user roles', 'danger');
+            });
     }
 
-    function loadPagination(totalPages) {
-        const pagination = document.getElementById('pagination');
-        pagination.innerHTML = '';
+    function updateUserRoles() {
+        const userId = document.getElementById('rolesUserId').value;
+        const roles = [];
 
-        for (let i = 0; i < totalPages; i++) {
-            const li = document.createElement('li');
-            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
-            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i + 1}</a>`;
-            pagination.appendChild(li);
+        if (document.getElementById('roleAdmin').checked) roles.push('ADMIN');
+        if (document.getElementById('roleBranchManager').checked) roles.push('BRANCH_MANAGER');
+        if (document.getElementById('roleShipper').checked) roles.push('SHIPPER');
+        if (document.getElementById('roleUser').checked) roles.push('USER');
+
+        if (roles.length === 0) {
+            showAlert('Please select at least one role', 'warning');
+            return;
         }
+
+        fetch(`/api/admin/users/${userId}`)
+            .then(response => response.json())
+            .then(currentUser => {
+                let updatePromises = [];
+
+                if (currentUser.roles) {
+                    currentUser.roles.forEach(role => {
+                        if (!roles.includes(role)) {
+                            updatePromises.push(
+                                fetch(`/api/admin/users/${userId}/remove-role?roleCode=${role}`, {
+                                    method: 'DELETE'
+                                })
+                            );
+                        }
+                    });
+                }
+
+                roles.forEach(role => {
+                    if (!currentUser.roles || !currentUser.roles.includes(role)) {
+                        updatePromises.push(
+                            fetch(`/api/admin/users/${userId}/assign-role`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ roleCode: role })
+                            })
+                        );
+                    }
+                });
+
+                return Promise.all(updatePromises);
+            })
+            .then(() => {
+                manageRolesModal.hide();
+                showAlert('User roles updated successfully', 'success');
+                loadUsers(currentPage);
+            })
+            .catch(error => {
+                console.error('Error updating roles:', error);
+                showAlert('Error updating user roles', 'danger');
+            });
     }
 
-    function changePage(page) {
-        currentPage = page;
-        loadUsers();
-    }
+    function showAlert(message, type = 'info') {
+        const alertContainer = document.getElementById('alertContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        alertContainer.appendChild(alert);
 
-    document.addEventListener('DOMContentLoaded', loadUsers);
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
 </script>
 </body>
 </html>

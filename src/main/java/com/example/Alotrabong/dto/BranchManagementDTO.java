@@ -25,5 +25,11 @@ public class BranchManagementDTO {
     private LocalDateTime updatedAt;
     private Integer itemCount;
     private Double totalRevenue;
+
+    // Manager information
+    private String managerId;
+    private String managerName;
+    private String managerEmail;
+    private String managerPhone;
 }
 

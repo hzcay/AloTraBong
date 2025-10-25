@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
+<head th:fragment="head">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu & Categories - Admin</title>
+    <title th:text="${title} ?: 'Admin Dashboard'">Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
@@ -14,14 +14,11 @@
             --dark-color: #1a1a1a;
             --light-color: #f5f5f5;
         }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         body {
             background-color: var(--light-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         .admin-wrapper {
             display: flex;
@@ -39,30 +36,30 @@
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             z-index: 1000;
         }
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
-        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 107, 53, 0.5); border-radius: 3px; }
         .sidebar-header {
             padding: 25px 20px;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
             text-align: center;
             border-bottom: 2px solid var(--primary-color);
-            position: sticky;
-            top: 0;
-            z-index: 1001;
         }
-        .sidebar-header h4 { font-size: 18px; font-weight: 600; margin: 0; }
-        .sidebar-header p { font-size: 12px; margin: 5px 0 0 0; opacity: 0.9; }
-        .sidebar-menu { padding: 20px 0; }
-        .sidebar-menu .menu-section { margin-bottom: 20px; }
+        .sidebar-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        .sidebar-menu .menu-section {
+            margin-bottom: 20px;
+        }
         .sidebar-menu .menu-title {
             padding: 10px 20px;
             font-size: 12px;
             font-weight: 600;
             color: #888;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
         .sidebar-menu .nav-link {
             color: #ccc;
@@ -87,34 +84,22 @@
             background-color: rgba(255, 107, 53, 0.15);
             font-weight: 600;
         }
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid #444;
-            position: sticky;
-            bottom: 0;
-            background: rgba(0,0,0,0.2);
-        }
-        .sidebar-footer .nav-link { padding: 10px 15px; margin: 0; border-radius: 5px; }
-        .sidebar-footer .nav-link:hover { background-color: rgba(220, 53, 69, 0.2); color: #ff6b6b; }
         .main-content-wrapper {
             margin-left: 250px;
             flex: 1;
-            overflow-y: auto;
-            background-color: var(--light-color);
+            padding: 30px;
         }
-        .main-content { padding: 30px; }
-        .page-header {
-            margin-bottom: 30px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 15px;
-        }
-        .page-header h1 { color: var(--dark-color); font-weight: 600; }
         .card-custom {
             background: white;
             border-radius: 10px;
             padding: 25px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 20px;
+        }
+        .page-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
         }
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -123,95 +108,91 @@
         .btn-primary:hover {
             background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
         }
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
     </style>
 </head>
-<body>
+
+<body th:fragment="layout(content, activeMenu)">
 <div class="admin-wrapper">
-    <div class="sidebar">
+    <!-- Sidebar -->
+    <div class="sidebar" th:fragment="sidebar">
         <div class="sidebar-header">
             <h4><i class="bi bi-speedometer2"></i> AloTraBong Admin</h4>
-            <p>Management System</p>
+            <p class="mb-0 small">Hệ thống quản lý</p>
         </div>
+
         <nav class="sidebar-menu">
             <div class="menu-section">
-                <div class="menu-title">Main</div>
-                <a class="nav-link" href="/admin/dashboard">
+                <div class="menu-title">Tổng quan</div>
+                <a class="nav-link" th:classappend="${activeMenu == 'dashboard'} ? 'active'" href="/admin/dashboard">
                     <i class="bi bi-house-door"></i>
                     <span>Dashboard</span>
                 </a>
             </div>
+
             <div class="menu-section">
-                <div class="menu-title">Management</div>
-                <a class="nav-link" href="/admin/users">
+                <div class="menu-title">Quản lý</div>
+                <a class="nav-link" th:classappend="${activeMenu == 'users'} ? 'active'" href="/admin/users">
                     <i class="bi bi-people"></i>
-                    <span>User Management</span>
+                    <span>Người dùng</span>
                 </a>
-                <a class="nav-link" href="/admin/branches">
+                <a class="nav-link" th:classappend="${activeMenu == 'branches'} ? 'active'" href="/admin/branches">
                     <i class="bi bi-building"></i>
-                    <span>Branches</span>
+                    <span>Chi nhánh</span>
                 </a>
-                <a class="nav-link active" href="/admin/menu">
+                <a class="nav-link" th:classappend="${activeMenu == 'menu'} ? 'active'" href="/admin/menu">
                     <i class="bi bi-list-ul"></i>
-                    <span>Menu & Categories</span>
+                    <span>Menu & Danh mục</span>
+                </a>
+                <a class="nav-link" th:classappend="${activeMenu == 'roles'} ? 'active'" href="/admin/roles">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Vai trò</span>
                 </a>
             </div>
+
             <div class="menu-section">
-                <div class="menu-title">Business</div>
-                <a class="nav-link" href="/admin/promotions">
+                <div class="menu-title">Kinh doanh</div>
+                <a class="nav-link" th:classappend="${activeMenu == 'promotions'} ? 'active'" href="/admin/promotions">
                     <i class="bi bi-tag"></i>
-                    <span>Promotions</span>
+                    <span>Khuyến mãi</span>
                 </a>
-                <a class="nav-link" href="/admin/shipping">
+                <a class="nav-link" th:classappend="${activeMenu == 'shipping'} ? 'active'" href="/admin/shipping">
                     <i class="bi bi-truck"></i>
-                    <span>Shipping Rates</span>
+                    <span>Phí vận chuyển</span>
                 </a>
-                <a class="nav-link" href="/admin/orders">
+                <a class="nav-link" th:classappend="${activeMenu == 'orders'} ? 'active'" href="/admin/orders">
                     <i class="bi bi-cart-check"></i>
-                    <span>Orders</span>
+                    <span>Đơn hàng</span>
                 </a>
             </div>
+
             <div class="menu-section">
-                <div class="menu-title">Analytics</div>
-                <a class="nav-link" href="/admin/reports">
+                <div class="menu-title">Hệ thống</div>
+                <a class="nav-link" th:classappend="${activeMenu == 'reports'} ? 'active'" href="/admin/reports">
                     <i class="bi bi-bar-chart"></i>
-                    <span>Reports</span>
+                    <span>Báo cáo</span>
                 </a>
-                <a class="nav-link" href="/admin/settings">
+                <a class="nav-link" th:classappend="${activeMenu == 'settings'} ? 'active'" href="/admin/settings">
                     <i class="bi bi-gear"></i>
-                    <span>Settings</span>
+                    <span>Cài đặt</span>
+                </a>
+                <a class="nav-link" href="/logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Đăng xuất</span>
                 </a>
             </div>
         </nav>
-        <div class="sidebar-footer">
-            <a class="nav-link" href="/logout">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Logout</span>
-            </a>
-        </div>
     </div>
 
+    <!-- Main Content -->
     <div class="main-content-wrapper">
-        <div class="main-content">
-            <div class="page-header">
-                <h1><i class="bi bi-list-ul"></i> Menu & Categories</h1>
-            </div>
-            <div class="card-custom">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <h5>Categories Management</h5>
-                    </div>
-                    <div class="col-auto">
-                        <button class="btn btn-primary">
-                            <i class="bi bi-plus-lg"></i> Add Category
-                        </button>
-                    </div>
-                </div>
-                <hr>
-                <p class="text-muted">Categories list will be displayed here</p>
-            </div>
-        </div>
+        <div th:replace="${content}"></div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

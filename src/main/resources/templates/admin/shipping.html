@@ -14,60 +14,88 @@
             --dark-color: #1a1a1a;
             --light-color: #f5f5f5;
         }
-        body {
-            background-color: var(--light-color);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--light-color); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .admin-wrapper { display: flex; min-height: 100vh; }
         .sidebar {
+            width: 250px;
             background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
             min-height: 100vh;
+            padding: 0;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
-        .sidebar .nav-link {
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 107, 53, 0.5); border-radius: 3px; }
+        .sidebar-header {
+            padding: 25px 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+        .sidebar-header h4 { font-size: 18px; font-weight: 600; margin: 0; }
+        .sidebar-header p { font-size: 12px; margin: 5px 0 0 0; opacity: 0.9; }
+        .sidebar-menu { padding: 20px 0; }
+        .sidebar-menu .menu-section { margin-bottom: 20px; }
+        .sidebar-menu .menu-title {
+            padding: 10px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sidebar-menu .nav-link {
             color: #ccc;
             padding: 12px 20px;
             border-left: 3px solid transparent;
-            margin: 5px 0;
+            margin: 0;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            text-decoration: none;
         }
-        .sidebar .nav-link.active {
+        .sidebar-menu .nav-link:hover {
             color: var(--primary-color);
             border-left-color: var(--primary-color);
             background-color: rgba(255, 107, 53, 0.1);
         }
-        .sidebar-header {
+        .sidebar-menu .nav-link.active {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.15);
+            font-weight: 600;
+        }
+        .sidebar-footer {
             padding: 20px;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            text-align: center;
+            border-top: 1px solid #444;
+            position: sticky;
+            bottom: 0;
+            background: rgba(0,0,0,0.2);
         }
-        .main-content {
-            padding: 30px;
-        }
-        .page-header {
-            margin-bottom: 30px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 15px;
-        }
+        .sidebar-footer .nav-link { padding: 10px 15px; margin: 0; border-radius: 5px; }
+        .sidebar-footer .nav-link:hover { background-color: rgba(220, 53, 69, 0.2); color: #ff6b6b; }
+        .main-content-wrapper { margin-left: 250px; flex: 1; overflow-y: auto; background-color: var(--light-color); }
+        .main-content { padding: 30px; }
+        .page-header { margin-bottom: 30px; border-bottom: 2px solid var(--primary-color); padding-bottom: 15px; }
+        .page-header h1 { color: var(--dark-color); font-weight: 600; }
         .card-custom {
             background: white;
             border-radius: 10px;
             padding: 25px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-        }
-        .table-responsive {
-            border-radius: 10px;
-        }
-        table {
-            margin-bottom: 0;
-        }
-        thead th {
-            border-bottom: 2px solid var(--primary-color);
-            padding: 15px;
-            font-weight: 600;
-        }
-        tbody td {
-            padding: 12px 15px;
-            vertical-align: middle;
         }
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -76,222 +104,261 @@
         .btn-primary:hover {
             background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
         }
-        .modal-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-        }
         .form-control:focus, .form-select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
         }
+        .table-hover tbody tr:hover {
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+        .badge-active { background-color: #28a745; }
+        .badge-inactive { background-color: #6c757d; }
+        .modal-content { border-radius: 10px; }
+        .modal-header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; }
+        .modal-title { font-weight: 600; }
     </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar">
-            <div class="sidebar-header">
-                <h4><i class="bi bi-speedometer2"></i> Admin Panel</h4>
-            </div>
-            <nav class="nav flex-column">
-                <a class="nav-link" href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
-                <a class="nav-link" href="/admin/users"><i class="bi bi-people"></i> Users</a>
-                <a class="nav-link" href="/admin/branches"><i class="bi bi-building"></i> Branches</a>
-                <a class="nav-link" href="/admin/menu"><i class="bi bi-list-ul"></i> Categories</a>
-                <a class="nav-link" href="/admin/promotions"><i class="bi bi-tag"></i> Promotions</a>
-                <a class="nav-link active" href="/admin/shipping"><i class="bi bi-truck"></i> Shipping</a>
-                <a class="nav-link" href="/admin/reports"><i class="bi bi-bar-chart"></i> Reports</a>
-                <a class="nav-link" href="/admin/settings"><i class="bi bi-gear"></i> Settings</a>
-                <hr style="background-color: #444; margin: 20px 0;">
-                <a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
-            </nav>
+<div class="admin-wrapper">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="bi bi-speedometer2"></i> AloTraBong Admin</h4>
+            <p>Management System</p>
         </div>
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">Main</div>
+                <a class="nav-link" href="/admin/dashboard">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            <div class="menu-section">
+                <div class="menu-title">Management</div>
+                <a class="nav-link" href="/admin/users">
+                    <i class="bi bi-people"></i>
+                    <span>User Management</span>
+                </a>
+                <a class="nav-link" href="/admin/branches">
+                    <i class="bi bi-building"></i>
+                    <span>Branches</span>
+                </a>
+                <a class="nav-link" href="/admin/menu">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Menu & Categories</span>
+                </a>
+            </div>
+            <div class="menu-section">
+                <div class="menu-title">Business</div>
+                <a class="nav-link" href="/admin/promotions">
+                    <i class="bi bi-tag"></i>
+                    <span>Promotions</span>
+                </a>
+                <a class="nav-link active" href="/admin/shipping">
+                    <i class="bi bi-truck"></i>
+                    <span>Shipping Rates</span>
+                </a>
+                <a class="nav-link" href="/admin/orders">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Orders</span>
+                </a>
+            </div>
+            <div class="menu-section">
+                <div class="menu-title">Analytics</div>
+                <a class="nav-link" href="/admin/reports">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Reports</span>
+                </a>
+                <a class="nav-link" href="/admin/settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <a class="nav-link" href="/logout">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
 
-        <!-- Main Content -->
-        <div class="col-md-10 main-content">
+    <div class="main-content-wrapper">
+        <div class="main-content">
             <div class="page-header">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <h1><i class="bi bi-truck"></i> Shipping Rates Management</h1>
+                <h1><i class="bi bi-truck"></i> Shipping Rates Management</h1>
+            </div>
+
+            <!-- Filter and Search Section -->
+            <div class="card-custom">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Search by City</label>
+                        <input type="text" class="form-control" placeholder="Enter city name">
                     </div>
-                    <div class="col-auto">
-                        <button class="btn btn-primary" onclick="openCreateRateModal()">
-                            <i class="bi bi-plus"></i> New Rate
+                    <div class="col-md-4">
+                        <label class="form-label">Search by District</label>
+                        <input type="text" class="form-control" placeholder="Enter district name">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select class="form-select">
+                            <option selected>All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Shipping Rates Table -->
+            <!-- Add New Shipping Rate Button -->
             <div class="card-custom">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Shipping Rates</h5>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addShippingModal">
+                        <i class="bi bi-plus-lg"></i> Add New Rate
+                    </button>
+                </div>
+                <hr>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>District</th>
+                                <th>ID</th>
                                 <th>City</th>
-                                <th>Base Rate</th>
-                                <th>Per Km Rate</th>
-                                <th>Max Distance</th>
+                                <th>District</th>
+                                <th>Base Rate (₫)</th>
+                                <th>Per KM (₫)</th>
+                                <th>Min Charge (₫)</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="ratesBody">
-                            <tr>
-                                <td colspan="6" class="text-center py-4">Loading shipping rates...</td>
-                            </tr>
-                        </tbody>
+
                     </table>
                 </div>
-                <nav>
-                    <ul class="pagination" id="pagination"></ul>
+                <!-- Pagination -->
+                <nav aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Previous</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Next</a>
+                        </li>
+                    </ul>
                 </nav>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Create/Edit Rate Modal -->
-<div class="modal fade" id="rateModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<!-- Add Shipping Rate Modal -->
+<div class="modal fade" id="addShippingModal" tabindex="-1">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Create Shipping Rate</h5>
+                <h5 class="modal-title">Add New Shipping Rate</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="rateForm">
-                    <input type="hidden" id="rateId">
-                    <div class="mb-3">
-                        <label class="form-label">District</label>
-                        <input type="text" id="district" class="form-control" required>
-                    </div>
+                <form>
                     <div class="mb-3">
                         <label class="form-label">City</label>
-                        <input type="text" id="city" class="form-control" required>
+                        <input type="text" class="form-control" placeholder="Enter city name">
                     </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Base Rate</label>
-                                <input type="number" id="baseRate" class="form-control" step="0.01" required>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Per Km Rate</label>
-                                <input type="number" id="perKmRate" class="form-control" step="0.01" required>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Max Distance</label>
-                                <input type="number" id="maxDistance" class="form-control" step="0.01" required>
-                            </div>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">District</label>
+                        <input type="text" class="form-control" placeholder="Enter district name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Base Rate (₫)</label>
+                        <input type="number" class="form-control" placeholder="Enter base rate">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Per KM (₫)</label>
+                        <input type="number" class="form-control" placeholder="Enter rate per KM">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Min Charge (₫)</label>
+                        <input type="number" class="form-control" placeholder="Enter minimum charge">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select">
+                            <option selected>Active</option>
+                            <option>Inactive</option>
+                        </select>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveRate()">Save Rate</button>
+                <button type="button" class="btn btn-primary">Add Rate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Shipping Rate Modal -->
+<div class="modal fade" id="editShippingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Shipping Rate</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">City</label>
+                        <input type="text" class="form-control" value="Hà Nội">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">District</label>
+                        <input type="text" class="form-control" value="Hoàn Kiếm">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Base Rate (₫)</label>
+                        <input type="number" class="form-control" value="15000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Per KM (₫)</label>
+                        <input type="number" class="form-control" value="3000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Min Charge (₫)</label>
+                        <input type="number" class="form-control" value="30000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select">
+                            <option selected>Active</option>
+                            <option>Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Update Rate</button>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    let currentPage = 0;
-
-    function loadRates() {
-        fetch(`/api/admin/shipping-rates?page=${currentPage}&size=20`)
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('ratesBody');
-                tbody.innerHTML = '';
-                if (data.content && data.content.length > 0) {
-                    data.content.forEach(rate => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${rate.district}</td>
-                                <td>${rate.city}</td>
-                                <td>${rate.baseRate}</td>
-                                <td>${rate.perKmRate}</td>
-                                <td>${rate.maxDistance}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" onclick="editRate('${rate.rateId}')">Edit</button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteRate('${rate.rateId}')">Delete</button>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No shipping rates found</td></tr>';
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    }
-
-    function openCreateRateModal() {
-        document.getElementById('rateForm').reset();
-        document.getElementById('rateId').value = '';
-        new bootstrap.Modal(document.getElementById('rateModal')).show();
-    }
-
-    function editRate(rateId) {
-        fetch(`/api/admin/shipping-rates/${rateId}`)
-            .then(response => response.json())
-            .then(rate => {
-                document.getElementById('rateId').value = rate.rateId;
-                document.getElementById('district').value = rate.district;
-                document.getElementById('city').value = rate.city;
-                document.getElementById('baseRate').value = rate.baseRate;
-                document.getElementById('perKmRate').value = rate.perKmRate;
-                document.getElementById('maxDistance').value = rate.maxDistance;
-                new bootstrap.Modal(document.getElementById('rateModal')).show();
-            });
-    }
-
-    function saveRate() {
-        const rateId = document.getElementById('rateId').value;
-        const data = {
-            district: document.getElementById('district').value,
-            city: document.getElementById('city').value,
-            baseRate: parseFloat(document.getElementById('baseRate').value),
-            perKmRate: parseFloat(document.getElementById('perKmRate').value),
-            maxDistance: parseFloat(document.getElementById('maxDistance').value)
-        };
-
-        const method = rateId ? 'PUT' : 'POST';
-        const url = rateId ? `/api/admin/shipping-rates/${rateId}` : '/api/admin/shipping-rates';
-
-        fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(() => {
-            bootstrap.Modal.getInstance(document.getElementById('rateModal')).hide();
-            loadRates();
-            alert(rateId ? 'Rate updated' : 'Rate created');
-        })
-        .catch(error => alert('Error: ' + error));
-    }
-
-    function deleteRate(rateId) {
-        if (confirm('Are you sure?')) {
-            fetch(`/api/admin/shipping-rates/${rateId}`, { method: 'DELETE' })
-                .then(() => {
-                    loadRates();
-                    alert('Rate deleted');
-                });
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', loadRates);
-</script>
 </body>
 </html>
 

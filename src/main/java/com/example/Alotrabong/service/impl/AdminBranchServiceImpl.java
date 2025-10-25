@@ -1,11 +1,12 @@
 package com.example.Alotrabong.service.impl;
 
 import com.example.Alotrabong.dto.BranchManagementDTO;
-import com.example.Alotrabong.entity.Branch;
-import com.example.Alotrabong.entity.User;
+import com.example.Alotrabong.entity.*;
 import com.example.Alotrabong.exception.ResourceNotFoundException;
 import com.example.Alotrabong.repository.BranchRepository;
 import com.example.Alotrabong.repository.UserRepository;
+import com.example.Alotrabong.repository.UserRoleRepository;
+import com.example.Alotrabong.repository.RoleRepository;
 import com.example.Alotrabong.service.AdminBranchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,8 @@ public class AdminBranchServiceImpl implements AdminBranchService {
 
     private final BranchRepository branchRepository;
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public Page<BranchManagementDTO> getAllBranches(Pageable pageable, String search) {
@@ -103,6 +108,27 @@ public class AdminBranchServiceImpl implements AdminBranchService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        // Get BRANCH_MANAGER role
+        Role managerRole = roleRepository.findByRoleCode(RoleCode.BRANCH_MANAGER)
+                .orElseThrow(() -> new ResourceNotFoundException("BRANCH_MANAGER role not found"));
+
+        // Check if this branch already has a manager
+        Optional<UserRole> existingManager = userRoleRepository.findManagerByBranchId(branchId, RoleCode.BRANCH_MANAGER);
+        if (existingManager.isPresent()) {
+            // Remove existing manager from this branch
+            userRoleRepository.delete(existingManager.get());
+            log.info("Removed existing manager from branch: {}", branchId);
+        }
+
+        // Assign new manager to this branch
+        UserRole userRole = UserRole.builder()
+                .user(user)
+                .role(managerRole)
+                .branch(branch)
+                .build();
+        userRoleRepository.save(userRole);
+        log.info("Successfully assigned manager {} to branch: {}", userId, branchId);
     }
 
     @Override
@@ -110,6 +136,9 @@ public class AdminBranchServiceImpl implements AdminBranchService {
         log.info("Removing branch manager from branch: {}", branchId);
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found with id: " + branchId));
+
+        userRoleRepository.deleteManagerByBranchId(branchId, RoleCode.BRANCH_MANAGER);
+        log.info("Successfully removed manager from branch: {}", branchId);
     }
 
     @Override
@@ -123,7 +152,7 @@ public class AdminBranchServiceImpl implements AdminBranchService {
     }
 
     private BranchManagementDTO convertToDTO(Branch branch) {
-        return BranchManagementDTO.builder()
+        BranchManagementDTO.BranchManagementDTOBuilder builder = BranchManagementDTO.builder()
                 .branchId(branch.getBranchId())
                 .branchCode(branch.getBranchCode())
                 .name(branch.getName())
@@ -136,8 +165,23 @@ public class AdminBranchServiceImpl implements AdminBranchService {
                 .isActive(branch.getIsActive())
                 .openHours(branch.getOpenHours())
                 .createdAt(branch.getCreatedAt())
-                .updatedAt(branch.getUpdatedAt())
-                .build();
+                .updatedAt(branch.getUpdatedAt());
+
+        // Add manager information if exists
+        Optional<UserRole> managerRole = userRoleRepository.findManagerByBranchId(
+                branch.getBranchId(),
+                RoleCode.BRANCH_MANAGER
+        );
+
+        if (managerRole.isPresent()) {
+            User manager = managerRole.get().getUser();
+            builder.managerId(manager.getUserId())
+                   .managerName(manager.getFullName())
+                   .managerEmail(manager.getEmail())
+                   .managerPhone(manager.getPhone());
+        }
+
+        return builder.build();
     }
 }
 

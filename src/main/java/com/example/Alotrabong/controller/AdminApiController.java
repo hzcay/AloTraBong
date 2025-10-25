@@ -171,7 +171,7 @@ public class AdminApiController {
         return ResponseEntity.ok(branch);
     }
 
-    @PostMapping("/branches/{branchId}/activate")
+    @PutMapping("/branches/{branchId}/activate")
     public ResponseEntity<Map<String, String>> activateBranch(@PathVariable String branchId) {
         log.info("Activating branch: {}", branchId);
         adminBranchService.activateBranch(branchId);
@@ -180,7 +180,7 @@ public class AdminApiController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/branches/{branchId}/deactivate")
+    @PutMapping("/branches/{branchId}/deactivate")
     public ResponseEntity<Map<String, String>> deactivateBranch(@PathVariable String branchId) {
         log.info("Deactivating branch: {}", branchId);
         adminBranchService.deactivateBranch(branchId);
@@ -189,12 +189,11 @@ public class AdminApiController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/branches/{branchId}/manager")
+    @PostMapping("/branches/{branchId}/manager/{userId}")
     public ResponseEntity<Map<String, String>> assignBranchManager(
             @PathVariable String branchId,
-            @RequestBody Map<String, String> request) {
-        log.info("Assigning manager to branch: {}", branchId);
-        String userId = request.get("userId");
+            @PathVariable String userId) {
+        log.info("Assigning manager {} to branch: {}", userId, branchId);
         adminBranchService.assignBranchManager(branchId, userId);
         Map<String, String> response = new HashMap<>();
         response.put("message", "Branch manager assigned successfully");
@@ -217,6 +216,18 @@ public class AdminApiController {
         stats.put("totalBranches", adminBranchService.getTotalBranchesCount());
         stats.put("activeBranches", adminBranchService.getActiveBranchesCount());
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/branches/stats/total")
+    public ResponseEntity<Long> getTotalBranchesCount() {
+        log.info("Fetching total branches count");
+        return ResponseEntity.ok(adminBranchService.getTotalBranchesCount());
+    }
+
+    @GetMapping("/branches/stats/active")
+    public ResponseEntity<Long> getActiveBranchesCount() {
+        log.info("Fetching active branches count");
+        return ResponseEntity.ok(adminBranchService.getActiveBranchesCount());
     }
 
     // ==================== CATEGORY MANAGEMENT ====================

@@ -218,6 +218,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserDTO> getAllManagers() {
+        return userRepository.findAllManagers().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public UserDTO updateUser(String userId, UserDTO userDTO) {

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Branch Management - Admin</title>
+    <title>Quản lý Chi nhánh - Admin</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
@@ -17,46 +17,116 @@
         body {
             background-color: var(--light-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
         }
         .sidebar {
+            width: 250px;
             background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
             min-height: 100vh;
             padding: 0;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
-        .sidebar .nav-link {
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.5);
+            border-radius: 3px;
+        }
+        .sidebar-header {
+            padding: 25px 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+        .sidebar-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        .sidebar-menu .menu-section {
+            margin-bottom: 20px;
+        }
+        .sidebar-menu .menu-title {
+            padding: 10px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sidebar-menu .nav-link {
             color: #ccc;
             padding: 12px 20px;
             border-left: 3px solid transparent;
-            margin: 5px 0;
+            margin: 0;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            text-decoration: none;
         }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
+        .sidebar-menu .nav-link:hover {
             color: var(--primary-color);
             border-left-color: var(--primary-color);
             background-color: rgba(255, 107, 53, 0.1);
         }
-        .sidebar-header {
-            padding: 20px;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            text-align: center;
-        }
-        .sidebar-header h4 {
-            margin: 0;
+        .sidebar-menu .nav-link.active {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.15);
             font-weight: 600;
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #444;
+            position: sticky;
+            bottom: 0;
+            background: rgba(0,0,0,0.2);
+        }
+        .sidebar-footer .nav-link {
+            padding: 10px 15px;
+            margin: 0;
+            border-radius: 5px;
+        }
+        .sidebar-footer .nav-link:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+        .main-content-wrapper {
+            margin-left: 250px;
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--light-color);
         }
         .main-content {
             padding: 30px;
-        }
-        .page-header {
-            margin-bottom: 30px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 15px;
-        }
-        .page-header h1 {
-            color: var(--dark-color);
-            font-weight: 600;
         }
         .card-custom {
             background: white;
@@ -65,12 +135,10 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
-        .branch-card {
-            border-left: 4px solid var(--primary-color);
-            transition: transform 0.3s ease;
-        }
-        .branch-card:hover {
-            transform: translateY(-5px);
+        .page-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
         }
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -83,254 +151,560 @@
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
         }
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        .manager-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
         }
-        .badge-active { background-color: #28a745; }
-        .badge-inactive { background-color: #dc3545; }
     </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar">
-            <div class="sidebar-header">
-                <h4><i class="bi bi-speedometer2"></i> Admin Panel</h4>
-            </div>
-            <nav class="nav flex-column">
-                <a class="nav-link" href="/admin/dashboard"><i class="bi bi-house"></i> Dashboard</a>
-                <a class="nav-link" href="/admin/users"><i class="bi bi-people"></i> Users</a>
-                <a class="nav-link active" href="/admin/branches"><i class="bi bi-building"></i> Branches</a>
-                <a class="nav-link" href="/admin/menu"><i class="bi bi-list-ul"></i> Categories</a>
-                <a class="nav-link" href="/admin/promotions"><i class="bi bi-tag"></i> Promotions</a>
-                <a class="nav-link" href="/admin/shipping"><i class="bi bi-truck"></i> Shipping</a>
-                <a class="nav-link" href="/admin/reports"><i class="bi bi-bar-chart"></i> Reports</a>
-                <a class="nav-link" href="/admin/settings"><i class="bi bi-gear"></i> Settings</a>
-                <hr style="background-color: #444; margin: 20px 0;">
-                <a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
-            </nav>
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="bi bi-speedometer2"></i> AloTraBong Admin</h4>
+            <p>Management System</p>
         </div>
 
-        <!-- Main Content -->
-        <div class="col-md-10 main-content">
-            <div class="page-header">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <h1><i class="bi bi-building"></i> Branch Management</h1>
-                    </div>
-                    <div class="col-auto">
-                        <button class="btn btn-primary" onclick="openCreateBranchModal()">
-                            <i class="bi bi-plus"></i> New Branch
-                        </button>
-                    </div>
+        <nav class="sidebar-menu">
+            <!-- Dashboard Section -->
+            <div class="menu-section">
+                <div class="menu-title">Main</div>
+                <a class="nav-link" href="/admin/dashboard">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+
+            <!-- Management Section -->
+            <div class="menu-section">
+                <div class="menu-title">Management</div>
+                <a class="nav-link" href="/admin/users">
+                    <i class="bi bi-people"></i>
+                    <span>User Management</span>
+                </a>
+                <a class="nav-link active" href="/admin/branches">
+                    <i class="bi bi-building"></i>
+                    <span>Branches</span>
+                </a>
+                <a class="nav-link" href="/admin/menu">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Menu & Categories</span>
+                </a>
+            </div>
+
+            <!-- Business Section -->
+            <div class="menu-section">
+                <div class="menu-title">Business</div>
+                <a class="nav-link" href="/admin/promotions">
+                    <i class="bi bi-tag"></i>
+                    <span>Promotions</span>
+                </a>
+                <a class="nav-link" href="/admin/shipping">
+                    <i class="bi bi-truck"></i>
+                    <span>Shipping Rates</span>
+                </a>
+                <a class="nav-link" href="/admin/orders">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Orders</span>
+                </a>
+            </div>
+
+            <!-- Reports Section -->
+            <div class="menu-section">
+                <div class="menu-title">Analytics</div>
+                <a class="nav-link" href="/admin/reports">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Reports</span>
+                </a>
+                <a class="nav-link" href="/admin/settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a class="nav-link" href="/logout">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content-wrapper">
+
+    <div class="page-header">
+        <h1><i class="bi bi-building"></i> Quản lý Chi nhánh</h1>
+        <p class="text-muted">Tạo, cập nhật, ngừng hoạt động và phân quyền quản lý cho từng chi nhánh</p>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card-custom text-center">
+                <h6 class="text-muted mb-2">Tổng số chi nhánh</h6>
+                <h3 class="text-primary" id="totalBranches">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-custom text-center">
+                <h6 class="text-muted mb-2">Đang hoạt động</h6>
+                <h3 class="text-success" id="activeBranches">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-custom text-center">
+                <h6 class="text-muted mb-2">Ngừng hoạt động</h6>
+                <h3 class="text-danger" id="inactiveBranches">0</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-custom">
+                <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm chi nhánh...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Branches Table Card -->
+    <div class="card-custom">
+        <div class="row align-items-center mb-3">
+            <div class="col">
+                <h5>Danh sách Chi nhánh</h5>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" onclick="openAddBranchModal()">
+                    <i class="bi bi-plus-lg"></i> Thêm Chi nhánh mới
+                </button>
+            </div>
+        </div>
+        <hr>
+
+        <!-- Branches Table -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã CN</th>
+                        <th>Tên Chi nhánh</th>
+                        <th>Địa chỉ</th>
+                        <th>Điện thoại</th>
+                        <th>Quản lý</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="branchesTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                            Đang tải dữ liệu...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination justify-content-center" id="paginationContainer"></ul>
+        </nav>
+    </div>
+
+    <!-- Add/Edit Branch Modal -->
+    <div class="modal fade" id="branchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalTitle">Thêm Chi nhánh mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="branchForm">
+                        <input type="hidden" id="branchId">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Mã chi nhánh <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="branchCode" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tên chi nhánh <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="branchName" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="branchPhone" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Giờ mở cửa</label>
+                                <input type="text" class="form-control" id="openHours" placeholder="08:00 - 22:00">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="branchAddress" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Thành phố <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="branchCity" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Quận/Huyện <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="branchDistrict" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Vĩ độ (Latitude)</label>
+                                <input type="number" class="form-control" id="branchLatitude" step="0.000001">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kinh độ (Longitude)</label>
+                                <input type="number" class="form-control" id="branchLongitude" step="0.000001">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="saveBranchBtn">Lưu</button>
                 </div>
             </div>
-
-            <!-- Branches Grid -->
-            <div class="row" id="branchesContainer">
-                <div class="col-12 text-center py-5">Loading branches...</div>
-            </div>
-
-            <!-- Pagination -->
-            <nav>
-                <ul class="pagination" id="pagination"></ul>
-            </nav>
         </div>
     </div>
-</div>
 
-<!-- Create/Edit Branch Modal -->
-<div class="modal fade" id="branchModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="branchModalTitle">Create Branch</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="branchForm">
-                    <input type="hidden" id="branchId">
+    <!-- Assign Manager Modal -->
+    <div class="modal fade" id="assignManagerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Phân quyền Quản lý Chi nhánh</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="assignBranchId">
                     <div class="mb-3">
-                        <label class="form-label">Branch Code</label>
-                        <input type="text" id="branchCode" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Branch Name</label>
-                        <input type="text" id="branchName" class="form-control" required>
+                        <label class="form-label">Chi nhánh</label>
+                        <input type="text" class="form-control" id="assignBranchName" readonly>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Address</label>
-                        <textarea id="branchAddress" class="form-control" rows="2" required></textarea>
+                        <label class="form-label">Chọn Quản lý <span class="text-danger">*</span></label>
+                        <select class="form-select" id="managerSelect" required>
+                            <option value="">-- Chọn người quản lý --</option>
+                        </select>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">City</label>
-                                <input type="text" id="branchCity" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">District</label>
-                                <input type="text" id="branchDistrict" class="form-control" required>
-                            </div>
-                        </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Mỗi chi nhánh chỉ có 1 quản lý. Nếu chi nhánh đã có quản lý, người mới sẽ thay thế.
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Phone</label>
-                                <input type="tel" id="branchPhone" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Open Hours</label>
-                                <input type="text" id="branchHours" class="form-control" placeholder="e.g., 08:00-22:00">
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveBranch()">Save Branch</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="assignManager()">Phân quyền</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    let currentPage = 0;
-    const itemsPerPage = 12;
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+    <script>
+        let currentPage = 0;
+        let currentSize = 10;
+        let totalPages = 0;
 
-    function loadBranches() {
-        fetch(`/api/admin/branches?page=${currentPage}&size=${itemsPerPage}`)
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('branchesContainer');
-                container.innerHTML = '';
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBranches();
+            loadStatistics();
+            setupEventListeners();
+        });
 
-                if (data.content && data.content.length > 0) {
-                    data.content.forEach(branch => {
-                        const statusBadge = branch.isActive ?
-                            '<span class="badge badge-active">Active</span>' :
-                            '<span class="badge badge-inactive">Inactive</span>';
+        function setupEventListeners() {
+            document.getElementById('saveBranchBtn').addEventListener('click', saveBranch);
+            document.getElementById('searchInput').addEventListener('input', debounce(() => {
+                currentPage = 0;
+                loadBranches();
+            }, 500));
+        }
 
-                        const card = `
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card-custom branch-card">
-                                    <h5>${branch.name}</h5>
-                                    <p class="text-muted">Code: ${branch.branchCode}</p>
-                                    <p><strong>Address:</strong> ${branch.address}</p>
-                                    <p><strong>City:</strong> ${branch.city}</p>
-                                    <p><strong>Phone:</strong> ${branch.phone}</p>
-                                    <p><strong>Hours:</strong> ${branch.openHours || '-'}</p>
-                                    <p>${statusBadge}</p>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-info" onclick="editBranch('${branch.branchId}')">
-                                            <i class="bi bi-pencil"></i> Edit
-                                        </button>
-                                        <button class="btn btn-sm btn-warning" onclick="toggleBranchStatus('${branch.branchId}', ${branch.isActive})">
-                                            <i class="bi ${branch.isActive ? 'bi-pause' : 'bi-play'}"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        container.innerHTML += card;
-                    });
-                    loadPagination(data.totalPages);
-                } else {
-                    container.innerHTML = '<div class="col-12 text-center py-5">No branches found</div>';
+        function loadStatistics() {
+            Promise.all([
+                axios.get('/api/admin/branches/stats/total'),
+                axios.get('/api/admin/branches/stats/active')
+            ]).then(([totalRes, activeRes]) => {
+                const total = totalRes.data;
+                const active = activeRes.data;
+                document.getElementById('totalBranches').textContent = total;
+                document.getElementById('activeBranches').textContent = active;
+                document.getElementById('inactiveBranches').textContent = total - active;
+            }).catch(err => {
+                console.error('Error loading statistics:', err);
+            });
+        }
+
+        function loadBranches() {
+            const searchTerm = document.getElementById('searchInput').value;
+            axios.get('/api/admin/branches', {
+                params: {
+                    page: currentPage,
+                    size: currentSize,
+                    search: searchTerm
                 }
             })
+            .then(response => {
+                const data = response.data;
+                totalPages = data.totalPages;
+                displayBranches(data.content);
+                displayPagination();
+            })
             .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('branchesContainer').innerHTML = '<div class="col-12 text-center py-5 text-danger">Error loading branches</div>';
+                console.error('Error loading branches:', error);
+                showAlert('Lỗi khi tải danh sách chi nhánh', 'danger');
             });
-    }
-
-    function openCreateBranchModal() {
-        document.getElementById('branchForm').reset();
-        document.getElementById('branchId').value = '';
-        document.getElementById('branchModalTitle').textContent = 'Create Branch';
-        new bootstrap.Modal(document.getElementById('branchModal')).show();
-    }
-
-    function editBranch(branchId) {
-        fetch(`/api/admin/branches/${branchId}`)
-            .then(response => response.json())
-            .then(branch => {
-                document.getElementById('branchId').value = branch.branchId;
-                document.getElementById('branchCode').value = branch.branchCode;
-                document.getElementById('branchName').value = branch.name;
-                document.getElementById('branchAddress').value = branch.address;
-                document.getElementById('branchCity').value = branch.city;
-                document.getElementById('branchDistrict').value = branch.district;
-                document.getElementById('branchPhone').value = branch.phone;
-                document.getElementById('branchHours').value = branch.openHours || '';
-                document.getElementById('branchModalTitle').textContent = 'Edit Branch';
-                new bootstrap.Modal(document.getElementById('branchModal')).show();
-            });
-    }
-
-    function saveBranch() {
-        const branchId = document.getElementById('branchId').value;
-        const data = {
-            branchCode: document.getElementById('branchCode').value,
-            name: document.getElementById('branchName').value,
-            address: document.getElementById('branchAddress').value,
-            city: document.getElementById('branchCity').value,
-            district: document.getElementById('branchDistrict').value,
-            phone: document.getElementById('branchPhone').value,
-            openHours: document.getElementById('branchHours').value
-        };
-
-        const method = branchId ? 'PUT' : 'POST';
-        const url = branchId ? `/api/admin/branches/${branchId}` : '/api/admin/branches';
-
-        fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(() => {
-            bootstrap.Modal.getInstance(document.getElementById('branchModal')).hide();
-            loadBranches();
-            alert(branchId ? 'Branch updated' : 'Branch created');
-        })
-        .catch(error => alert('Error: ' + error));
-    }
-
-    function toggleBranchStatus(branchId, isActive) {
-        const endpoint = isActive ? 'deactivate' : 'activate';
-        fetch(`/api/admin/branches/${branchId}/${endpoint}`, { method: 'POST' })
-            .then(() => {
-                loadBranches();
-                alert(isActive ? 'Branch deactivated' : 'Branch activated');
-            });
-    }
-
-    function loadPagination(totalPages) {
-        const pagination = document.getElementById('pagination');
-        pagination.innerHTML = '';
-
-        for (let i = 0; i < totalPages; i++) {
-            const li = document.createElement('li');
-            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
-            li.innerHTML = `<a class="page-link" href="#" onclick="event.preventDefault(); currentPage=${i}; loadBranches()">${i + 1}</a>`;
-            pagination.appendChild(li);
         }
-    }
 
-    document.addEventListener('DOMContentLoaded', loadBranches);
-</script>
+        function displayBranches(branches) {
+            const tbody = document.getElementById('branchesTableBody');
+            if (branches.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Không tìm thấy chi nhánh</td></tr>';
+                return;
+            }
+            tbody.innerHTML = branches.map(branch => `
+                <tr>
+                    <td><strong>${branch.branchCode}</strong></td>
+                    <td>${branch.name}</td>
+                    <td>${branch.address}<br><small class="text-muted">${branch.district}, ${branch.city}</small></td>
+                    <td>${branch.phone}</td>
+                    <td>
+                        ${branch.managerId ?
+                            `<div class="manager-info">
+                                <i class="bi bi-person-badge"></i> ${branch.managerName}<br>
+                                <small>${branch.managerEmail}</small>
+                            </div>`
+                            : '<span class="text-muted"><i>Chưa phân quyền</i></span>'
+                        }
+                    </td>
+                    <td>
+                        <span class="badge ${branch.isActive ? 'bg-success' : 'bg-danger'}">
+                            ${branch.isActive ? 'Hoạt động' : 'Ngừng'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-warning" onclick="editBranch('${branch.branchId}')" title="Sửa">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-info" onclick="openAssignManagerModal('${branch.branchId}', '${branch.name}')" title="Phân quyền">
+                                <i class="bi bi-person-badge"></i>
+                            </button>
+                            ${branch.managerId ?
+                                `<button class="btn btn-outline-danger" onclick="removeManager('${branch.branchId}')" title="Xóa quản lý">
+                                    <i class="bi bi-person-x"></i>
+                                </button>` : ''
+                            }
+                            ${branch.isActive ?
+                                `<button class="btn btn-outline-danger" onclick="toggleBranchStatus('${branch.branchId}', false)" title="Ngừng hoạt động">
+                                    <i class="bi bi-pause-circle"></i>
+                                </button>` :
+                                `<button class="btn btn-outline-success" onclick="toggleBranchStatus('${branch.branchId}', true)" title="Kích hoạt">
+                                    <i class="bi bi-play-circle"></i>
+                                </button>`
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function displayPagination() {
+            const container = document.getElementById('paginationContainer');
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            let html = '';
+            for (let i = 0; i < totalPages; i++) {
+                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i + 1}</a>
+                </li>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            loadBranches();
+        }
+
+        function openAddBranchModal() {
+            document.getElementById('branchForm').reset();
+            document.getElementById('branchId').value = '';
+            document.getElementById('modalTitle').textContent = 'Thêm Chi nhánh mới';
+            new bootstrap.Modal(document.getElementById('branchModal')).show();
+        }
+
+        function editBranch(branchId) {
+            axios.get(`/api/admin/branches/${branchId}`)
+                .then(response => {
+                    const branch = response.data;
+                    document.getElementById('branchId').value = branch.branchId;
+                    document.getElementById('branchCode').value = branch.branchCode;
+                    document.getElementById('branchName').value = branch.name;
+                    document.getElementById('branchPhone').value = branch.phone;
+                    document.getElementById('openHours').value = branch.openHours || '';
+                    document.getElementById('branchAddress').value = branch.address;
+                    document.getElementById('branchCity').value = branch.city;
+                    document.getElementById('branchDistrict').value = branch.district;
+                    document.getElementById('branchLatitude').value = branch.latitude || '';
+                    document.getElementById('branchLongitude').value = branch.longitude || '';
+                    document.getElementById('modalTitle').textContent = 'Cập nhật Chi nhánh';
+                    new bootstrap.Modal(document.getElementById('branchModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error loading branch:', error);
+                    showAlert('Lỗi khi tải thông tin chi nhánh', 'danger');
+                });
+        }
+
+        function saveBranch() {
+            const branchId = document.getElementById('branchId').value;
+            const data = {
+                branchCode: document.getElementById('branchCode').value,
+                name: document.getElementById('branchName').value,
+                phone: document.getElementById('branchPhone').value,
+                openHours: document.getElementById('openHours').value,
+                address: document.getElementById('branchAddress').value,
+                city: document.getElementById('branchCity').value,
+                district: document.getElementById('branchDistrict').value,
+                latitude: document.getElementById('branchLatitude').value || null,
+                longitude: document.getElementById('branchLongitude').value || null
+            };
+            const request = branchId
+                ? axios.put(`/api/admin/branches/${branchId}`, data)
+                : axios.post('/api/admin/branches', data);
+            request
+                .then(response => {
+                    showAlert(branchId ? 'Cập nhật chi nhánh thành công' : 'Thêm chi nhánh thành công', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('branchModal')).hide();
+                    loadBranches();
+                    loadStatistics();
+                })
+                .catch(error => {
+                    console.error('Error saving branch:', error);
+                    showAlert(error.response?.data?.message || 'Lỗi khi lưu chi nhánh', 'danger');
+                });
+        }
+
+        function toggleBranchStatus(branchId, activate) {
+            const url = activate
+                ? `/api/admin/branches/${branchId}/activate`
+                : `/api/admin/branches/${branchId}/deactivate`;
+            axios.put(url)
+                .then(response => {
+                    showAlert(activate ? 'Kích hoạt chi nhánh thành công' : 'Ngừng hoạt động chi nhánh thành công', 'success');
+                    loadBranches();
+                    loadStatistics();
+                })
+                .catch(error => {
+                    console.error('Error toggling branch status:', error);
+                    showAlert('Lỗi khi thay đổi trạng thái chi nhánh', 'danger');
+                });
+        }
+
+        function openAssignManagerModal(branchId, branchName) {
+            document.getElementById('assignBranchId').value = branchId;
+            document.getElementById('assignBranchName').value = branchName;
+
+            // Gọi API lấy danh sách users có role BRANCH_MANAGER
+            axios.get('/api/admin/users/role/BRANCH_MANAGER')
+            .then(response => {
+                const users = response.data;
+                const select = document.getElementById('managerSelect');
+                select.innerHTML = '<option value="">-- Chọn người quản lý --</option>';
+
+                if (users && users.length > 0) {
+                    users.forEach(user => {
+                        select.innerHTML += `<option value="${user.userId}">${user.fullName} (${user.email})</option>`;
+                    });
+                } else {
+                    select.innerHTML += '<option value="" disabled>Không có manager nào</option>';
+                }
+
+                new bootstrap.Modal(document.getElementById('assignManagerModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading managers:', error);
+                showAlert('Lỗi khi tải danh sách quản lý', 'danger');
+            });
+        }
+
+        function assignManager() {
+            const branchId = document.getElementById('assignBranchId').value;
+            const userId = document.getElementById('managerSelect').value;
+            if (!userId) {
+                showAlert('Vui lòng chọn người quản lý', 'warning');
+                return;
+            }
+            axios.post(`/api/admin/branches/${branchId}/manager/${userId}`)
+                .then(response => {
+                    showAlert('Phân quyền quản lý chi nhánh thành công', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('assignManagerModal')).hide();
+                    loadBranches();
+                })
+                .catch(error => {
+                    console.error('Error assigning manager:', error);
+                    showAlert(error.response?.data?.message || 'Lỗi khi phân quyền', 'danger');
+                });
+        }
+
+        function removeManager(branchId) {
+            if (!confirm('Bạn có chắc muốn xóa quyền quản lý của chi nhánh này?')) return;
+            axios.delete(`/api/admin/branches/${branchId}/manager`)
+                .then(response => {
+                    showAlert('Đã xóa quyền quản lý chi nhánh', 'success');
+                    loadBranches();
+                })
+                .catch(error => {
+                    console.error('Error removing manager:', error);
+                    showAlert('Lỗi khi xóa quyền quản lý', 'danger');
+                });
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+
+    </div>
+    <!-- End Main Content Wrapper -->
+</div>
+<!-- End Admin Wrapper -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 
