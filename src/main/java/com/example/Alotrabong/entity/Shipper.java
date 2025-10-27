@@ -16,14 +16,13 @@ public class Shipper extends Auditable {
     @Column(name = "shipper_id", length = 36)
     private String shipperId;
 
-    @Column(name = "name", length = 120)
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    @Column(name = "phone", length = 20)
-    private String phone;
-
-    @Column(name = "email", length = 190)
-    private String email;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
 
     @Column(name = "vehicle_plate", length = 20)
     private String vehiclePlate;

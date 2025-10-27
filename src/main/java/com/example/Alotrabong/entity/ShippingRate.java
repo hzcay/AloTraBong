@@ -31,4 +31,7 @@ public class ShippingRate extends Auditable {
 
     @Column(name = "free_ship_threshold", precision = 12, scale = 2)
     private BigDecimal freeShipThreshold;
+
+    @Column(name = "is_active")
+    private Boolean isActive;
 }

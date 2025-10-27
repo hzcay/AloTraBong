@@ -1,7 +1,6 @@
 package com.example.Alotrabong.dto;
 
 import lombok.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -9,19 +8,22 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ShippingRateDTO {
-    private Integer rateId;
+public class ShipperDTO {
+    private String shipperId;
+    private String userId;
+    private String userName;
+    private String userEmail;
+    private String userPhone;
     private String branchId;
     private String branchName;
-    private BigDecimal baseFee;
-    private BigDecimal perKmFee;
-    private BigDecimal freeShipThreshold;
+    private String vehiclePlate;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
     // Additional fields for display
-    private String branchAddress;
-    private String branchPhone;
-    private Boolean branchIsActive;
+    private Integer totalShipments;
+    private Integer completedShipments;
+    private Integer activeShipments;
+    private Double averageRating;
 }

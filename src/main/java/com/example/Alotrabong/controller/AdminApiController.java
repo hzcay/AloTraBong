@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -230,6 +231,20 @@ public class AdminApiController {
         return ResponseEntity.ok(adminBranchService.getActiveBranchesCount());
     }
 
+    @GetMapping("/branches/all")
+    public ResponseEntity<List<BranchManagementDTO>> getAllBranchesForDropdown() {
+        log.info("Fetching all branches for dropdown");
+        List<BranchManagementDTO> branches = adminBranchService.getAllBranchesForDropdown();
+        return ResponseEntity.ok(branches);
+    }
+
+    @GetMapping("/users/shippers")
+    public ResponseEntity<List<UserManagementDTO>> getShipperUsers() {
+        log.info("Fetching users with SHIPPER role");
+        List<UserManagementDTO> users = adminUserService.getUsersByRole("SHIPPER");
+        return ResponseEntity.ok(users);
+    }
+
     // ==================== CATEGORY MANAGEMENT ====================
 
     @GetMapping("/categories")
@@ -365,7 +380,7 @@ public class AdminApiController {
     }
 
     @GetMapping("/shipping-rates/{rateId}")
-    public ResponseEntity<ShippingRateDTO> getShippingRateById(@PathVariable String rateId) {
+    public ResponseEntity<ShippingRateDTO> getShippingRateById(@PathVariable Integer rateId) {
         log.info("Fetching shipping rate by id: {}", rateId);
         ShippingRateDTO rate = adminShippingService.getShippingRateById(rateId);
         return ResponseEntity.ok(rate);
@@ -380,7 +395,7 @@ public class AdminApiController {
 
     @PutMapping("/shipping-rates/{rateId}")
     public ResponseEntity<ShippingRateDTO> updateShippingRate(
-            @PathVariable String rateId,
+            @PathVariable Integer rateId,
             @RequestBody ShippingRateDTO dto) {
         log.info("Updating shipping rate: {}", rateId);
         ShippingRateDTO rate = adminShippingService.updateShippingRate(rateId, dto);
@@ -388,7 +403,7 @@ public class AdminApiController {
     }
 
     @DeleteMapping("/shipping-rates/{rateId}")
-    public ResponseEntity<Map<String, String>> deleteShippingRate(@PathVariable String rateId) {
+    public ResponseEntity<Map<String, String>> deleteShippingRate(@PathVariable Integer rateId) {
         log.info("Deleting shipping rate: {}", rateId);
         adminShippingService.deleteShippingRate(rateId);
         Map<String, String> response = new HashMap<>();
@@ -396,11 +411,6 @@ public class AdminApiController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/shipping-rates/active")
-    public ResponseEntity<?> getActiveShippingRates() {
-        log.info("Fetching all active shipping rates");
-        return ResponseEntity.ok(adminShippingService.getAllActiveShippingRates());
-    }
 
     // ==================== REPORTS & STATISTICS ====================
 

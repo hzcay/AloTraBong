@@ -34,7 +34,7 @@ public class ShipperServiceImpl implements ShipperService {
 
     @Override
     public Shipper createShipper(Shipper shipper) {
-        log.info("Creating shipper: {}", shipper.getName());
+        log.info("Creating shipper for user: {}", shipper.getUser().getUserId());
         Shipper savedShipper = shipperRepository.save(shipper);
         log.info("Shipper created successfully: {}", savedShipper.getShipperId());
         return savedShipper;
@@ -46,9 +46,9 @@ public class ShipperServiceImpl implements ShipperService {
         Shipper existingShipper = shipperRepository.findById(shipperId)
                 .orElseThrow(() -> new ResourceNotFoundException("Shipper not found"));
         
-        existingShipper.setName(shipper.getName());
-        existingShipper.setPhone(shipper.getPhone());
-        existingShipper.setEmail(shipper.getEmail());
+        existingShipper.setUser(shipper.getUser());
+        existingShipper.setBranch(shipper.getBranch());
+        existingShipper.setVehiclePlate(shipper.getVehiclePlate());
         existingShipper.setIsActive(shipper.getIsActive());
         
         existingShipper = shipperRepository.save(existingShipper);

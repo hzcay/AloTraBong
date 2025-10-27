@@ -22,9 +22,8 @@ public class ShipmentEvent {
     @JoinColumn(name = "shipment_id")
     private Shipment shipment;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private ShipmentStatus status;
+    @Column(name = "status", columnDefinition = "TINYINT")
+    private Integer status; // Mốc trạng thái
 
     @Column(name = "note", length = 200)
     private String note;

@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -197,6 +199,16 @@ public class AdminBranchServiceImpl implements AdminBranchService {
         }
 
         return builder.build();
+    }
+
+    @Override
+    public List<BranchManagementDTO> getAllBranchesForDropdown() {
+        log.info("Fetching all branches for dropdown");
+        List<Branch> branches = branchRepository.findAll();
+        return branches.stream()
+                .filter(branch -> Boolean.TRUE.equals(branch.getIsActive()))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }
 

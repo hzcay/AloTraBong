@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shipping Rates - Admin</title>
+    <title>Quản lý Vận chuyển - Admin</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
@@ -14,14 +14,20 @@
             --dark-color: #1a1a1a;
             --light-color: #f5f5f5;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: var(--light-color); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .admin-wrapper { display: flex; min-height: 100vh; }
+        body {
+            background-color: var(--light-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
         .sidebar {
             width: 250px;
             background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
             min-height: 100vh;
-            padding: 0;
             position: fixed;
             left: 0;
             top: 0;
@@ -29,9 +35,16 @@
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             z-index: 1000;
         }
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
-        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 107, 53, 0.5); border-radius: 3px; }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.5);
+            border-radius: 3px;
+        }
         .sidebar-header {
             padding: 25px 20px;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -42,10 +55,22 @@
             top: 0;
             z-index: 1001;
         }
-        .sidebar-header h4 { font-size: 18px; font-weight: 600; margin: 0; }
-        .sidebar-header p { font-size: 12px; margin: 5px 0 0 0; opacity: 0.9; }
-        .sidebar-menu { padding: 20px 0; }
-        .sidebar-menu .menu-section { margin-bottom: 20px; }
+        .sidebar-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        .sidebar-menu .menu-section {
+            margin-bottom: 20px;
+        }
         .sidebar-menu .menu-title {
             padding: 10px 20px;
             font-size: 12px;
@@ -84,12 +109,33 @@
             bottom: 0;
             background: rgba(0,0,0,0.2);
         }
-        .sidebar-footer .nav-link { padding: 10px 15px; margin: 0; border-radius: 5px; }
-        .sidebar-footer .nav-link:hover { background-color: rgba(220, 53, 69, 0.2); color: #ff6b6b; }
-        .main-content-wrapper { margin-left: 250px; flex: 1; overflow-y: auto; background-color: var(--light-color); }
-        .main-content { padding: 30px; }
-        .page-header { margin-bottom: 30px; border-bottom: 2px solid var(--primary-color); padding-bottom: 15px; }
-        .page-header h1 { color: var(--dark-color); font-weight: 600; }
+        .sidebar-footer .nav-link {
+            padding: 10px 15px;
+            margin: 0;
+            border-radius: 5px;
+        }
+        .sidebar-footer .nav-link:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+        .main-content-wrapper {
+            margin-left: 250px;
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--light-color);
+        }
+        .main-content {
+            padding: 30px;
+        }
+        .page-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+        .page-header h1 {
+            color: var(--dark-color);
+            font-weight: 600;
+        }
         .card-custom {
             background: white;
             border-radius: 10px;
@@ -104,27 +150,21 @@
         .btn-primary:hover {
             background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
         }
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
         }
-        .table-hover tbody tr:hover {
-            background-color: rgba(255, 107, 53, 0.1);
-        }
-        .badge-active { background-color: #28a745; }
-        .badge-inactive { background-color: #6c757d; }
-        .modal-content { border-radius: 10px; }
-        .modal-header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; }
-        .modal-title { font-weight: 600; }
     </style>
 </head>
 <body>
 <div class="admin-wrapper">
+    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
             <h4><i class="bi bi-speedometer2"></i> AloTraBong Admin</h4>
             <p>Management System</p>
         </div>
+
         <nav class="sidebar-menu">
             <div class="menu-section">
                 <div class="menu-title">Main</div>
@@ -133,6 +173,7 @@
                     <span>Dashboard</span>
                 </a>
             </div>
+
             <div class="menu-section">
                 <div class="menu-title">Management</div>
                 <a class="nav-link" href="/admin/users">
@@ -148,11 +189,12 @@
                     <span>Menu & Categories</span>
                 </a>
             </div>
+
             <div class="menu-section">
                 <div class="menu-title">Business</div>
                 <a class="nav-link" href="/admin/promotions">
-                    <i class="bi bi-tag"></i>
-                    <span>Promotions</span>
+                    <i class="bi bi-ticket-perforated"></i>
+                    <span>Coupons</span>
                 </a>
                 <a class="nav-link active" href="/admin/shipping">
                     <i class="bi bi-truck"></i>
@@ -163,6 +205,7 @@
                     <span>Orders</span>
                 </a>
             </div>
+
             <div class="menu-section">
                 <div class="menu-title">Analytics</div>
                 <a class="nav-link" href="/admin/reports">
@@ -175,6 +218,7 @@
                 </a>
             </div>
         </nav>
+
         <div class="sidebar-footer">
             <a class="nav-link" href="/logout">
                 <i class="bi bi-box-arrow-right"></i>
@@ -186,179 +230,674 @@
     <div class="main-content-wrapper">
         <div class="main-content">
             <div class="page-header">
-                <h1><i class="bi bi-truck"></i> Shipping Rates Management</h1>
+                <h1><i class="bi bi-truck"></i> Quản lý Vận chuyển</h1>
+                <p class="text-muted">Quản lý thông tin đơn vị vận chuyển, phí ship theo khu vực</p>
             </div>
 
-            <!-- Filter and Search Section -->
-            <div class="card-custom">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Search by City</label>
-                        <input type="text" class="form-control" placeholder="Enter city name">
+            <!-- Statistics Row -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card-custom text-center">
+                        <h6 class="text-muted mb-2">Tổng Phí Ship</h6>
+                        <h3 class="text-primary" id="totalShippingRates">0</h3>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Search by District</label>
-                        <input type="text" class="form-control" placeholder="Enter district name">
+                </div>
+                <div class="col-md-3">
+                    <div class="card-custom text-center">
+                        <h6 class="text-muted mb-2">Đang Hoạt động</h6>
+                        <h3 class="text-success" id="activeShippingRates">0</h3>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Status</label>
-                        <select class="form-select">
-                            <option selected>All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-custom text-center">
+                        <h6 class="text-muted mb-2">Tổng Shipper</h6>
+                        <h3 class="text-info" id="totalShippers">0</h3>
                     </div>
-                    <div class="col-12">
-                        <button class="btn btn-primary">
-                            <i class="bi bi-search"></i> Search
-                        </button>
-                        <button class="btn btn-secondary">
-                            <i class="bi bi-arrow-clockwise"></i> Reset
-                        </button>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-custom text-center">
+                        <h6 class="text-muted mb-2">Shipper Hoạt động</h6>
+                        <h3 class="text-warning" id="activeShippers">0</h3>
                     </div>
                 </div>
             </div>
 
-            <!-- Add New Shipping Rate Button -->
+            <!-- Tabs Navigation -->
+            <div class="card-custom mb-4">
+                <ul class="nav nav-tabs" id="shippingTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="rates-tab" data-bs-toggle="tab" data-bs-target="#rates-content" type="button" role="tab">
+                            <i class="bi bi-currency-dollar"></i> Phí Ship
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="shippers-tab" data-bs-toggle="tab" data-bs-target="#shippers-content" type="button" role="tab">
+                            <i class="bi bi-person-badge"></i> Shipper
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-content" id="shippingTabsContent">
+                <!-- Shipping Rates Tab -->
+                <div class="tab-pane fade show active" id="rates-content" role="tabpanel">
             <div class="card-custom">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Shipping Rates</h5>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addShippingModal">
-                        <i class="bi bi-plus-lg"></i> Add New Rate
+                        <div class="row align-items-center mb-3">
+                            <div class="col">
+                                <h5>Danh sách Phí Ship theo Chi nhánh</h5>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary" onclick="openAddRateModal()">
+                                    <i class="bi bi-plus-lg"></i> Thêm Phí Ship
                     </button>
+                            </div>
+                        </div>
+                        <hr>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Chi nhánh</th>
+                                        <th>Phí cơ bản</th>
+                                        <th>Phí/km</th>
+                                        <th>Miễn phí từ</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ratesTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <div class="spinner-border spinner-border-sm"></div> Đang tải...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shippers Tab -->
+                <div class="tab-pane fade" id="shippers-content" role="tabpanel">
+                    <div class="card-custom">
+                        <div class="row align-items-center mb-3">
+                            <div class="col">
+                                <h5>Danh sách Shipper</h5>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary" onclick="openAddShipperModal()">
+                                    <i class="bi bi-plus-lg"></i> Thêm Shipper
+                                </button>
+                            </div>
                 </div>
                 <hr>
+
                 <div class="table-responsive">
                     <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>City</th>
-                                <th>District</th>
-                                <th>Base Rate (₫)</th>
-                                <th>Per KM (₫)</th>
-                                <th>Min Charge (₫)</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tên</th>
+                                        <th>Email</th>
+                                        <th>Số điện thoại</th>
+                                        <th>Chi nhánh</th>
+                                        <th>Biển số xe</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
                             </tr>
                         </thead>
-
+                                <tbody id="shippersTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <div class="spinner-border spinner-border-sm"></div> Đang tải...
+                                        </td>
+                                    </tr>
+                                </tbody>
                     </table>
+                        </div>
+                    </div>
                 </div>
-                <!-- Pagination -->
-                <nav aria-label="Page navigation" class="mt-3">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1">Previous</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Next</a>
-                        </li>
-                    </ul>
-                </nav>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Add Shipping Rate Modal -->
-<div class="modal fade" id="addShippingModal" tabindex="-1">
+<!-- Add/Edit Shipping Rate Modal -->
+<div class="modal fade" id="rateModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add New Shipping Rate</h5>
+                <h5 class="modal-title" id="rateModalTitle">Thêm Phí Ship</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form id="rateForm">
+                    <input type="hidden" id="rateId">
+                    
                     <div class="mb-3">
-                        <label class="form-label">City</label>
-                        <input type="text" class="form-control" placeholder="Enter city name">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">District</label>
-                        <input type="text" class="form-control" placeholder="Enter district name">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Base Rate (₫)</label>
-                        <input type="number" class="form-control" placeholder="Enter base rate">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Per KM (₫)</label>
-                        <input type="number" class="form-control" placeholder="Enter rate per KM">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Min Charge (₫)</label>
-                        <input type="number" class="form-control" placeholder="Enter minimum charge">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select class="form-select">
-                            <option selected>Active</option>
-                            <option>Inactive</option>
+                        <label class="form-label">Chi nhánh <span class="text-danger">*</span></label>
+                        <select class="form-select" id="branchId" required>
+                            <option value="">-- Chọn chi nhánh --</option>
                         </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                    <div class="mb-3">
+                                <label class="form-label">Phí cơ bản (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="baseFee" required step="1000" placeholder="0">
+                            </div>
+                    </div>
+                        <div class="col-md-6">
+                    <div class="mb-3">
+                                <label class="form-label">Phí/km (VNĐ)</label>
+                                <input type="number" class="form-control" id="perKmFee" step="1000" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Miễn phí ship từ (VNĐ)</label>
+                        <input type="number" class="form-control" id="freeShipThreshold" step="1000" placeholder="0">
+                        <div class="form-text">Đơn hàng từ số tiền này trở lên sẽ được miễn phí ship</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rateActive" checked>
+                            <label class="form-check-label" for="rateActive">
+                                Kích hoạt ngay
+                            </label>
+                    </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Add Rate</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveRateBtn">Lưu</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Shipping Rate Modal -->
-<div class="modal fade" id="editShippingModal" tabindex="-1">
+<!-- Add/Edit Shipper Modal -->
+<div class="modal fade" id="shipperModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Shipping Rate</h5>
+                <h5 class="modal-title" id="shipperModalTitle">Thêm Shipper</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form id="shipperForm">
+                    <input type="hidden" id="shipperId">
+                    
                     <div class="mb-3">
-                        <label class="form-label">City</label>
-                        <input type="text" class="form-control" value="Hà Nội">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">District</label>
-                        <input type="text" class="form-control" value="Hoàn Kiếm">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Base Rate (₫)</label>
-                        <input type="number" class="form-control" value="15000">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Per KM (₫)</label>
-                        <input type="number" class="form-control" value="3000">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Min Charge (₫)</label>
-                        <input type="number" class="form-control" value="30000">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select class="form-select">
-                            <option selected>Active</option>
-                            <option>Inactive</option>
+                        <label class="form-label">Người dùng <span class="text-danger">*</span></label>
+                        <select class="form-select" id="userId" required>
+                            <option value="">-- Chọn người dùng --</option>
                         </select>
+                        <div class="form-text">Chọn người dùng để làm shipper</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Chi nhánh <span class="text-danger">*</span></label>
+                        <select class="form-select" id="shipperBranchId" required>
+                            <option value="">-- Chọn chi nhánh --</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Biển số xe</label>
+                        <input type="text" class="form-control" id="vehiclePlate" placeholder="29A-12345">
+                        <div class="form-text">Tùy chọn - để trống nếu không có</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="shipperActive" checked>
+                            <label class="form-check-label" for="shipperActive">
+                                Kích hoạt ngay
+                            </label>
+                    </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Update Rate</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveShipperBtn">Lưu</button>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadShippingRates();
+        loadShippers();
+        loadStatistics();
+        setupEventListeners();
+    });
+
+    function setupEventListeners() {
+        document.getElementById('saveRateBtn').addEventListener('click', saveRate);
+        document.getElementById('saveShipperBtn').addEventListener('click', saveShipper);
+        
+        // Load branches for rate modal
+        const rateTab = document.getElementById('rates-tab');
+        if (rateTab) {
+            rateTab.addEventListener('shown.bs.tab', function() {
+                loadBranchesForRate();
+            });
+        }
+    }
+
+    function loadStatistics() {
+        axios.get('/api/admin/shipping/statistics')
+            .then(response => {
+                const stats = response.data;
+                document.getElementById('totalShippingRates').textContent = stats.totalShippingRates || 0;
+                document.getElementById('activeShippingRates').textContent = stats.activeShippingRates || 0;
+                document.getElementById('totalShippers').textContent = stats.totalShippers || 0;
+                document.getElementById('activeShippers').textContent = stats.activeShippers || 0;
+            })
+            .catch(err => {
+                console.error('Error loading shipping statistics:', err);
+            });
+    }
+
+    // ===== SHIPPING RATES FUNCTIONS =====
+
+    function loadShippingRates() {
+        axios.get('/api/admin/shipping/rates')
+            .then(response => {
+                const rates = response.data || [];
+                displayShippingRates(rates);
+            })
+            .catch(error => {
+                console.error('Error loading shipping rates:', error);
+                showAlert('Lỗi khi tải danh sách phí ship', 'danger');
+            });
+    }
+
+    function displayShippingRates(rates) {
+        const tbody = document.getElementById('ratesTableBody');
+
+        if (!rates || rates.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có phí ship nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = rates.map(rate => {
+            const statusBadge = rate.isActive 
+                ? '<span class="badge bg-success">Hoạt động</span>'
+                : '<span class="badge bg-secondary">Ngừng</span>';
+
+            return `
+                <tr>
+                    <td><strong>${rate.branchName}</strong><br><small class="text-muted">${rate.branchAddress}</small></td>
+                    <td>${(rate.baseFee || 0).toLocaleString('vi-VN')} ₫</td>
+                    <td>${(rate.perKmFee || 0).toLocaleString('vi-VN')} ₫</td>
+                    <td>${rate.freeShipThreshold ? (rate.freeShipThreshold).toLocaleString('vi-VN') + ' ₫' : 'Không có'}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="editRate(${rate.rateId})" title="Sửa">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-${rate.isActive ? 'warning' : 'success'}" 
+                                    onclick="toggleRateStatus(${rate.rateId}, ${rate.isActive})" 
+                                    title="${rate.isActive ? 'Tạm dừng' : 'Kích hoạt'}">
+                                <i class="bi bi-${rate.isActive ? 'pause' : 'play'}"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deleteRate(${rate.rateId})" title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function openAddRateModal() {
+        document.getElementById('rateForm').reset();
+        document.getElementById('rateId').value = '';
+        document.getElementById('rateActive').checked = true;
+        document.getElementById('rateModalTitle').textContent = 'Thêm Phí Ship';
+        loadBranchesForRate();
+        new bootstrap.Modal(document.getElementById('rateModal')).show();
+    }
+
+    function loadBranchesForRate() {
+        axios.get('/api/admin/branches/all')
+            .then(response => {
+                const branches = response.data || [];
+                const select = document.getElementById('branchId');
+                select.innerHTML = '<option value="">-- Chọn chi nhánh --</option>';
+                branches.forEach(branch => {
+                    select.innerHTML += `<option value="${branch.branchId}">${branch.name}</option>`;
+                });
+            })
+            .catch(error => console.error('Error loading branches:', error));
+    }
+
+    function editRate(rateId) {
+        axios.get(`/api/admin/shipping/rates/${rateId}`)
+            .then(response => {
+                const rate = response.data;
+                document.getElementById('rateId').value = rate.rateId;
+                document.getElementById('baseFee').value = rate.baseFee || 0;
+                document.getElementById('perKmFee').value = rate.perKmFee || 0;
+                document.getElementById('freeShipThreshold').value = rate.freeShipThreshold || 0;
+                document.getElementById('rateActive').checked = rate.isActive;
+                document.getElementById('rateModalTitle').textContent = 'Sửa Phí Ship';
+                
+                loadBranchesForRate();
+                setTimeout(() => {
+                    document.getElementById('branchId').value = rate.branchId;
+                }, 100);
+                
+                new bootstrap.Modal(document.getElementById('rateModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading rate:', error);
+                showAlert('Lỗi khi tải thông tin phí ship', 'danger');
+            });
+    }
+
+    function saveRate() {
+        const rateId = document.getElementById('rateId').value;
+        const data = {
+            branchId: document.getElementById('branchId').value,
+            baseFee: parseFloat(document.getElementById('baseFee').value) || 0,
+            perKmFee: parseFloat(document.getElementById('perKmFee').value) || 0,
+            freeShipThreshold: parseFloat(document.getElementById('freeShipThreshold').value) || null,
+            isActive: document.getElementById('rateActive').checked
+        };
+
+        if (!data.branchId || !data.baseFee) {
+            showAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
+            return;
+        }
+
+        const request = rateId
+            ? axios.put(`/api/admin/shipping/rates/${rateId}`, data)
+            : axios.post('/api/admin/shipping/rates', data);
+
+        request
+            .then(response => {
+                showAlert(rateId ? 'Cập nhật phí ship thành công' : 'Thêm phí ship thành công', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('rateModal')).hide();
+                loadShippingRates();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error saving rate:', error);
+                showAlert(error.response?.data?.message || 'Lỗi khi lưu phí ship', 'danger');
+            });
+    }
+
+    function deleteRate(rateId) {
+        if (!confirm('Bạn có chắc muốn xóa phí ship này?')) return;
+
+        axios.delete(`/api/admin/shipping/rates/${rateId}`)
+            .then(response => {
+                showAlert('Xóa phí ship thành công', 'success');
+                loadShippingRates();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error deleting rate:', error);
+                showAlert('Lỗi khi xóa phí ship', 'danger');
+            });
+    }
+
+    function toggleRateStatus(rateId, isActive) {
+        const action = isActive ? 'deactivate' : 'activate';
+        const endpoint = `/api/admin/shipping/rates/${rateId}/${action}`;
+        
+        axios.post(endpoint)
+            .then(response => {
+                showAlert(`${isActive ? 'Tạm dừng' : 'Kích hoạt'} phí ship thành công`, 'success');
+                loadShippingRates();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error toggling rate status:', error);
+                showAlert('Lỗi khi thay đổi trạng thái phí ship', 'danger');
+            });
+    }
+
+    // ===== SHIPPER FUNCTIONS =====
+
+    function loadShippers() {
+        axios.get('/api/admin/shipping/shippers')
+            .then(response => {
+                const shippers = response.data || [];
+                displayShippers(shippers);
+            })
+            .catch(error => {
+                console.error('Error loading shippers:', error);
+                showAlert('Lỗi khi tải danh sách shipper', 'danger');
+            });
+    }
+
+    function displayShippers(shippers) {
+        const tbody = document.getElementById('shippersTableBody');
+
+        if (!shippers || shippers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có shipper nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = shippers.map(shipper => {
+            const statusBadge = shipper.isActive 
+                ? '<span class="badge bg-success">Hoạt động</span>'
+                : '<span class="badge bg-secondary">Ngừng</span>';
+
+            return `
+                <tr>
+                    <td><strong>${shipper.userName}</strong></td>
+                    <td>${shipper.userEmail}</td>
+                    <td>${shipper.userPhone}</td>
+                    <td><span class="badge bg-info">${shipper.branchName}</span></td>
+                    <td>${shipper.vehiclePlate || '<i class="text-muted">Không có</i>'}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="editShipper('${shipper.shipperId}')" title="Sửa">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-${shipper.isActive ? 'warning' : 'success'}" 
+                                    onclick="toggleShipperStatus('${shipper.shipperId}', ${shipper.isActive})" 
+                                    title="${shipper.isActive ? 'Tạm dừng' : 'Kích hoạt'}">
+                                <i class="bi bi-${shipper.isActive ? 'pause' : 'play'}"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deleteShipper('${shipper.shipperId}')" title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function openAddShipperModal() {
+        document.getElementById('shipperForm').reset();
+        document.getElementById('shipperId').value = '';
+        document.getElementById('shipperActive').checked = true;
+        document.getElementById('shipperModalTitle').textContent = 'Thêm Shipper';
+        
+        // Show modal first
+        const modal = new bootstrap.Modal(document.getElementById('shipperModal'));
+        modal.show();
+        
+        // Load users and branches for dropdowns after modal is shown
+        setTimeout(() => {
+            loadUsersForDropdown();
+            loadBranchesForDropdown();
+        }, 300);
+    }
+
+    function editShipper(shipperId) {
+        axios.get(`/api/admin/shipping/shippers/${shipperId}`)
+            .then(response => {
+                const shipper = response.data;
+                document.getElementById('shipperId').value = shipper.shipperId;
+                document.getElementById('vehiclePlate').value = shipper.vehiclePlate || '';
+                document.getElementById('shipperActive').checked = shipper.isActive;
+                document.getElementById('shipperModalTitle').textContent = 'Sửa Shipper';
+                
+                // Load dropdowns first
+                loadUsersForDropdown();
+                loadBranchesForDropdown();
+                
+                // Set values after dropdowns are loaded
+                setTimeout(() => {
+                    document.getElementById('userId').value = shipper.userId;
+                    document.getElementById('shipperBranchId').value = shipper.branchId;
+                }, 100);
+                
+                new bootstrap.Modal(document.getElementById('shipperModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading shipper:', error);
+                showAlert('Lỗi khi tải thông tin shipper', 'danger');
+            });
+    }
+
+    function saveShipper() {
+        const shipperId = document.getElementById('shipperId').value;
+        const data = {
+            userId: document.getElementById('userId').value,
+            branchId: document.getElementById('shipperBranchId').value,
+            vehiclePlate: document.getElementById('vehiclePlate').value,
+            isActive: document.getElementById('shipperActive').checked
+        };
+
+        if (!data.userId || !data.branchId) {
+            showAlert('Vui lòng chọn người dùng và chi nhánh', 'warning');
+            return;
+        }
+
+        const request = shipperId
+            ? axios.put(`/api/admin/shipping/shippers/${shipperId}`, data)
+            : axios.post('/api/admin/shipping/shippers', data);
+
+        request
+            .then(response => {
+                showAlert(shipperId ? 'Cập nhật shipper thành công' : 'Thêm shipper thành công', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('shipperModal')).hide();
+                loadShippers();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error saving shipper:', error);
+                showAlert(error.response?.data?.message || 'Lỗi khi lưu shipper', 'danger');
+            });
+    }
+
+    function deleteShipper(shipperId) {
+        if (!confirm('Bạn có chắc muốn xóa shipper này?')) return;
+
+        axios.delete(`/api/admin/shipping/shippers/${shipperId}`)
+            .then(response => {
+                showAlert('Xóa shipper thành công', 'success');
+                loadShippers();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error deleting shipper:', error);
+                showAlert('Lỗi khi xóa shipper', 'danger');
+            });
+    }
+
+    function toggleShipperStatus(shipperId, isActive) {
+        const action = isActive ? 'deactivate' : 'activate';
+        const endpoint = `/api/admin/shipping/shippers/${shipperId}/${action}`;
+        
+        axios.post(endpoint)
+            .then(response => {
+                showAlert(`${isActive ? 'Tạm dừng' : 'Kích hoạt'} shipper thành công`, 'success');
+                loadShippers();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error toggling shipper status:', error);
+                showAlert('Lỗi khi thay đổi trạng thái shipper', 'danger');
+            });
+    }
+
+    // ===== HELPER FUNCTIONS =====
+
+    function loadUsersForDropdown() {
+        console.log('Loading users for dropdown...');
+        const select = document.getElementById('userId');
+        console.log('User select element:', select);
+        
+        if (!select) {
+            console.error('User select element not found!');
+            return;
+        }
+        
+        axios.get('/api/admin/users/shippers')
+            .then(response => {
+                console.log('Users response:', response.data);
+                const users = response.data || [];
+                select.innerHTML = '<option value="">-- Chọn người dùng --</option>';
+                users.forEach(user => {
+                    select.innerHTML += `<option value="${user.userId}">${user.fullName} (${user.email})</option>`;
+                });
+                console.log('Loaded', users.length, 'users into dropdown');
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                showAlert('Lỗi khi tải danh sách người dùng', 'danger');
+            });
+    }
+
+    function loadBranchesForDropdown() {
+        console.log('Loading branches for dropdown...');
+        const select = document.getElementById('shipperBranchId');
+        console.log('Branch select element:', select);
+        
+        if (!select) {
+            console.error('Branch select element not found!');
+            return;
+        }
+        
+        axios.get('/api/admin/branches/all')
+            .then(response => {
+                console.log('Branches response:', response.data);
+                const branches = response.data || [];
+                select.innerHTML = '<option value="">-- Chọn chi nhánh --</option>';
+                branches.forEach(branch => {
+                    select.innerHTML += `<option value="${branch.branchId}">${branch.name}</option>`;
+                });
+                console.log('Loaded', branches.length, 'branches into dropdown');
+            })
+            .catch(error => {
+                console.error('Error loading branches:', error);
+                showAlert('Lỗi khi tải danh sách chi nhánh', 'danger');
+            });
+    }
+
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+</script>
+
 </body>
 </html>
-
