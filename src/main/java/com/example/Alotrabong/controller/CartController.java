@@ -97,7 +97,9 @@ public class CartController {
     }
 
     private String getUserIdFromAuth(Authentication authentication) {
-        // TODO: Implement based on your JWT authentication setup
-        return "user-id-placeholder"; // Placeholder
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("Unauthenticated");
+        }
+        return authentication.getName();
     }
 }

@@ -4,7 +4,36 @@
   lang="vi"
   th:replace="~{fragments/layout :: layout(~{::content}, 'Trang chủ')}"
 >
-  <div th:fragment="content">
+  <div
+    th:fragment="content"
+    id="home-root"
+    th:attr="data-branch-id=${branchId}"
+  >
+    <!-- === CSS FIX (đặt TRONG fragment để chắc chắn render) === -->
+    <style>
+      /* Fix click tabs & card overlay */
+      [data-tabs] .tab {
+        pointer-events: auto !important;
+        cursor: pointer;
+      }
+      [data-tabs] {
+        position: relative;
+        z-index: 5;
+      }
+      .product-card {
+        position: relative;
+        z-index: 1;
+      }
+      .gradient-hero {
+        position: relative;
+        z-index: 0;
+      }
+      .page-overlay[hidden],
+      .page-overlay[aria-hidden="true"] {
+        pointer-events: none !important;
+      }
+    </style>
+
     <!-- HERO -->
     <section
       class="gradient-hero"
@@ -79,6 +108,7 @@
 
       <!-- tab controls -->
       <div
+        data-tabs="home"
         style="
           display: flex;
           gap: 14px;
@@ -86,12 +116,14 @@
           margin-bottom: 14px;
         "
       >
-        <button class="tab is-active" data-tab="new">Món mới</button>
-        <button class="tab" data-tab="best">Bán chạy</button>
-        <button class="tab" data-tab="fav">Được yêu thích</button>
+        <button type="button" class="tab is-active" data-tab="new">
+          Món mới
+        </button>
+        <button type="button" class="tab" data-tab="best">Bán chạy</button>
+        <button type="button" class="tab" data-tab="fav">Được yêu thích</button>
       </div>
 
-      <!-- tab panels -->
+      <!-- panel: NEW -->
       <div data-panel="new">
         <div
           style="
@@ -100,16 +132,17 @@
             gap: 18px;
           "
         >
-          <!-- CARD SẢN PHẨM (MÓN MỚI) -->
           <article
-            class="card"
-            style="padding: 12px"
+            class="card product-card"
+            style="padding: 12px; cursor: pointer"
             th:each="p : ${productsNew}"
+            th:attr="data-href=@{'/user/product/detail/' + ${p.id}}"
           >
             <img
               th:src="${p.thumbnailUrl}"
               alt=""
               style="width: 100%; border-radius: 8px"
+              onerror="this.onerror=null;this.src='/img/placeholder.jpg'"
             />
             <h3
               style="font-weight: 800; margin: 10px 0 4px"
@@ -124,18 +157,21 @@
                 align-items: center;
               "
             >
-              <strong th:text="${#numbers.formatInteger(p.price)} + 'đ'"
+              <strong
+                th:text="${#numbers.formatDecimal(p.price,0,'POINT',0,'COMMA')} + 'đ'"
                 >49.000đ</strong
               >
-              <form th:action="@{/cart}" method="post">
-                <input type="hidden" name="productId" th:value="${p.id}" />
-                <button class="btn" type="submit">+ Giỏ</button>
-              </form>
+              <button
+                class="btn add-to-cart"
+                type="button"
+                th:attr="data-id=${p.id}"
+              >
+                + Giỏ
+              </button>
             </div>
           </article>
         </div>
 
-        <!-- empty state -->
         <div
           th:if="${#lists.isEmpty(productsNew)}"
           style="padding: 16px; color: var(--ink-2)"
@@ -143,12 +179,12 @@
           Chưa có món mới. Quay lại sau nha!
         </div>
 
-        <!-- load more -->
         <div style="display: flex; justify-content: center; margin-top: 14px">
           <a th:href="@{/menu(category='new')}" class="btn">Xem thêm</a>
         </div>
       </div>
 
+      <!-- panel: BEST -->
       <div data-panel="best" hidden>
         <div
           style="
@@ -157,16 +193,17 @@
             gap: 18px;
           "
         >
-          <!-- CARD SẢN PHẨM (BÁN CHẠY) -->
           <article
-            class="card"
-            style="padding: 12px"
+            class="card product-card"
+            style="padding: 12px; cursor: pointer"
             th:each="p : ${productsBest}"
+            th:attr="data-href=@{'/user/product/detail/' + ${p.id}}"
           >
             <img
               th:src="${p.thumbnailUrl}"
               alt=""
               style="width: 100%; border-radius: 8px"
+              onerror="this.onerror=null;this.src='/img/placeholder.jpg'"
             />
             <h3
               style="font-weight: 800; margin: 10px 0 4px"
@@ -181,27 +218,34 @@
                 align-items: center;
               "
             >
-              <strong th:text="${#numbers.formatInteger(p.price)} + 'đ'"
+              <strong
+                th:text="${#numbers.formatDecimal(p.price,0,'POINT',0,'COMMA')} + 'đ'"
                 >49.000đ</strong
               >
-              <form th:action="@{/cart}" method="post">
-                <input type="hidden" name="productId" th:value="${p.id}" />
-                <button class="btn" type="submit">+ Giỏ</button>
-              </form>
+              <button
+                class="btn add-to-cart"
+                type="button"
+                th:attr="data-id=${p.id}"
+              >
+                + Giỏ
+              </button>
             </div>
           </article>
         </div>
+
         <div
           th:if="${#lists.isEmpty(productsBest)}"
           style="padding: 16px; color: var(--ink-2)"
         >
           Chưa có dữ liệu bán chạy.
         </div>
+
         <div style="display: flex; justify-content: center; margin-top: 14px">
           <a th:href="@{/menu(sort='best')}" class="btn">Xem thêm</a>
         </div>
       </div>
 
+      <!-- panel: FAVORITES -->
       <div data-panel="fav" hidden>
         <div
           style="
@@ -210,16 +254,17 @@
             gap: 18px;
           "
         >
-          <!-- CARD SẢN PHẨM (ĐƯỢC YÊU THÍCH) -->
           <article
-            class="card"
-            style="padding: 12px"
+            class="card product-card"
+            style="padding: 12px; cursor: pointer"
             th:each="p : ${productsFav}"
+            th:attr="data-href=@{'/user/product/detail/' + ${p.id}}"
           >
             <img
               th:src="${p.thumbnailUrl}"
               alt=""
               style="width: 100%; border-radius: 8px"
+              onerror="this.onerror=null;this.src='/img/placeholder.jpg'"
             />
             <h3
               style="font-weight: 800; margin: 10px 0 4px"
@@ -234,29 +279,35 @@
                 align-items: center;
               "
             >
-              <strong th:text="${#numbers.formatInteger(p.price)} + 'đ'"
+              <strong
+                th:text="${#numbers.formatDecimal(p.price,0,'POINT',0,'COMMA')} + 'đ'"
                 >49.000đ</strong
               >
-              <form th:action="@{/cart}" method="post">
-                <input type="hidden" name="productId" th:value="${p.id}" />
-                <button class="btn" type="submit">+ Giỏ</button>
-              </form>
+              <button
+                class="btn add-to-cart"
+                type="button"
+                th:attr="data-id=${p.id}"
+              >
+                + Giỏ
+              </button>
             </div>
           </article>
         </div>
+
         <div
           th:if="${#lists.isEmpty(productsFav)}"
           style="padding: 16px; color: var(--ink-2)"
         >
           Chưa có món yêu thích để hiển thị.
         </div>
+
         <div style="display: flex; justify-content: center; margin-top: 14px">
           <a th:href="@{/menu(filter='favorite')}" class="btn">Xem thêm</a>
         </div>
       </div>
     </section>
 
-    <!-- ĐẶT LẠI GẦN ĐÂY (OPTIONAL) -->
+    <!-- Đặt lại gần đây (ẩn nếu null) -->
     <section
       class="container"
       style="padding: 8px 0 28px"
@@ -286,14 +337,16 @@
         style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px"
       >
         <article
-          class="card"
-          style="padding: 10px"
+          class="card product-card"
+          style="padding: 10px; cursor: pointer"
           th:each="p : ${recentItems}"
+          th:attr="data-href=@{'/user/product/detail/' + ${p.id}}"
         >
           <img
             th:src="${p.thumbnailUrl}"
             alt=""
             style="width: 100%; border-radius: 8px"
+            onerror="this.onerror=null;this.src='/img/placeholder.jpg'"
           />
           <div
             style="
@@ -304,33 +357,208 @@
             "
           >
             <span style="font-weight: 700" th:text="${p.name}">Tên món</span>
-            <form th:action="@{/cart}" method="post">
-              <input type="hidden" name="productId" th:value="${p.id}" />
-              <button class="btn" type="submit">+ Giỏ</button>
-            </form>
+            <button
+              type="button"
+              class="btn add-to-cart"
+              th:attr="data-id=${p.id}"
+            >
+              + Giỏ
+            </button>
           </div>
         </article>
       </div>
     </section>
-  </div>
 
-  <!-- tiny JS: chuyển tab đơn giản -->
-  <script>
-    (function () {
-      const tabs = [...document.querySelectorAll(".tab")];
-      const panels = {
-        new: document.querySelector('[data-panel="new"]'),
-        best: document.querySelector('[data-panel="best"]'),
-        fav: document.querySelector('[data-panel="fav"]'),
-      };
-      tabs.forEach((t) => {
-        t.addEventListener("click", () => {
-          tabs.forEach((x) => x.classList.remove("is-active"));
-          t.classList.add("is-active");
-          Object.values(panels).forEach((p) => (p.hidden = true));
-          panels[t.dataset.tab].hidden = false;
-        });
-      });
-    })();
-  </script>
+    <!-- === JS (PHẢI nằm TRONG fragment) === -->
+    <script>
+      (function () {
+        // ===== Helpers =====
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+        // Resolve current branchId: meta > data-attr > default "b1"
+        const CURRENT_BRANCH_ID =
+          document.querySelector('meta[name="branch-id"]')?.content ||
+          document.getElementById("home-root")?.dataset.branchId ||
+          "b1";
+
+        function toast(msg) {
+          let box = $("#_toast_box");
+          if (!box) {
+            box = document.createElement("div");
+            box.id = "_toast_box";
+            Object.assign(box.style, {
+              position: "fixed",
+              right: "16px",
+              top: "16px",
+              zIndex: 9999,
+              display: "grid",
+              gap: "8px",
+            });
+            document.body.appendChild(box);
+          }
+          const tip = document.createElement("div");
+          tip.textContent = msg;
+          Object.assign(tip.style, {
+            padding: "10px 12px",
+            background: "#111",
+            color: "#fff",
+            borderRadius: "10px",
+            boxShadow: "0 6px 18px rgba(0,0,0,.25)",
+            fontWeight: 600,
+          });
+          box.appendChild(tip);
+          setTimeout(() => tip.remove(), 1400);
+        }
+
+        function buildHeaders() {
+          const headers = { "Content-Type": "application/json" };
+          const csrf = document.querySelector('meta[name="_csrf"]')?.content;
+          const csrfHeader = document.querySelector(
+            'meta[name="_csrf_header"]'
+          )?.content;
+          if (csrf && csrfHeader) headers[csrfHeader] = csrf;
+          const jwt = localStorage.getItem("access_token");
+          if (jwt) headers["Authorization"] = `Bearer ${jwt}`;
+          return headers;
+        }
+
+        // ===== API =====
+        async function apiAddToCart(
+          itemId,
+          quantity = 1,
+          branchId = CURRENT_BRANCH_ID
+        ) {
+          const body = { itemId, branchId, quantity: Number(quantity) || 1 };
+          const res = await fetch("/api/cart/add", {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify(body),
+          });
+          if (res.status === 401) {
+            location.href = "/auth";
+            return;
+          }
+          if (!res.ok) {
+            const txt = await res.text().catch(() => "Add to cart failed");
+            throw new Error(txt);
+          }
+          const payload = await res.json().catch(() => null);
+          return payload?.data ?? null;
+        }
+
+        // ===== Tabs (event delegation) =====
+        function initTabsDelegation() {
+          document.addEventListener("click", (e) => {
+            const tabBtn = e.target.closest("[data-tabs] .tab");
+            if (!tabBtn) return;
+
+            e.preventDefault();
+            const key = tabBtn.dataset.tab || "new";
+            const bar = tabBtn.closest("[data-tabs]");
+            const section = bar.closest("section") || document;
+
+            // toggle active
+            $$(".tab", bar).forEach((t) => {
+              const act = t === tabBtn;
+              t.classList.toggle("is-active", act);
+              t.setAttribute("aria-selected", act ? "true" : "false");
+              t.setAttribute("tabindex", act ? "0" : "-1");
+              if (t.tagName === "BUTTON" && !t.type) t.type = "button";
+            });
+
+            // show/hide panels
+            ["new", "best", "fav"].forEach((k) => {
+              const pane = section.querySelector(`[data-panel="${k}"]`);
+              if (pane) pane.hidden = k !== key;
+            });
+          });
+
+          // init state
+          document.querySelectorAll("[data-tabs]").forEach((bar) => {
+            const current =
+              (bar.querySelector(".tab.is-active") || bar.querySelector(".tab"))
+                ?.dataset.tab || "new";
+            const btn =
+              bar.querySelector(`.tab[data-tab="${current}"]`) ||
+              bar.querySelector(".tab");
+            btn?.dispatchEvent(new Event("click", { bubbles: true }));
+          });
+
+          // insurance CSS (nếu theme nào chặn pointer-events)
+          const fix = document.createElement("style");
+          fix.textContent = `[data-tabs] .tab{pointer-events:auto!important;cursor:pointer}[data-tabs]{position:relative;z-index:5}`;
+          document.head.appendChild(fix);
+        }
+
+        // ===== Card click (event delegation) =====
+        function initCardClickDelegation() {
+          document.addEventListener("click", (e) => {
+            // bỏ qua control
+            if (
+              e.target.closest(
+                "button, .add-to-cart, a, input, select, textarea, label"
+              )
+            )
+              return;
+            const card = e.target.closest(".product-card");
+            if (!card) return;
+            const href = card.getAttribute("data-href") || card.dataset.href;
+            if (!href) return;
+            try {
+              window.location.href = href;
+            } catch {
+              window.location.assign(href);
+            }
+          });
+        }
+
+        // ===== Add-to-cart (event delegation) =====
+        function initAddToCartDelegation() {
+          // đảm bảo nút trong DOM hiện tại là type=button
+          $$(".add-to-cart").forEach((b) => {
+            if (!b.type) b.type = "button";
+          });
+
+          document.addEventListener("click", async (e) => {
+            const btn = e.target.closest(".add-to-cart");
+            if (!btn) return;
+
+            e.preventDefault();
+            if (btn.dataset.loading === "1") return;
+            btn.dataset.loading = "1";
+
+            const itemId = btn.dataset.id;
+            const original = btn.textContent;
+            btn.disabled = true;
+
+            try {
+              await apiAddToCart(itemId, 1, CURRENT_BRANCH_ID);
+              btn.textContent = "Đã thêm ✓";
+              toast("Đã thêm vào giỏ");
+              setTimeout(() => (btn.textContent = original), 1200);
+            } catch (err) {
+              toast("Thêm giỏ thất bại");
+              alert("Thêm giỏ thất bại: " + err.message);
+            } finally {
+              btn.disabled = false;
+              btn.dataset.loading = "0";
+            }
+          });
+        }
+
+        // ===== Boot =====
+        function boot() {
+          initTabsDelegation();
+          initCardClickDelegation();
+          initAddToCartDelegation();
+        }
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", boot);
+        } else {
+          boot();
+        }
+      })();
+    </script>
+  </div>
 </html>

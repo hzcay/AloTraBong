@@ -1,16 +1,17 @@
 package com.example.Alotrabong.controller;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import lombok.RequiredArgsConstructor;
+
 @Controller
+@RequiredArgsConstructor
 public class PageController {
 
     @GetMapping("/")
     public String root() {
-        return "index"; // hiển thị trang chủ
+        return "redirect:/user/home";
     }
 
     @GetMapping("/auth")
@@ -38,7 +39,7 @@ public class PageController {
         return "redirect:/user/coupon/list";
     }
 
-    @GetMapping({"/branches", "/branches/list"})
+    @GetMapping({ "/branches", "/branches/list" })
     public String branches() {
         return "redirect:/user/branch/list";
     }

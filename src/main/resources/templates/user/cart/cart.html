@@ -35,7 +35,8 @@
                 <td>
                   <div class="center" style="gap:12px;justify-content:flex-start">
                     <a th:href="@{'/p/' + ${it.slug}}" class="card" style="width:72px;height:72px;overflow:hidden">
-                      <img th:src="${it.thumbnailUrl}" alt="" style="width:100%;height:100%;object-fit:cover">
+                      <img th:src="${it.thumbnailUrl}" alt="" style="width:100%;height:100%;object-fit:cover"
+                           onerror="this.onerror=null;this.src='/img/placeholder.jpg'">
                     </a>
                     <div>
                       <a th:href="@{'/p/' + ${it.slug}}" class="bold" th:text="${it.name}">Tên món</a>
@@ -45,24 +46,32 @@
                 </td>
 
                 <td style="text-align:right">
-                  <b th:text="${#numbers.formatInteger(it.unitPrice)} + 'đ'">49.000đ</b>
+                  <b th:text="${it.unitPrice != null 
+                      ? #numbers.formatDecimal(it.unitPrice, 0, 'POINT', 0, 'COMMA') + 'đ' 
+                      : '0đ'}">49.000đ</b>
                 </td>
 
                 <td style="text-align:right">
-                  <form th:action="@{/cart/update}" method="post" class="center" style="gap:8px;justify-content:flex-end">
-                    <input type="hidden" name="itemId" th:value="${it.itemId}">
+                  <!-- UPDATE (REST) -->
+                  <form class="js-cart-update center" style="gap:8px;justify-content:flex-end">
+                    <input type="hidden" name="cartItemId" th:value="${it.cartItemId}">
+                    <input type="hidden" name="branchId" th:value="${branchId}">
                     <input class="input" type="number" name="qty" min="1" th:value="${it.qty}" style="max-width:90px;text-align:right">
                     <button class="btn" type="submit" title="Cập nhật">Cập nhật</button>
                   </form>
                 </td>
 
                 <td style="text-align:right">
-                  <b th:text="${#numbers.formatInteger(it.subtotal)} + 'đ'">98.000đ</b>
+                  <b th:text="${it.subtotal != null
+                      ? #numbers.formatDecimal(it.subtotal, 0, 'POINT', 0, 'COMMA') + 'đ'
+                      : '0đ'}">98.000đ</b>
                 </td>
 
                 <td style="text-align:right">
-                  <form th:action="@{/cart/remove}" method="post">
-                    <input type="hidden" name="itemId" th:value="${it.itemId}">
+                  <!-- REMOVE (REST) -->
+                  <form class="js-cart-remove">
+                    <input type="hidden" name="cartItemId" th:value="${it.cartItemId}">
+                    <input type="hidden" name="branchId" th:value="${branchId}">
                     <button class="btn" type="submit" title="Xóa">✕</button>
                   </form>
                 </td>
@@ -71,17 +80,19 @@
           </table>
         </div>
 
-        <!-- Coupon (visible when items exist) -->
+        <!-- Coupon (visible when items exist)
         <div th:if="${!#lists.isEmpty(items)}" class="card pad" style="margin-top:12px">
-          <form th:action="@{/cart/apply-coupon}" method="post" class="center" style="gap:10px;justify-content:flex-start;flex-wrap:wrap">
+          <form th:action="@{/cart/apply-coupon}" method="post" class="center"
+                style="gap:10px;justify-content:flex-start;flex-wrap:wrap">
             <label class="bold">Mã giảm giá</label>
-            <input class="input" name="code" th:value="${appliedCoupon?.code}" placeholder="Nhập mã…"
-                   style="max-width:240px;border-style:dashed">
+            <input class="input" name="code"
+                   th:value="${appliedCoupon != null ? appliedCoupon.code : ''}"
+                   placeholder="Nhập mã…" style="max-width:240px;border-style:dashed">
             <button class="btn" type="submit">Áp dụng</button>
 
             <div th:if="${appliedCoupon != null}" class="badge">
               Đã áp dụng: <b th:text="${appliedCoupon.code}">ALO20</b>
-              <form th:action="@{/cart/remove-coupon}" method="post" style="margin-left:6px">
+              <form th:action="@{/cart/remove-coupon}" method="post" style="margin-left:6px;display:inline">
                 <button class="btn" type="submit" title="Bỏ mã">Bỏ</button>
               </form>
             </div>
@@ -90,7 +101,7 @@
               <b th:text="${couponError}">Mã không hợp lệ</b>
             </div>
           </form>
-        </div>
+        </div> -->
       </section>
 
       <!-- SUMMARY -->
@@ -100,40 +111,104 @@
 
           <div class="center-between mb-1">
             <span>Tạm tính</span>
-            <b th:text="${#numbers.formatInteger(summary?.subtotal)} + 'đ'">0đ</b>
+            <b th:text="${summary != null && summary.subtotal != null
+                          ? #numbers.formatDecimal(summary.subtotal, 0, 'POINT', 0, 'COMMA') + 'đ'
+                          : '0đ'}">0đ</b>
           </div>
 
-          <div class="center-between mb-1" th:if="${summary?.discount > 0}">
+          <div class="center-between mb-1"
+               th:if="${summary != null && summary.discount != null && summary.discount > 0}">
             <span>Giảm giá</span>
-            <b th:text="'- ' + ${#numbers.formatInteger(summary.discount)} + 'đ'">-0đ</b>
+            <b th:text="${'- ' + #numbers.formatDecimal(summary.discount, 0, 'POINT', 0, 'COMMA') + 'đ'}">-0đ</b>
           </div>
 
           <div class="center-between mb-1">
             <span>Phí giao</span>
-            <b th:text="${#numbers.formatInteger(summary?.shippingFee)} + 'đ'">0đ</b>
+            <b th:text="${summary != null && summary.shippingFee != null
+                          ? #numbers.formatDecimal(summary.shippingFee, 0, 'POINT', 0, 'COMMA') + 'đ'
+                          : '0đ'}">0đ</b>
           </div>
 
           <div class="center-between" style="margin:10px 0;border-top:1px solid var(--line);padding-top:10px">
             <span class="bold">Tổng thanh toán</span>
-            <b style="font-size:20px" th:text="${#numbers.formatInteger(summary?.grandTotal)} + 'đ'">0đ</b>
+            <b style="font-size:20px"
+               th:text="${summary != null && summary.grandTotal != null
+                          ? #numbers.formatDecimal(summary.grandTotal, 0, 'POINT', 0, 'COMMA') + 'đ'
+                          : '0đ'}">0đ</b>
           </div>
 
           <div class="grid" style="gap:10px;margin-top:10px">
             <a th:href="@{/menu}" class="btn">Tiếp tục mua</a>
-            <a th:href="@{/checkout}" class="btn btn-primary" th:classappend="${#lists.isEmpty(items)} ? ' disabled'">
-              Thanh toán →
-            </a>
+            <a th:href="@{/checkout}" class="btn btn-primary"
+               th:classappend="${#lists.isEmpty(items)} ? ' disabled' : ''">
+              Thanh toán →</a>
           </div>
 
-          <!-- note nhỏ -->
           <p class="text-muted mb-0" style="margin-top:10px">
-            * Phí giao có thể thay đổi theo địa chỉ & chi nhánh.
+            * Phí giao có thể thay đổi theo địa chỉ &amp; chi nhánh.
           </p>
         </div>
       </aside>
 
     </div>
   </section>
+
+  <!-- === JS: gọi REST API cho update/remove === -->
+  <script>
+    (function () {
+      const $ = (s, r = document) => r.querySelector(s);
+      const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+      function buildHeaders() {
+        const h = { "Content-Type": "application/json" };
+        // CSRF (nếu bật)
+        const csrf = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+        if (csrf && csrfHeader) h[csrfHeader] = csrf;
+        // JWT (nếu dùng)
+        const jwt = localStorage.getItem("access_token");
+        if (jwt) h["Authorization"] = `Bearer ${jwt}`;
+        return h;
+      }
+
+      // Update qty -> PUT /api/cart/update/{cartItemId}?quantity=X
+      $$(".js-cart-update").forEach(form => {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const cartItemId = form.querySelector('[name="cartItemId"]').value;
+          const qty = Math.max(1, parseInt(form.querySelector('[name="qty"]').value || "1", 10));
+          try {
+            const res = await fetch(`/api/cart/update/${encodeURIComponent(cartItemId)}?quantity=${qty}`, {
+              method: "PUT",
+              headers: buildHeaders()
+            });
+            if (!res.ok) throw new Error(await res.text().catch(() => "Update failed"));
+            location.reload();
+          } catch (err) {
+            alert("Cập nhật thất bại: " + err.message);
+          }
+        });
+      });
+
+      // Remove -> DELETE /api/cart/remove/{cartItemId}
+      $$(".js-cart-remove").forEach(form => {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const cartItemId = form.querySelector('[name="cartItemId"]').value;
+          try {
+            const res = await fetch(`/api/cart/remove/${encodeURIComponent(cartItemId)}`, {
+              method: "DELETE",
+              headers: buildHeaders()
+            });
+            if (!res.ok) throw new Error(await res.text().catch(() => "Remove failed"));
+            location.reload();
+          } catch (err) {
+            alert("Xóa thất bại: " + err.message);
+          }
+        });
+      });
+    })();
+  </script>
 
 </div>
 </html>

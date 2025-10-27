@@ -3,23 +3,49 @@
       th:replace="~{fragments/layout :: layout(~{::content}, 'Viết đánh giá')}">
 <div th:fragment="content">
 
+  <!-- ⭐ Style riêng cho trang này -->
+  <style>
+    .rating { display:inline-flex; gap:6px; direction: rtl; }
+    .rating input { position:absolute; left:-9999px; }
+    .rating label {
+      cursor:pointer; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;
+      color: var(--line);
+      transition: transform .05s ease-in-out;
+    }
+    .rating label svg { width:100%; height:100%; }
+    .rating label:hover { transform: scale(1.05); }
+    /* tô màu khi hover */
+    .rating label:hover,
+    .rating label:hover ~ label { color: #fbbf24; } /* amber-400 */
+    /* tô màu khi chọn */
+    .rating input:checked ~ label { color: #f59e0b; } /* amber-500 */
+  </style>
+
   <section class="section">
     <div class="container" style="max-width:820px">
       <header class="section-head">
         <h2 class="section-title m-0">Viết đánh giá</h2>
-        <a th:href="@{${backUrl} ?: '/orders'}" class="btn">← Quay lại</a>
+
+        <!-- Back link an toàn -->
+        <a th:if="${backUrl != null}" th:href="${backUrl}" class="btn">← Quay lại</a>
+        <button th:unless="${backUrl != null}" type="button" class="btn" onclick="history.back()">← Quay lại</button>
       </header>
 
       <!-- Thông tin món/đơn -->
       <div class="card pad mb-2">
         <div class="center" style="gap:12px;justify-content:flex-start">
           <div class="card" style="width:64px;height:64px;overflow:hidden">
-            <img th:src="${product.thumbnailUrl}" alt="" style="width:100%;height:100%;object-fit:cover">
+            <img th:src="${(product != null && product.thumbnailUrl != null) ? product.thumbnailUrl : '/img/placeholder.jpg'}"
+                 alt="Ảnh sản phẩm"
+                 style="width:100%;height:100%;object-fit:cover">
           </div>
           <div>
-            <b th:text="${product.name}">Tên món</b>
+            <b th:text="${product != null ? product.name : 'Sản phẩm'}">Tên món</b>
             <div class="text-muted">
-              Đơn: <b th:text="${orderCode}">ALB12345</b> • Đã giao: <b th:text="${#temporals.format(deliveredAt,'dd/MM/yyyy')}">--</b>
+              Đơn:
+              <b th:text="${orderCode != null ? orderCode : '--'}">ALB12345</b>
+              • Đã giao:
+              <b th:text="${deliveredAt != null ? #temporals.format(deliveredAt,'dd/MM/yyyy') : '--'}">--</b>
             </div>
           </div>
         </div>
@@ -29,13 +55,49 @@
       <div class="card pad">
         <form th:action="@{/review/submit}" method="post" enctype="multipart/form-data" class="grid" style="gap:12px">
           <input type="hidden" name="orderCode" th:value="${orderCode}">
-          <input type="hidden" name="productId" th:value="${product.id}">
+          <input type="hidden" name="productId" th:value="${product != null ? product.id : null}">
 
+          <!-- ⭐ Star rating -->
           <label class="grid">
             <span class="text-muted">Chấm điểm</span>
-            <select class="select" name="rating" required>
-              <option th:each="r : ${#numbers.sequence(5,1)}" th:value="${r}" th:text="${r + ' ★'}"></option>
-            </select>
+
+            <!-- radio để submit, label hiển thị sao (đảo ngược để dùng sibling selector) -->
+            <div class="rating">
+              <input type="radio" id="rate5" name="rating" value="5" required>
+              <label for="rate5" title="5 sao">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l3.09 6.3 6.95 1.01-5.02 4.89 1.19 6.9L12 18.77 5.79 21.1 6.98 14.2 1.96 9.31l6.95-1.01L12 2z"/>
+                </svg>
+              </label>
+
+              <input type="radio" id="rate4" name="rating" value="4">
+              <label for="rate4" title="4 sao">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l3.09 6.3 6.95 1.01-5.02 4.89 1.19 6.9L12 18.77 5.79 21.1 6.98 14.2 1.96 9.31l6.95-1.01L12 2z"/>
+                </svg>
+              </label>
+
+              <input type="radio" id="rate3" name="rating" value="3">
+              <label for="rate3" title="3 sao">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l3.09 6.3 6.95 1.01-5.02 4.89 1.19 6.9L12 18.77 5.79 21.1 6.98 14.2 1.96 9.31l6.95-1.01L12 2z"/>
+                </svg>
+              </label>
+
+              <input type="radio" id="rate2" name="rating" value="2">
+              <label for="rate2" title="2 sao">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l3.09 6.3 6.95 1.01-5.02 4.89 1.19 6.9L12 18.77 5.79 21.1 6.98 14.2 1.96 9.31l6.95-1.01L12 2z"/>
+                </svg>
+              </label>
+
+              <input type="radio" id="rate1" name="rating" value="1">
+              <label for="rate1" title="1 sao">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l3.09 6.3 6.95 1.01-5.02 4.89 1.19 6.9L12 18.77 5.79 21.1 6.98 14.2 1.96 9.31l6.95-1.01L12 2z"/>
+                </svg>
+              </label>
+            </div>
           </label>
 
           <label class="grid">
@@ -51,7 +113,10 @@
 
           <div class="center" style="gap:8px;justify-content:flex-start">
             <button class="btn btn-primary" type="submit">Gửi đánh giá</button>
-            <a th:href="@{${backUrl} ?: '/orders'}" class="btn">Hủy</a>
+
+            <!-- Back link an toàn (lặp lại cho hàng nút) -->
+            <a th:if="${backUrl != null}" th:href="${backUrl}" class="btn">Hủy</a>
+            <button th:unless="${backUrl != null}" type="button" class="btn" onclick="history.back()">Hủy</button>
           </div>
 
           <div th:if="${error != null}" class="badge" style="border-color:#fecaca;color:#991b1b">[[${error}]]</div>
