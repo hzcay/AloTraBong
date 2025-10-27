@@ -126,6 +126,7 @@
       <!-- panel: NEW -->
       <div data-panel="new">
         <div
+          data-role="grid-new"
           style="
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -180,13 +181,16 @@
         </div>
 
         <div style="display: flex; justify-content: center; margin-top: 14px">
-          <a th:href="@{/menu(category='new')}" class="btn">Xem thêm</a>
+          <button type="button" class="btn load-more" data-load="new">
+            Xem thêm
+          </button>
         </div>
       </div>
 
       <!-- panel: BEST -->
       <div data-panel="best" hidden>
         <div
+          data-role="grid-best"
           style="
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -248,6 +252,7 @@
       <!-- panel: FAVORITES -->
       <div data-panel="fav" hidden>
         <div
+          data-role="grid-fav"
           style="
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -469,7 +474,7 @@
 
             // show/hide panels
             ["new", "best", "fav"].forEach((k) => {
-              const pane = section.querySelector(`[data-panel="${k}"]`);
+              const pane = section.querySelector(`[data-panel="\${k}"]`);
               if (pane) pane.hidden = k !== key;
             });
           });
@@ -480,14 +485,15 @@
               (bar.querySelector(".tab.is-active") || bar.querySelector(".tab"))
                 ?.dataset.tab || "new";
             const btn =
-              bar.querySelector(`.tab[data-tab="${current}"]`) ||
+              bar.querySelector(`.tab[data-tab="\${current}"]`) ||
               bar.querySelector(".tab");
             btn?.dispatchEvent(new Event("click", { bubbles: true }));
           });
 
           // insurance CSS (nếu theme nào chặn pointer-events)
           const fix = document.createElement("style");
-          fix.textContent = `[data-tabs] .tab{pointer-events:auto!important;cursor:pointer}[data-tabs]{position:relative;z-index:5}`;
+          fix.textContent =
+            "[data-tabs] .tab{pointer-events:auto!important;cursor:pointer}[data-tabs]{position:relative;z-index:5}";
           document.head.appendChild(fix);
         }
 
@@ -547,11 +553,95 @@
           });
         }
 
+        // ===== Load-more =====
+        function vnMoney(x) {
+          try {
+            if (x == null) return "Liên hệ";
+            const n = Number(x);
+            return (isNaN(n) ? "Liên hệ" : n.toLocaleString("vi-VN")) + "đ";
+          } catch {
+            return "Liên hệ";
+          }
+        }
+
+        function cardHtml(p) {
+          const img = p.thumbnailUrl || "/img/placeholder.jpg";
+          return `
+            <article class="card product-card" style="padding: 12px; cursor: pointer"
+                     data-href="/user/product/detail/${p.id}">
+              <img src="${img}" alt="" style="width: 100%; border-radius: 8px"
+                   onerror="this.onerror=null;this.src='/img/placeholder.jpg'"/>
+              <h3 style="font-weight: 800; margin: 10px 0 4px">${p.name ?? ""}</h3>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong>${vnMoney(p.price)}</strong>
+                <button class="btn add-to-cart" type="button" data-id="${p.id}">+ Giỏ</button>
+              </div>
+            </article>`;
+        }
+
+        async function loadMore(type, gridEl, btn) {
+          if (!type || !gridEl) return;
+          btn && (btn.disabled = true);
+
+          try {
+            const res = await fetch(
+              `/user/home/more?type=${encodeURIComponent(type)}&size=1000`,
+              { headers: { Accept: "application/json" } }
+            );
+            if (!res.ok) throw new Error("Fetch failed");
+            const data = await res.json();
+
+            // Lọc bỏ những món đã có (theo data-href trong DOM)
+            const existed = new Set(
+              Array.from(gridEl.querySelectorAll("[data-href]")).map((el) =>
+                (el.getAttribute("data-href") || "").split("/").pop()
+              )
+            );
+
+            const fresh = (data.items || []).filter((it) => !existed.has(it.id));
+            if (!fresh.length) {
+              btn && (btn.textContent = "Đã hiển thị hết");
+              return;
+            }
+
+            // Append bằng DocumentFragment
+            const frag = document.createDocumentFragment();
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = fresh.map(cardHtml).join("");
+            while (wrapper.firstChild) frag.appendChild(wrapper.firstChild);
+            gridEl.appendChild(frag);
+
+            btn && (btn.textContent = "Xem thêm nữa");
+          } catch (e) {
+            alert("Tải thêm thất bại");
+          } finally {
+            btn && (btn.disabled = false);
+          }
+        }
+
+        function initLoadMoreDelegation() {
+          document.addEventListener("click", (e) => {
+            const btn = e.target.closest(".load-more");
+            if (!btn) return;
+            e.preventDefault();
+
+            const type = btn.dataset.load; // 'new' | 'best' | 'fav'
+            // tìm grid trong đúng panel chứa nút
+            const panel = btn.closest("[data-panel]");
+            const grid =
+              panel?.querySelector('[data-role="grid-' + type + '"]') ||
+              document.querySelector('[data-role="grid-' + type + '"]');
+
+            loadMore(type, grid, btn);
+          });
+        }
+
         // ===== Boot =====
         function boot() {
           initTabsDelegation();
           initCardClickDelegation();
           initAddToCartDelegation();
+          initLoadMoreDelegation();
         }
         if (document.readyState === "loading") {
           document.addEventListener("DOMContentLoaded", boot);
