@@ -4,10 +4,6 @@ public enum RoleCode {
     ADMIN, BRANCH_MANAGER, SHIPPER, USER
 }
 
-enum MediaType {
-    image, video
-}
-
 // enum PaymentMethod {
 //     COD, VNPAY, MOMO
 // }
@@ -20,9 +16,6 @@ enum MediaType {
 //     NEW, CONFIRMED, SHIPPING, DELIVERED, CANCELED, REFUNDED
 // } // 0..5
 
-enum ShipmentStatus {
-    ASSIGNED, IN_TRANSIT, DELIVERED, CANCELED
-} // 0..3
 
 // enum PromoType {
 //     PERCENT, AMOUNT, COMBO, FREESHIP

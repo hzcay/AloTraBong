@@ -113,21 +113,26 @@ public class AdminBranchServiceImpl implements AdminBranchService {
         Role managerRole = roleRepository.findByRoleCode(RoleCode.BRANCH_MANAGER)
                 .orElseThrow(() -> new ResourceNotFoundException("BRANCH_MANAGER role not found"));
 
+        // Find user's existing BRANCH_MANAGER role (user must already have this role)
+        UserRole userManagerRole = user.getUserRoles().stream()
+                .filter(ur -> ur.getRole().getRoleCode() == RoleCode.BRANCH_MANAGER)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("User does not have BRANCH_MANAGER role"));
+
         // Check if this branch already has a manager
         Optional<UserRole> existingManager = userRoleRepository.findManagerByBranchId(branchId, RoleCode.BRANCH_MANAGER);
-        if (existingManager.isPresent()) {
-            // Remove existing manager from this branch
-            userRoleRepository.delete(existingManager.get());
-            log.info("Removed existing manager from branch: {}", branchId);
+        if (existingManager.isPresent() && !existingManager.get().getUser().getUserId().equals(userId)) {
+            // Remove branch assignment from previous manager (set branch to null)
+            UserRole oldManager = existingManager.get();
+            oldManager.setBranch(null);
+            userRoleRepository.save(oldManager);
+            log.info("Removed branch assignment from previous manager: {}", oldManager.getUser().getUserId());
         }
 
-        // Assign new manager to this branch
-        UserRole userRole = UserRole.builder()
-                .user(user)
-                .role(managerRole)
-                .branch(branch)
-                .build();
-        userRoleRepository.save(userRole);
+        // Update existing UserRole: assign this branch to the manager
+        // KHÔNG tạo UserRole mới, CHỈ cập nhật branch_id
+        userManagerRole.setBranch(branch);
+        userRoleRepository.save(userManagerRole);
         log.info("Successfully assigned manager {} to branch: {}", userId, branchId);
     }
 
@@ -137,8 +142,18 @@ public class AdminBranchServiceImpl implements AdminBranchService {
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found with id: " + branchId));
 
-        userRoleRepository.deleteManagerByBranchId(branchId, RoleCode.BRANCH_MANAGER);
-        log.info("Successfully removed manager from branch: {}", branchId);
+        // Tìm manager hiện tại của chi nhánh
+        Optional<UserRole> managerRole = userRoleRepository.findManagerByBranchId(branchId, RoleCode.BRANCH_MANAGER);
+
+        if (managerRole.isPresent()) {
+            // CHỈ set branch = NULL, KHÔNG xóa UserRole (giữ lại role BRANCH_MANAGER)
+            UserRole userRole = managerRole.get();
+            userRole.setBranch(null);
+            userRoleRepository.save(userRole);
+            log.info("Successfully removed branch assignment from manager: {}", userRole.getUser().getUserId());
+        } else {
+            log.warn("No manager found for branch: {}", branchId);
+        }
     }
 
     @Override
