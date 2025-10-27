@@ -32,4 +32,14 @@ public interface ItemService {
     ItemDTO activateItem(String itemId);
     
     ItemDTO setBranchPrice(String itemId, String branchId, BigDecimal price);
+
+    /** Top bán chạy theo thời gian gần đây (ví dụ 30 ngày) */
+    List<ItemDTO> getTopSellingItemsSince(int days, int limit);
+
+    /** Top được yêu thích (toàn hệ thống) */
+    List<ItemDTO> getTopFavoritedItems(int limit);
+
+    /** Yêu thích theo user (nếu muốn cá nhân hoá tab ‘Được yêu thích’) */
+    List<ItemDTO> getUserFavoriteItems(String userId, int limit);
+
 }

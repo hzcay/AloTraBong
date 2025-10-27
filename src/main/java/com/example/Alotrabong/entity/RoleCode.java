@@ -4,9 +4,9 @@ public enum RoleCode {
     ADMIN, BRANCH_MANAGER, SHIPPER, USER
 }
 
-enum MediaType {
-    image, video
-}
+// enum MediaType {
+//     image, video
+// }
 
 // enum PaymentMethod {
 //     COD, VNPAY, MOMO

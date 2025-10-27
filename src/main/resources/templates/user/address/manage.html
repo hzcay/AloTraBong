@@ -1,127 +1,328 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="vi"
-      th:replace="~{fragments/layout :: layout(~{::content}, 'Địa chỉ giao hàng')}">
-<div th:fragment="content">
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  lang="vi"
+  th:replace="~{fragments/layout :: layout(~{::content}, 'Địa chỉ giao hàng')}"
+>
+  <div th:fragment="content">
+    <!-- BREADCRUMB -->
+    <section class="section address-header">
+      <div class="container">
+        <div class="ah-row">
+          <div class="ah-left">
+            <h1 class="ah-title">Địa chỉ giao hàng</h1>
+            <nav class="ah-breadcrumb">
+              <a th:href="@{/}" class="ah-link">Trang chủ</a>
+              <span class="ah-sep">/</span>
+              <span>Địa chỉ</span>
+            </nav>
+          </div>
 
-  <!-- BREADCRUMB (optional) -->
-  <section class="section">
-    <div class="container center-between">
-      <nav class="text-muted">
-        <a th:href="@{/}" class="nav">Trang chủ</a> /
-        <span>Địa chỉ</span>
-      </nav>
-      <a th:href="@{/checkout}" class="btn">← Về thanh toán</a>
-    </div>
-  </section>
-
-  <!-- ADDRESS MANAGE -->
-  <section class="section">
-    <div class="container grid" style="grid-template-columns:1fr .55fr;align-items:start;gap:20px">
-
-      <!-- LEFT: List addresses -->
-      <section class="grid" style="gap:14px">
-        <div class="center-between">
-          <h2 class="section-title m-0">Địa chỉ của bạn</h2>
-          <a href="#add-form" class="btn">+ Thêm địa chỉ</a>
+          <div class="ah-right">
+            <a th:href="@{/user/checkout}" class="btn ah-btn-back">
+              ← Về thanh toán
+            </a>
+          </div>
         </div>
+      </div>
+    </section>
 
-        <!-- Empty -->
-        <div th:if="${#lists.isEmpty(addresses)}" class="card pad text-muted">
-          Chưa có địa chỉ nào. Thêm địa chỉ để giao hàng nhanh hơn nhé!
-        </div>
+    <style>
+      /* ===== Address Header (scoped) ===== */
+      .address-header {
+        padding: 18px 0 8px;
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.02),
+          rgba(0, 0, 0, 0)
+        );
+      }
+      .address-header .container {
+        padding: 14px 16px;
+        background: #fff;
+        border: 1px solid #eee;
+        border-radius: 16px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+      }
+      .ah-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .ah-left {
+        display: grid;
+        gap: 6px;
+      }
+      .ah-title {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.25;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+      .ah-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #6b7280; /* text-muted */
+        font-size: 13px;
+      }
+      .ah-link {
+        color: inherit;
+        text-decoration: none;
+      }
+      .ah-link:hover {
+        text-decoration: underline;
+      }
+      .ah-sep {
+        opacity: 0.7;
+      }
+      .ah-right .ah-btn-back {
+        border-radius: 999px;
+        padding: 10px 14px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        transition: transform 0.05s ease, background 0.15s ease,
+          box-shadow 0.15s ease;
+        white-space: nowrap;
+      }
+      .ah-right .ah-btn-back:hover {
+        background: #f3f4f6;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+      }
+      .ah-right .ah-btn-back:active {
+        transform: translateY(1px);
+      }
 
-        <!-- Address cards -->
-        <article class="card pad" th:each="ad : ${addresses}">
-          <div class="center-between mb-1">
-            <div class="center" style="gap:10px;justify-content:flex-start">
-              <input type="radio" name="defaultAddr"
-                     th:checked="${ad.default}" disabled title="Địa chỉ mặc định">
-              <div>
-                <b th:text="${ad.fullName}">Nguyễn Văn A</b>
-                <div class="text-muted" th:text="${ad.phone}">090...</div>
+      /* Responsive */
+      @media (max-width: 768px) {
+        .ah-row {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+        .ah-right {
+          display: flex;
+          justify-content: flex-start;
+        }
+        .ah-title {
+          font-size: 20px;
+        }
+      }
+    </style>
+
+    <!-- ADDRESS MANAGE -->
+    <section class="section">
+      <div
+        class="container grid"
+        style="grid-template-columns: 1fr 0.55fr; align-items: start; gap: 20px"
+      >
+        <!-- LEFT: List addresses -->
+        <section class="grid" style="gap: 14px">
+          <div class="center-between">
+            <h2 class="section-title m-0">Địa chỉ của bạn</h2>
+            <a href="#add-form" class="btn">+ Thêm địa chỉ</a>
+          </div>
+
+          <!-- Empty -->
+          <div th:if="${#lists.isEmpty(addresses)}" class="card pad text-muted">
+            Chưa có địa chỉ nào. Thêm địa chỉ để giao hàng nhanh hơn nhé!
+          </div>
+
+          <!-- Address cards -->
+          <article class="card pad" th:each="ad : ${addresses}">
+            <div class="center-between mb-1">
+              <div
+                class="center"
+                style="gap: 10px; justify-content: flex-start"
+              >
+                <input
+                  type="radio"
+                  name="defaultAddr"
+                  th:checked="${ad.default}"
+                  disabled
+                  title="Địa chỉ mặc định"
+                />
+                <div>
+                  <b th:text="${ad.fullName}">Nguyễn Văn A</b>
+                  <div class="text-muted" th:text="${ad.phone}">090...</div>
+                </div>
               </div>
+              <div th:if="${ad.default}" class="badge">Mặc định</div>
             </div>
-            <div th:if="${ad.default}" class="badge">Mặc định</div>
+
+            <!-- Gộp địa chỉ bằng syntax literal |...| cho gọn -->
+            <div
+              class="mb-2"
+              th:text="|${ad.line}, ${ad.ward}, ${ad.district}, ${ad.city}|"
+            >
+              Số 1, P.X, Q.Y, TP.Z
+            </div>
+
+            <div class="center" style="gap: 8px; justify-content: flex-start">
+              <!-- set default -->
+              <form
+                th:action="@{'/user/addresses/' + ${ad.id} + '/default'}"
+                method="post"
+              >
+                <input
+                  type="hidden"
+                  th:name="${_csrf.parameterName}"
+                  th:value="${_csrf.token}"
+                />
+                <button class="btn" type="submit" th:disabled="${ad.default}">
+                  Đặt làm mặc định
+                </button>
+              </form>
+
+              <!-- edit -->
+              <a
+                th:href="@{'/user/addresses/' + ${ad.id} + '/edit'}"
+                class="btn"
+                >Sửa</a
+              >
+
+              <!-- delete -->
+              <form
+                th:action="@{'/user/addresses/' + ${ad.id} + '/delete'}"
+                method="post"
+                onsubmit="return confirm('Xóa địa chỉ này?')"
+              >
+                <input
+                  type="hidden"
+                  th:name="${_csrf.parameterName}"
+                  th:value="${_csrf.token}"
+                />
+                <button class="btn" type="submit">Xóa</button>
+              </form>
+            </div>
+          </article>
+        </section>
+
+        <!-- RIGHT: Add / Edit form -->
+        <aside class="card pad" id="add-form">
+          <h3
+            class="m-0 mb-2 bold text-upper"
+            th:text="${formMode == 'edit' ? 'Sửa địa chỉ' : 'Thêm địa chỉ'}"
+          >
+            Thêm địa chỉ
+          </h3>
+
+          <!-- lỗi chung -->
+          <div
+            th:if="${error != null}"
+            class="badge"
+            style="border-color: #fecaca; color: #991b1b"
+          >
+            [[${error}]]
           </div>
 
-          <div class="mb-2" th:text="${ad.line} + ', ' + ${ad.ward} + ', ' + ${ad.district} + ', ' + ${ad.city}">
-            Số 1, P.X, Q.Y, TP.Z
-          </div>
+          <form
+            th:action="${formMode == 'edit'} ? @{/user/addresses/update} : @{/user/addresses/create}"
+            method="post"
+            class="grid"
+            style="gap: 12px"
+          >
+            <input type="hidden" name="id" th:value="${addressForm?.id}" />
+            <input
+              type="hidden"
+              th:name="${_csrf.parameterName}"
+              th:value="${_csrf.token}"
+            />
 
-          <div class="center" style="gap:8px;justify-content:flex-start">
-            <!-- set default -->
-            <form th:action="@{'/addresses/' + ${ad.id} + '/default'}" method="post">
-              <button class="btn" type="submit" th:disabled="${ad.default}">Đặt làm mặc định</button>
-            </form>
-            <!-- edit -->
-            <a th:href="@{'/addresses/' + ${ad.id} + '/edit'}" class="btn">Sửa</a>
-            <!-- delete -->
-            <form th:action="@{'/addresses/' + ${ad.id} + '/delete'}" method="post"
-                  onsubmit="return confirm('Xóa địa chỉ này?')">
-              <button class="btn" type="submit">Xóa</button>
-            </form>
-          </div>
-        </article>
-      </section>
-
-      <!-- RIGHT: Add / Edit form -->
-      <aside class="card pad" id="add-form">
-        <h3 class="m-0 mb-2 bold text-upper" th:text="${formMode == 'edit' ? 'Sửa địa chỉ' : 'Thêm địa chỉ'}">
-          Thêm địa chỉ
-        </h3>
-
-        <!-- hiển thị lỗi chung -->
-        <div th:if="${error != null}" class="badge" style="border-color:#fecaca;color:#991b1b">[[${error}]]</div>
-
-        <form th:action="${formMode == 'edit' ? '/addresses/update' : '/addresses/create'}"
-              method="post" class="grid" style="gap:12px">
-          <input type="hidden" name="id" th:value="${addressForm?.id}"/>
-
-          <label class="grid">
-            <span class="text-muted">Họ tên người nhận</span>
-            <input class="input" name="fullName" th:value="${addressForm?.fullName}" required>
-          </label>
-
-          <label class="grid">
-            <span class="text-muted">Số điện thoại</span>
-            <input class="input" name="phone" th:value="${addressForm?.phone}" required pattern="0[0-9]{9,10}">
-          </label>
-
-          <label class="grid">
-            <span class="text-muted">Địa chỉ (số nhà, đường)</span>
-            <input class="input" name="line" th:value="${addressForm?.line}" required>
-          </label>
-
-          <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px">
             <label class="grid">
-              <span class="text-muted">Phường/Xã</span>
-              <input class="input" name="ward" th:value="${addressForm?.ward}" required>
+              <span class="text-muted">Họ tên người nhận</span>
+              <input
+                class="input"
+                name="fullName"
+                th:value="${addressForm?.fullName}"
+                required
+              />
             </label>
+
             <label class="grid">
-              <span class="text-muted">Quận/Huyện</span>
-              <input class="input" name="district" th:value="${addressForm?.district}" required>
+              <span class="text-muted">Số điện thoại</span>
+              <input
+                class="input"
+                name="phone"
+                th:value="${addressForm?.phone}"
+                required
+                pattern="0[0-9]{9,10}"
+              />
             </label>
-          </div>
 
-          <label class="grid">
-            <span class="text-muted">Tỉnh/Thành phố</span>
-            <input class="input" name="city" th:value="${addressForm?.city}" required>
-          </label>
+            <label class="grid">
+              <span class="text-muted">Địa chỉ (số nhà, đường)</span>
+              <input
+                class="input"
+                name="line"
+                th:value="${addressForm?.line}"
+                required
+              />
+            </label>
 
-          <label class="center" style="gap:8px;justify-content:flex-start">
-            <input type="checkbox" name="asDefault" th:checked="${addressForm?.asDefault}">
-            <span>Đặt làm địa chỉ mặc định</span>
-          </label>
+            <div
+              class="grid"
+              style="grid-template-columns: repeat(2, 1fr); gap: 12px"
+            >
+              <label class="grid">
+                <span class="text-muted">Phường/Xã</span>
+                <input
+                  class="input"
+                  name="ward"
+                  th:value="${addressForm?.ward}"
+                  required
+                />
+              </label>
+              <label class="grid">
+                <span class="text-muted">Quận/Huyện</span>
+                <input
+                  class="input"
+                  name="district"
+                  th:value="${addressForm?.district}"
+                  required
+                />
+              </label>
+            </div>
 
-          <div class="center" style="gap:8px;justify-content:flex-start">
-            <button class="btn btn-primary" type="submit" th:text="${formMode == 'edit' ? 'Lưu thay đổi' : 'Thêm địa chỉ'}">Thêm địa chỉ</button>
-            <a th:if="${formMode == 'edit'}" th:href="@{/addresses}" class="btn">Hủy</a>
-          </div>
-        </form>
-      </aside>
+            <label class="grid">
+              <span class="text-muted">Tỉnh/Thành phố</span>
+              <input
+                class="input"
+                name="city"
+                th:value="${addressForm?.city}"
+                required
+              />
+            </label>
 
-    </div>
-  </section>
+            <label class="center" style="gap: 8px; justify-content: flex-start">
+              <input
+                type="checkbox"
+                name="asDefault"
+                th:checked="${addressForm?.asDefault}"
+              />
+              <span>Đặt làm địa chỉ mặc định</span>
+            </label>
 
-</div>
+            <div class="center" style="gap: 8px; justify-content: flex-start">
+              <button
+                class="btn btn-primary"
+                type="submit"
+                th:text="${formMode == 'edit' ? 'Lưu thay đổi' : 'Thêm địa chỉ'}"
+              >
+                Thêm địa chỉ
+              </button>
+              <a
+                th:if="${formMode == 'edit'}"
+                th:href="@{/user/addresses}"
+                class="btn"
+                >Hủy</a
+              >
+            </div>
+          </form>
+        </aside>
+      </div>
+    </section>
+  </div>
 </html>
