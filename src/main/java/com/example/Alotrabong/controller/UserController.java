@@ -14,6 +14,9 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -43,6 +46,7 @@ public class UserController {
     private final BranchItemPriceRepository branchItemPriceRepository;
     private final InventoryRepository inventoryRepository;
     private final BranchRepository branchRepository;
+    private final CategoryRepository categoryRepository;
     private final ReviewRepository reviewRepository;
     private final ReviewMediaRepository reviewMediaRepository;
     private final CouponRepository couponRepository;
@@ -85,6 +89,37 @@ public class UserController {
     private static final Map<String, Object> DEFAULT_NUTRITION = Map.of(
             "cal", 300, "protein", 6, "fat", 10, "carb", 45, "sodium", 160);
 
+    @GetMapping("/home/more")
+    @ResponseBody
+    public Map<String, Object> homeMore(@RequestParam String type,
+            @RequestParam(required = false, defaultValue = "1000") Integer size) {
+
+        // Lấy nhiều hơn cho lần "Xem thêm"
+        int limit = Math.max(1, Math.min(size, 2000));
+
+        List<ItemDTO> src;
+        switch ((type == null ? "" : type).toLowerCase()) {
+            case "new" -> src = itemService.getNewItems(limit);
+            case "best" -> src = itemService.getTopSellingItems(limit);
+            // “fav” mình tạm dùng best (tuỳ bạn có source riêng thì gọi service tương ứng)
+            case "fav" -> src = itemService.getTopSellingItems(limit);
+            default -> src = itemService.getNewItems(limit);
+        }
+
+        // map sang payload tối thiểu cho UI
+        List<Map<String, Object>> items = src.stream().map(i -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", i.getItemId());
+            m.put("name", i.getName());
+            m.put("price", i.getPrice());
+            m.put("thumbnailUrl", "/img/products/" + i.getItemId() + ".jpg");
+            m.put("slug", i.getItemId()); // hoặc i.getItemCode() nếu có
+            return m;
+        }).toList();
+
+        return Map.of("items", items);
+    }
+
     // ===== PRODUCT LIST / DETAIL =====
     @GetMapping("/product/list")
     public String productList(
@@ -95,34 +130,87 @@ public class UserController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size, // <--- thêm size
             Model model) {
 
-        // Demo data để UI chạy ngay
-        List<Map<String, Object>> sampleProducts = new ArrayList<>();
-        for (int i = 1; i <= 8; i++) {
-            Map<String, Object> p = new HashMap<>();
-            p.put("id", String.valueOf(i));
-            p.put("name", "Món ăn số " + i);
-            p.put("price", BigDecimal.valueOf(25_000 + i * 5_000L));
-            p.put("priceText", String.format("%,dđ", 25_000 + i * 5_000L));
-            p.put("thumbnailUrl", "/img/products/" + i + ".jpg");
-            p.put("slug", "mon-" + i);
-            sampleProducts.add(p);
+        // load categories/branches
+        List<Category> categories = categoryRepository.findAll().stream()
+                .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
+                .toList();
+        List<Branch> branches = branchRepository.findAll().stream()
+                .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
+                .toList();
+
+        // Pageable với size động
+        size = Math.max(size, 1);
+        Pageable pageable = PageRequest.of(Math.max(page, 0), size);
+
+        // ====== Lấy dữ liệu từ repo (giữ logic cũ) ======
+        Page<Item> itemsPage;
+        if (categoryId != null && !categoryId.isEmpty()) {
+            itemsPage = itemRepository.findActiveByCategoryId(categoryId, pageable);
+        } else if ("best".equals(sort)) {
+            itemsPage = itemRepository.findActiveOrderBySalesDesc(pageable);
+        } else if ("new".equals(sort)) {
+            itemsPage = itemRepository.findActiveOrderByCreatedAtDesc(pageable);
+        } else if (q != null && !q.isEmpty()) {
+            // NOTE: cách này trả về full list rồi tự gói PageImpl → không chuẩn cho dữ liệu
+            // lớn
+            List<Item> searchResults = itemRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(q);
+            itemsPage = new PageImpl<>(searchResults, pageable, searchResults.size());
+        } else {
+            itemsPage = itemRepository.findByIsActiveTrue(pageable);
         }
 
-        List<Map<String, Object>> categories = List.of(
-                Map.of("id", "1", "name", "Cơm"),
-                Map.of("id", "2", "name", "Mì"),
-                Map.of("id", "3", "name", "Tráng miệng"));
+        // ====== (TẠM THỜI) lọc giá & sort TRONG TRANG HIỆN TẠI ======
+        // Lưu ý: làm thế này page có thể < size nếu món bị lọc rơi bớt.
+        List<Item> filteredItems = itemsPage.getContent();
+        if (minPrice != null || maxPrice != null) {
+            filteredItems = filteredItems.stream()
+                    .filter(item -> {
+                        BigDecimal price = item.getPrice();
+                        if (price == null)
+                            return false;
+                        if (minPrice != null && price.compareTo(minPrice) < 0)
+                            return false;
+                        if (maxPrice != null && price.compareTo(maxPrice) > 0)
+                            return false;
+                        return true;
+                    })
+                    .toList();
+        }
 
-        List<Map<String, Object>> branches = List.of(
-                Map.of("id", "b1", "name", "AloTraBong - TP.HCM"),
-                Map.of("id", "b2", "name", "AloTraBong - Hà Nội"));
+        if ("price_asc".equals(sort)) {
+            filteredItems = filteredItems.stream()
+                    .sorted(Comparator.comparing(Item::getPrice, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .toList();
+        } else if ("price_desc".equals(sort)) {
+            filteredItems = filteredItems.stream()
+                    .sorted(Comparator.comparing(Item::getPrice, Comparator.nullsLast(Comparator.reverseOrder())))
+                    .toList();
+        }
 
-        var fakePage = new org.springframework.data.domain.PageImpl<>(
-                sampleProducts, org.springframework.data.domain.PageRequest.of(page, 8), 20);
+        // map sang VM
+        List<Map<String, Object>> productMaps = filteredItems.stream()
+                .map(item -> {
+                    Map<String, Object> p = new HashMap<>();
+                    p.put("id", item.getItemId());
+                    p.put("name", item.getName());
+                    p.put("price", item.getPrice());
+                    p.put("priceText", item.getPrice() != null
+                            ? String.format("%,dđ", item.getPrice().longValue())
+                            : "—");
+                    p.put("thumbnailUrl", "/img/products/" + item.getItemId() + ".jpg");
+                    p.put("slug", item.getItemCode() != null ? item.getItemCode() : item.getItemId());
+                    return p;
+                })
+                .toList();
 
-        model.addAttribute("page", fakePage);
+        // Giữ totalElements gốc để phân trang không lệch (dù số item trong trang có thể
+        // < size)
+        Page<Map<String, Object>> resultPage = new PageImpl<>(productMaps, pageable, itemsPage.getTotalElements());
+
+        model.addAttribute("page", resultPage);
         model.addAttribute("categories", categories);
         model.addAttribute("branches", branches);
         model.addAttribute("q", q);
@@ -131,6 +219,7 @@ public class UserController {
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("sort", sort);
+        model.addAttribute("size", size); // <--- để view giữ lại
 
         return "user/product/list";
     }
@@ -715,6 +804,7 @@ public class UserController {
     }
 
     // ===== FAVORITE (session-based) =====
+    // ===== FAVORITE (session-based) =====
     @SuppressWarnings("unchecked")
     private Set<String> getFavoriteSet(HttpSession session) {
         Object fv = session.getAttribute("FAVORITES");
@@ -725,6 +815,7 @@ public class UserController {
         return s;
     }
 
+    /** Thêm vào yêu thích (form: POST /user/favorite/add?productId=...) */
     @PostMapping("/favorite/add")
     public String addFavorite(@RequestParam("productId") String itemId,
             HttpSession session,
@@ -740,6 +831,7 @@ public class UserController {
         return "redirect:/user/favorite/list";
     }
 
+    /** Bỏ khỏi yêu thích (form: POST /user/favorite/{id}/remove) */
     @PostMapping("/favorite/{id}/remove")
     public String removeFavorite(@PathVariable("id") String itemId,
             HttpSession session,
@@ -753,11 +845,36 @@ public class UserController {
         return "redirect:/user/favorite/list";
     }
 
+    /**
+     * (Tuỳ chọn) Toggle nhanh: đang yêu thích thì bỏ, chưa thì thêm.
+     * Dùng: POST /user/favorite/toggle?productId=...
+     */
+    @PostMapping("/favorite/toggle")
+    public String toggleFavorite(@RequestParam("productId") String itemId,
+            HttpSession session,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        var itemOpt = itemRepository.findById(itemId);
+        if (itemOpt.isEmpty()) {
+            ra.addFlashAttribute("toastError", "Món không tồn tại.");
+            return "redirect:/user/favorite/list";
+        }
+        var fav = getFavoriteSet(session);
+        if (fav.contains(itemId)) {
+            fav.remove(itemId);
+            ra.addFlashAttribute("toastSuccess", "Đã bỏ khỏi yêu thích!");
+        } else {
+            fav.add(itemId);
+            ra.addFlashAttribute("toastSuccess", "Đã thêm vào yêu thích!");
+        }
+        return "redirect:/user/favorite/list";
+    }
+
+    /** Trang liệt kê yêu thích */
     @GetMapping("/favorite/list")
     public String favoriteList(Model model, HttpSession session) {
         var fav = getFavoriteSet(session);
 
-        // rỗng thì trả sớm
+        // rỗng thì trả sớm cho view hiện khung Empty
         if (fav.isEmpty()) {
             model.addAttribute("items", java.util.Collections.emptyList());
             model.addAttribute("page", null);
@@ -768,7 +885,8 @@ public class UserController {
         var items = itemRepository.findAllById(fav).stream().map(i -> {
             var thumb = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(i.getItemId())
                     .stream().findFirst().map(ItemMedia::getMediaUrl)
-                    .orElse("/img/products/" + i.getItemId() + ".jpg");
+                    // dùng placeholder để tránh 404 static
+                    .orElse("/img/placeholder-product.jpg");
             var m = new java.util.HashMap<String, Object>();
             m.put("id", i.getItemId());
             m.put("name", i.getName());
@@ -779,13 +897,8 @@ public class UserController {
         }).toList();
 
         model.addAttribute("items", items);
-        model.addAttribute("page", null); // nếu cần phân trang, bạn tự wrap PageImpl như ở product list
+        model.addAttribute("page", null); // nếu cần phân trang: wrap PageImpl như product list
         return "user/favorite/list";
-    }
-
-    @GetMapping("/recent/list")
-    public String recentList() {
-        return "user/recent/list";
     }
 
     // ===== COUPON =====

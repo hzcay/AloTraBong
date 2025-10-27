@@ -7,7 +7,6 @@
     <div class="container">
       <header class="section-head">
         <h2 class="section-title m-0">Sản phẩm yêu thích</h2>
-        <!-- Tuỳ app: nếu muốn đưa về trang menu của bạn -->
         <a th:href="@{/user/product/list}" class="btn">+ Thêm món</a>
       </header>
 
@@ -20,11 +19,12 @@
       <!-- Grid -->
       <div class="grid grid-4" th:if="${!#lists.isEmpty(items)}">
         <article class="card pad" th:each="p : ${items}">
-          <img th:src="${p.thumbnailUrl}" alt="">
+          <img th:src="${p.thumbnailUrl}" alt="Ảnh món"
+               onerror="this.onerror=null;this.src='/img/placeholder.jpg'">
           <h3 class="m-0 mb-1 bold" th:text="${p.name}">Tên món</h3>
 
           <div class="center-between">
-            <strong th:text="${#numbers.formatInteger(p.price)} + 'đ'">49.000đ</strong>
+            <strong th:text="${p.price != null ? #numbers.formatDecimal(p.price,0,0) + 'đ' : 'Liên hệ'}">49.000đ</strong>
             <div class="center" style="gap:8px">
               <!-- Bỏ yêu thích -->
               <form th:action="@{'/user/favorite/' + ${p.id} + '/remove'}" method="post">
