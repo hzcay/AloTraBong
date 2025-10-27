@@ -647,6 +647,73 @@
                 </div>
             </div>
         </div>
+
+        <!-- Add/Edit Media Modal -->
+        <div class="modal fade" id="mediaModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="mediaModalTitle">Thêm Ảnh/Video</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="mediaForm">
+                            <input type="hidden" id="mediaId">
+                            
+                            <!-- Upload Section -->
+                            <div class="mb-3">
+                                <label class="form-label">Chọn File <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="mediaFile" accept="image/*,video/*" required>
+                                <div class="form-text">Hỗ trợ: Ảnh (JPG, PNG, GIF) - Video (MP4, AVI, MOV). Max: Ảnh 10MB, Video 100MB</div>
+                            </div>
+
+                            <!-- Preview Section -->
+                            <div id="mediaPreview" class="mb-3" style="display: none;">
+                                <label class="form-label">Preview:</label>
+                                <div class="border rounded p-3 text-center">
+                                    <img id="imagePreview" class="img-fluid" style="max-height: 200px; display: none;">
+                                    <video id="videoPreview" class="img-fluid" style="max-height: 200px; display: none;" controls>
+                                        <source id="videoSource" src="">
+                                    </video>
+                                    <div id="fileInfo" class="mt-2 text-muted"></div>
+                                </div>
+                            </div>
+
+                            <!-- Media Type -->
+                            <div class="mb-3">
+                                <label class="form-label">Loại Media <span class="text-danger">*</span></label>
+                                <select class="form-select" id="mediaType" required>
+                                    <option value="">-- Chọn loại --</option>
+                                    <option value="IMAGE">Ảnh</option>
+                                    <option value="VIDEO">Video</option>
+                                </select>
+                            </div>
+
+                            <!-- Sort Order -->
+                            <div class="mb-3">
+                                <label class="form-label">Thứ tự hiển thị</label>
+                                <input type="number" class="form-control" id="mediaSortOrder" value="0" min="0">
+                                <div class="form-text">Số nhỏ hơn sẽ hiển thị trước</div>
+                            </div>
+
+                            <!-- Upload Progress -->
+                            <div id="uploadProgress" class="mb-3" style="display: none;">
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <span id="uploadStatus">Đang upload...</span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" id="saveMediaBtn" disabled>Lưu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -665,14 +732,56 @@
         document.getElementById('saveItemBtn').addEventListener('click', saveItem);
         document.getElementById('saveOptionBtn').addEventListener('click', saveOption);
         document.getElementById('saveOptionValueBtn').addEventListener('click', saveOptionValue);
-        document.getElementById('searchInput')?.addEventListener('input', debounce(() => {
-            loadCategories();
-        }, 500));
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(() => {
+                loadCategories();
+            }, 500));
+        }
 
         // Load items for options tab when tab is shown
-        document.getElementById('options-tab')?.addEventListener('shown.bs.tab', function() {
-            loadItemsForOptions();
-        });
+        const optionsTab = document.getElementById('options-tab');
+        if (optionsTab) {
+            optionsTab.addEventListener('shown.bs.tab', function() {
+                loadItemsForOptions();
+            });
+        }
+
+        // File upload handling
+        const mediaFile = document.getElementById('mediaFile');
+        if (mediaFile) {
+            mediaFile.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Validate file type
+                const isImage = file.type.startsWith('image/');
+                const isVideo = file.type.startsWith('video/');
+                
+                if (!isImage && !isVideo) {
+                    showAlert('Chỉ hỗ trợ file ảnh và video', 'warning');
+                    e.target.value = '';
+                    return;
+                }
+
+                // Validate file size
+                const maxSize = isImage ? 10 * 1024 * 1024 : 100 * 1024 * 1024; // 10MB for images, 100MB for videos
+                if (file.size > maxSize) {
+                    showAlert(`File quá lớn. Kích thước tối đa: ${isImage ? '10MB' : '100MB'}`, 'warning');
+                    e.target.value = '';
+                    return;
+                }
+
+                // Auto-detect media type
+                document.getElementById('mediaType').value = isImage ? 'IMAGE' : 'VIDEO';
+
+                // Show preview
+                showFilePreview(file);
+                
+                // Upload file
+                uploadFile(file);
+            });
+        }
     }
 
     function loadStatistics() {
@@ -1234,7 +1343,270 @@
                 console.error('Error deleting option value:', error);
                 showAlert('Lỗi khi xóa giá trị tùy chọn', 'danger');
             });
-    }</script>
+    }
+
+    // ============= MEDIA FUNCTIONS =============
+
+    let currentSelectedMediaItemId = null;
+    let uploadedFileData = null;
+
+    function loadItemsForMedia() {
+        axios.get('/api/admin/menu/items')
+            .then(response => {
+                const items = response.data.data || response.data || [];
+                const select = document.getElementById('mediaItemSelect');
+                select.innerHTML = '<option value="">-- Chọn Món ăn --</option>';
+                items.forEach(item => {
+                    select.innerHTML += `<option value="${item.itemId}">${item.name}</option>`;
+                });
+            })
+            .catch(error => console.error('Error loading items:', error));
+    }
+
+    function loadMediaItems() {
+        const itemId = document.getElementById('mediaItemSelect').value;
+        if (!itemId) {
+            document.getElementById('mediaContainer').style.display = 'none';
+            return;
+        }
+
+        currentSelectedMediaItemId = itemId;
+
+        axios.get(`/api/admin/menu/items/${itemId}/media`)
+            .then(response => {
+                const media = response.data.data || response.data || [];
+                displayMedia(media);
+                document.getElementById('mediaContainer').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error loading media:', error);
+                showAlert('Lỗi khi tải media', 'danger');
+            });
+    }
+
+    function displayMedia(media) {
+        const tbody = document.getElementById('mediaTableBody');
+
+        if (!media || media.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Không có ảnh/video nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = media.map(med => `
+            <tr>
+                <td>
+                    ${med.mediaType === 'IMAGE' 
+                        ? `<img src="${med.mediaUrl}" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">`
+                        : `<video class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;" muted>
+                             <source src="${med.mediaUrl}" type="video/mp4">
+                           </video>`
+                    }
+                </td>
+                <td>
+                    <span class="badge ${med.mediaType === 'IMAGE' ? 'bg-success' : 'bg-info'}">
+                        ${med.mediaType === 'IMAGE' ? 'Ảnh' : 'Video'}
+                    </span>
+                </td>
+                <td><span class="badge bg-secondary">${med.sortOrder || 0}</span></td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-warning" onclick="editMedia(${med.mediaId})" title="Sửa">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteMedia(${med.mediaId})" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openAddMediaModal() {
+        if (!currentSelectedMediaItemId) {
+            showAlert('Vui lòng chọn món ăn trước', 'warning');
+            return;
+        }
+        
+        document.getElementById('mediaForm').reset();
+        document.getElementById('mediaId').value = '';
+        document.getElementById('mediaSortOrder').value = '0';
+        document.getElementById('mediaModalTitle').textContent = 'Thêm Ảnh/Video';
+        document.getElementById('mediaPreview').style.display = 'none';
+        document.getElementById('uploadProgress').style.display = 'none';
+        document.getElementById('saveMediaBtn').disabled = true;
+        uploadedFileData = null;
+        
+        new bootstrap.Modal(document.getElementById('mediaModal')).show();
+    }
+
+    function editMedia(mediaId) {
+        axios.get(`/api/admin/menu/media/${mediaId}`)
+            .then(response => {
+                const med = response.data.data || response.data;
+                document.getElementById('mediaId').value = med.mediaId;
+                document.getElementById('mediaType').value = med.mediaType;
+                document.getElementById('mediaSortOrder').value = med.sortOrder || 0;
+                document.getElementById('mediaModalTitle').textContent = 'Sửa Ảnh/Video';
+                
+                // Hiển thị preview với URL hiện tại
+                showMediaPreview(med.mediaUrl, med.mediaType);
+                document.getElementById('saveMediaBtn').disabled = false;
+                uploadedFileData = { url: med.mediaUrl };
+                
+                new bootstrap.Modal(document.getElementById('mediaModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading media:', error);
+                showAlert('Lỗi khi tải media', 'danger');
+            });
+    }
+
+    function saveMedia() {
+        if (!uploadedFileData) {
+            showAlert('Vui lòng chọn file để upload', 'warning');
+            return;
+        }
+
+        const mediaId = document.getElementById('mediaId').value;
+        const data = {
+            mediaUrl: uploadedFileData.url,
+            mediaType: document.getElementById('mediaType').value,
+            sortOrder: parseInt(document.getElementById('mediaSortOrder').value) || 0
+        };
+
+        if (!data.mediaType) {
+            showAlert('Vui lòng chọn loại media', 'warning');
+            return;
+        }
+
+        const request = mediaId
+            ? axios.put(`/api/admin/menu/media/${mediaId}`, data)
+            : axios.post(`/api/admin/menu/items/${currentSelectedMediaItemId}/media`, data);
+
+        request
+            .then(response => {
+                showAlert(mediaId ? 'Cập nhật media thành công' : 'Thêm media thành công', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('mediaModal')).hide();
+                loadMediaItems();
+            })
+            .catch(error => {
+                console.error('Error saving media:', error);
+                showAlert(error.response?.data?.message || 'Lỗi khi lưu media', 'danger');
+            });
+    }
+
+    function deleteMedia(mediaId) {
+        if (!confirm('Bạn có chắc muốn xóa media này?')) return;
+
+        axios.delete(`/api/admin/menu/media/${mediaId}`)
+            .then(response => {
+                showAlert('Xóa media thành công', 'success');
+                loadMediaItems();
+            })
+            .catch(error => {
+                console.error('Error deleting media:', error);
+                showAlert('Lỗi khi xóa media', 'danger');
+            });
+    }
+
+    function showFilePreview(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const isImage = file.type.startsWith('image/');
+            
+            if (isImage) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('videoPreview').style.display = 'none';
+            } else {
+                document.getElementById('videoSource').src = e.target.result;
+                document.getElementById('videoPreview').style.display = 'block';
+                document.getElementById('imagePreview').style.display = 'none';
+            }
+            
+            document.getElementById('fileInfo').textContent = 
+                `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            document.getElementById('mediaPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function showMediaPreview(url, type) {
+        if (type === 'IMAGE') {
+            document.getElementById('imagePreview').src = url;
+            document.getElementById('imagePreview').style.display = 'block';
+            document.getElementById('videoPreview').style.display = 'none';
+        } else {
+            document.getElementById('videoSource').src = url;
+            document.getElementById('videoPreview').style.display = 'block';
+            document.getElementById('imagePreview').style.display = 'none';
+        }
+        
+        document.getElementById('fileInfo').textContent = 'File hiện tại';
+        document.getElementById('mediaPreview').style.display = 'block';
+    }
+
+    function uploadFile(file) {
+        const isImage = file.type.startsWith('image/');
+        const endpoint = isImage ? '/api/admin/upload/image' : '/api/admin/upload/video';
+        const folder = isImage ? 'alotrabong/images' : 'alotrabong/videos';
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', folder);
+
+        // Show progress
+        document.getElementById('uploadProgress').style.display = 'block';
+        document.getElementById('uploadStatus').textContent = 'Đang upload...';
+        document.getElementById('saveMediaBtn').disabled = true;
+
+        axios.post(endpoint, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: function(progressEvent) {
+                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                document.querySelector('.progress-bar').style.width = percentCompleted + '%';
+                document.getElementById('uploadStatus').textContent = `Đang upload... ${percentCompleted}%`;
+            }
+        })
+        .then(response => {
+            uploadedFileData = response.data.data;
+            document.getElementById('uploadStatus').textContent = 'Upload thành công!';
+            document.getElementById('saveMediaBtn').disabled = false;
+            
+            // Hide progress after 2 seconds
+            setTimeout(() => {
+                document.getElementById('uploadProgress').style.display = 'none';
+            }, 2000);
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            document.getElementById('uploadStatus').textContent = 'Upload thất bại!';
+            showAlert(error.response?.data?.message || 'Lỗi khi upload file', 'danger');
+            
+            // Hide progress after 3 seconds
+            setTimeout(() => {
+                document.getElementById('uploadProgress').style.display = 'none';
+            }, 3000);
+        });
+    }
+
+    // Load items for media tab when tab is shown
+    const mediaTab = document.getElementById('media-tab');
+    if (mediaTab) {
+        mediaTab.addEventListener('shown.bs.tab', function() {
+            loadItemsForMedia();
+        });
+    }
+
+    // Add event listener for save media button
+    const saveMediaBtn = document.getElementById('saveMediaBtn');
+    if (saveMediaBtn) {
+        saveMediaBtn.addEventListener('click', saveMedia);
+    }
+</script>
 
 </body>
 </html>
