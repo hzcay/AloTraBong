@@ -68,7 +68,7 @@ public class PageController {
         return "redirect:/user/favorite/list";
     }
 
-    // Chi tiết sản phẩm bằng slug “đẹp” -> map vào trang chi tiết ở /user
+    // Chi tiết sản phẩm bằng slug "đẹp" -> map vào trang chi tiết ở /user
     @GetMapping("/p/{slug}")
     public String productBySlug() {
         return "redirect:/user/product/detail/{slug}";

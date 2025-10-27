@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu & Categories - Admin</title>
+    <title>Quản lý Danh mục & Món ăn - Admin</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
@@ -14,14 +14,11 @@
             --dark-color: #1a1a1a;
             --light-color: #f5f5f5;
         }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         body {
             background-color: var(--light-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         .admin-wrapper {
             display: flex;
@@ -31,7 +28,6 @@
             width: 250px;
             background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
             min-height: 100vh;
-            padding: 0;
             position: fixed;
             left: 0;
             top: 0;
@@ -39,9 +35,16 @@
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             z-index: 1000;
         }
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
-        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 107, 53, 0.5); border-radius: 3px; }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.5);
+            border-radius: 3px;
+        }
         .sidebar-header {
             padding: 25px 20px;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -52,10 +55,22 @@
             top: 0;
             z-index: 1001;
         }
-        .sidebar-header h4 { font-size: 18px; font-weight: 600; margin: 0; }
-        .sidebar-header p { font-size: 12px; margin: 5px 0 0 0; opacity: 0.9; }
-        .sidebar-menu { padding: 20px 0; }
-        .sidebar-menu .menu-section { margin-bottom: 20px; }
+        .sidebar-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        .sidebar-menu .menu-section {
+            margin-bottom: 20px;
+        }
         .sidebar-menu .menu-title {
             padding: 10px 20px;
             font-size: 12px;
@@ -94,21 +109,33 @@
             bottom: 0;
             background: rgba(0,0,0,0.2);
         }
-        .sidebar-footer .nav-link { padding: 10px 15px; margin: 0; border-radius: 5px; }
-        .sidebar-footer .nav-link:hover { background-color: rgba(220, 53, 69, 0.2); color: #ff6b6b; }
+        .sidebar-footer .nav-link {
+            padding: 10px 15px;
+            margin: 0;
+            border-radius: 5px;
+        }
+        .sidebar-footer .nav-link:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
         .main-content-wrapper {
             margin-left: 250px;
             flex: 1;
             overflow-y: auto;
             background-color: var(--light-color);
         }
-        .main-content { padding: 30px; }
+        .main-content {
+            padding: 30px;
+        }
         .page-header {
             margin-bottom: 30px;
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 15px;
         }
-        .page-header h1 { color: var(--dark-color); font-weight: 600; }
+        .page-header h1 {
+            color: var(--dark-color);
+            font-weight: 600;
+        }
         .card-custom {
             background: white;
             border-radius: 10px;
@@ -123,15 +150,33 @@
         .btn-primary:hover {
             background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
         }
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+        .nav-tabs .nav-link {
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+        }
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: none;
+        }
     </style>
 </head>
 <body>
 <div class="admin-wrapper">
+    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
             <h4><i class="bi bi-speedometer2"></i> AloTraBong Admin</h4>
             <p>Management System</p>
         </div>
+
         <nav class="sidebar-menu">
             <div class="menu-section">
                 <div class="menu-title">Main</div>
@@ -140,6 +185,7 @@
                     <span>Dashboard</span>
                 </a>
             </div>
+
             <div class="menu-section">
                 <div class="menu-title">Management</div>
                 <a class="nav-link" href="/admin/users">
@@ -155,6 +201,7 @@
                     <span>Menu & Categories</span>
                 </a>
             </div>
+
             <div class="menu-section">
                 <div class="menu-title">Business</div>
                 <a class="nav-link" href="/admin/promotions">
@@ -170,6 +217,7 @@
                     <span>Orders</span>
                 </a>
             </div>
+
             <div class="menu-section">
                 <div class="menu-title">Analytics</div>
                 <a class="nav-link" href="/admin/reports">
@@ -182,6 +230,7 @@
                 </a>
             </div>
         </nav>
+
         <div class="sidebar-footer">
             <a class="nav-link" href="/logout">
                 <i class="bi bi-box-arrow-right"></i>
@@ -191,28 +240,1002 @@
     </div>
 
     <div class="main-content-wrapper">
-        <div class="main-content">
-            <div class="page-header">
-                <h1><i class="bi bi-list-ul"></i> Menu & Categories</h1>
+    <div class="main-content">
+        <div class="page-header">
+            <h1><i class="bi bi-list-ul"></i> Quản lý Danh mục & Món ăn</h1>
+            <p class="text-muted">CRUD danh mục: Gà rán, Pizza, Burger, Đồ uống, Combo,...</p>
+        </div>
+
+        <!-- Statistics Row -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card-custom text-center">
+                    <h6 class="text-muted mb-2">Tổng Danh mục</h6>
+                    <h3 class="text-primary" id="totalCategories">0</h3>
+                </div>
             </div>
-            <div class="card-custom">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <h5>Categories Management</h5>
+            <div class="col-md-3">
+                <div class="card-custom text-center">
+                    <h6 class="text-muted mb-2">Danh mục Hoạt động</h6>
+                    <h3 class="text-success" id="activeCategories">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-custom text-center">
+                    <h6 class="text-muted mb-2">Tổng Món ăn</h6>
+                    <h3 class="text-info" id="totalItems">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-custom text-center">
+                    <h6 class="text-muted mb-2">Món ăn Hoạt động</h6>
+                    <h3 class="text-warning" id="activeItems">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="card-custom mb-4">
+            <ul class="nav nav-tabs" id="menuTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories-content" type="button" role="tab">
+                        <i class="bi bi-list"></i> Danh mục
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="items-tab" data-bs-toggle="tab" data-bs-target="#items-content" type="button" role="tab">
+                        <i class="bi bi-basket"></i> Món ăn
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="options-tab" data-bs-toggle="tab" data-bs-target="#options-content" type="button" role="tab">
+                        <i class="bi bi-gear"></i> Tùy chọn
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="media-tab" data-bs-toggle="tab" data-bs-target="#media-content" type="button" role="tab">
+                        <i class="bi bi-image"></i> Ảnh & Video
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="tab-content" id="menuTabsContent">
+            <!-- Categories Tab -->
+            <div class="tab-pane fade show active" id="categories-content" role="tabpanel">
+                <div class="card-custom">
+                    <div class="row align-items-center mb-3">
+                        <div class="col">
+                            <h5>Danh sách Danh mục</h5>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-primary" onclick="openAddCategoryModal()">
+                                <i class="bi bi-plus-lg"></i> Thêm Danh mục
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-auto">
-                        <button class="btn btn-primary">
-                            <i class="bi bi-plus-lg"></i> Add Category
+                    <hr>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tên Danh mục</th>
+                                    <th>Mô tả</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTableBody">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <div class="spinner-border spinner-border-sm"></div> Đang tải...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Tab -->
+            <div class="tab-pane fade" id="items-content" role="tabpanel">
+                <div class="card-custom">
+                    <div class="row align-items-center mb-3">
+                        <div class="col">
+                            <h5>Danh sách Món ăn</h5>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-primary" onclick="openAddItemModal()">
+                                <i class="bi bi-plus-lg"></i> Thêm Món ăn
+                            </button>
+                        </div>
+                    </div>
+                    <hr>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã Món</th>
+                                    <th>Tên Món</th>
+                                    <th>Danh mục</th>
+                                    <th>Giá</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <div class="spinner-border spinner-border-sm"></div> Đang tải...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Options Tab -->
+            <div class="tab-pane fade" id="options-content" role="tabpanel">
+                <div class="card-custom">
+                    <div class="row align-items-center mb-3">
+                        <div class="col">
+                            <h5>Quản lý Tùy chọn (Size, Drink, Combo...)</h5>
+                        </div>
+                    </div>
+                    <hr>
+
+                    <!-- Select Item -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Chọn Món ăn để quản lý tùy chọn:</label>
+                            <select class="form-select" id="optionItemSelect" onchange="loadItemOptions()">
+                                <option value="">-- Chọn Món ăn --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Options List -->
+                    <div id="optionsContainer" style="display: none;">
+                        <h6 class="mb-3">Tùy chọn của món ăn này:</h6>
+                        <div class="table-responsive mb-4">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tên Tùy chọn</th>
+                                        <th>Bắt buộc</th>
+                                        <th>Số giá trị</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="optionsTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Không có tùy chọn nào</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button class="btn btn-primary mb-4" onclick="openAddOptionModal()">
+                            <i class="bi bi-plus-lg"></i> Thêm Tùy chọn
+                        </button>
+
+                        <!-- Option Values -->
+                        <div id="optionValuesContainer" style="display: none;">
+                            <hr>
+                            <h6 class="mb-3">Giá trị tùy chọn: <span id="selectedOptionName"></span></h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Nhãn (S/M/L)</th>
+                                            <th>Phụ thu (VNĐ)</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="optionValuesTableBody">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">Không có giá trị nào</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button class="btn btn-success" onclick="openAddOptionValueModal()">
+                                <i class="bi bi-plus-lg"></i> Thêm Giá trị
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Media Tab -->
+            <div class="tab-pane fade" id="media-content" role="tabpanel">
+                <div class="card-custom">
+                    <div class="row align-items-center mb-3">
+                        <div class="col">
+                            <h5>Quản lý Ảnh & Video</h5>
+                        </div>
+                    </div>
+                    <hr>
+
+                    <!-- Select Item -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Chọn Món ăn để quản lý ảnh/video:</label>
+                            <select class="form-select" id="mediaItemSelect" onchange="loadMediaItems()">
+                                <option value="">-- Chọn Món ăn --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Media List -->
+                    <div id="mediaContainer" style="display: none;">
+                        <h6 class="mb-3">Ảnh/Video của món ăn:</h6>
+                        <div class="table-responsive mb-4">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Ảnh/Video</th>
+                                        <th>Loại</th>
+                                        <th>Thứ tự</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mediaTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Không có ảnh/video nào</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button class="btn btn-primary" onclick="openAddMediaModal()">
+                            <i class="bi bi-plus-lg"></i> Thêm Ảnh/Video
                         </button>
                     </div>
                 </div>
-                <hr>
-                <p class="text-muted">Categories list will be displayed here</p>
+            </div>
+        </div>
+
+        <!-- Add/Edit Category Modal -->
+        <div class="modal fade" id="categoryModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="categoryModalTitle">Thêm Danh mục</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="categoryForm">
+                            <input type="hidden" id="categoryId">
+                            <div class="mb-3">
+                                <label class="form-label">Tên Danh mục <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="categoryName" required placeholder="VD: Gà rán, Pizza, Burger...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Mô tả</label>
+                                <textarea class="form-control" id="categoryDescription" rows="3" placeholder="Nhập mô tả danh mục"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="categoryActive" checked>
+                                    <label class="form-check-label" for="categoryActive">
+                                        Danh mục Hoạt động
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" id="saveCategoryBtn">Lưu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Item Modal -->
+        <div class="modal fade" id="itemModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="itemModalTitle">Thêm Món ăn</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="itemForm">
+                            <input type="hidden" id="itemId">
+                            <div class="mb-3">
+                                <label class="form-label">Tên Món ăn <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="itemName" required placeholder="Nhập tên món ăn">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Mô tả</label>
+                                <textarea class="form-control" id="itemDescription" rows="2" placeholder="Nhập mô tả món ăn"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Danh mục <span class="text-danger">*</span></label>
+                                <select class="form-select" id="itemCategory" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="itemPrice" required step="1000" placeholder="0">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Calories (kcal)</label>
+                                <input type="number" class="form-control" id="itemCalories" placeholder="0">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="itemActive" checked>
+                                    <label class="form-check-label" for="itemActive">
+                                        Món ăn Hoạt động
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" id="saveItemBtn">Lưu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Option Modal -->
+        <div class="modal fade" id="optionModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="optionModalTitle">Thêm Tùy chọn</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="optionForm">
+                            <input type="hidden" id="optionId">
+                            <div class="mb-3">
+                                <label class="form-label">Tên Tùy chọn <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="optionName" required placeholder="VD: Size, Drink, Combo...">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="optionRequired">
+                                    <label class="form-check-label" for="optionRequired">
+                                        Bắt buộc chọn tùy chọn này
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" id="saveOptionBtn">Lưu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Option Value Modal -->
+        <div class="modal fade" id="optionValueModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="optionValueModalTitle">Thêm Giá trị Tùy chọn</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="optionValueForm">
+                            <input type="hidden" id="optionValueId">
+                            <div class="mb-3">
+                                <label class="form-label">Nhãn <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="valueName" required placeholder="VD: S, M, L hoặc Có Đá, Không Đá...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phụ thu (VNĐ)</label>
+                                <input type="number" class="form-control" id="valueExtraPrice" placeholder="0" step="1000">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" id="saveOptionValueBtn">Lưu</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCategories();
+        loadItems();
+        loadStatistics();
+        setupEventListeners();
+    });
+
+    function setupEventListeners() {
+        document.getElementById('saveCategoryBtn').addEventListener('click', saveCategory);
+        document.getElementById('saveItemBtn').addEventListener('click', saveItem);
+        document.getElementById('saveOptionBtn').addEventListener('click', saveOption);
+        document.getElementById('saveOptionValueBtn').addEventListener('click', saveOptionValue);
+        document.getElementById('searchInput')?.addEventListener('input', debounce(() => {
+            loadCategories();
+        }, 500));
+
+        // Load items for options tab when tab is shown
+        document.getElementById('options-tab')?.addEventListener('shown.bs.tab', function() {
+            loadItemsForOptions();
+        });
+    }
+
+    function loadStatistics() {
+        axios.get('/api/admin/menu/categories')
+            .then(response => {
+                const categories = response.data.data || response.data || [];
+                const activeCount = categories.filter(c => c.isActive).length;
+                document.getElementById('totalCategories').textContent = categories.length;
+                document.getElementById('activeCategories').textContent = activeCount;
+            })
+            .catch(err => {
+                console.error('Error loading category statistics:', err);
+                document.getElementById('totalCategories').textContent = '0';
+                document.getElementById('activeCategories').textContent = '0';
+            });
+
+        axios.get('/api/admin/menu/items')
+            .then(response => {
+                const items = response.data.data || response.data || [];
+                const activeCount = items.filter(i => i.isActive).length;
+                document.getElementById('totalItems').textContent = items.length;
+                document.getElementById('activeItems').textContent = activeCount;
+            })
+            .catch(err => {
+                console.error('Error loading item statistics:', err);
+                document.getElementById('totalItems').textContent = '0';
+                document.getElementById('activeItems').textContent = '0';
+            });
+    }
+
+    function loadCategories() {
+        axios.get('/api/admin/menu/categories')
+            .then(response => {
+                const categories = response.data.data || response.data || [];
+                displayCategories(categories);
+            })
+            .catch(error => {
+                console.error('Error loading categories:', error);
+                showAlert('Lỗi khi tải danh mục', 'danger');
+            });
+    }
+
+    function displayCategories(categories) {
+        const tbody = document.getElementById('categoriesTableBody');
+
+        if (!categories || categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Không có danh mục nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = categories.map(cat => `
+            <tr>
+                <td><strong>${cat.name}</strong></td>
+                <td>${cat.description || '<i class="text-muted">Không có</i>'}</td>
+                <td>
+                    <span class="badge ${cat.isActive ? 'bg-success' : 'bg-danger'}">
+                        ${cat.isActive ? 'Hoạt động' : 'Ngừng'}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-warning" onclick="editCategory('${cat.categoryId}')" title="Sửa">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteCategory('${cat.categoryId}')" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openAddCategoryModal() {
+        document.getElementById('categoryForm').reset();
+        document.getElementById('categoryId').value = '';
+        document.getElementById('categoryActive').checked = true;
+        document.getElementById('categoryModalTitle').textContent = 'Thêm Danh mục';
+        new bootstrap.Modal(document.getElementById('categoryModal')).show();
+    }
+
+    function editCategory(categoryId) {
+        axios.get(`/api/admin/menu/categories/${categoryId}`)
+            .then(response => {
+                const cat = response.data.data || response.data;
+                document.getElementById('categoryId').value = cat.categoryId;
+                document.getElementById('categoryName').value = cat.name;
+                document.getElementById('categoryDescription').value = cat.description || '';
+                document.getElementById('categoryActive').checked = cat.isActive;
+                document.getElementById('categoryModalTitle').textContent = 'Sửa Danh mục';
+                new bootstrap.Modal(document.getElementById('categoryModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading category:', error);
+                showAlert('Lỗi khi tải danh mục', 'danger');
+            });
+    }
+
+    function saveCategory() {
+        const categoryId = document.getElementById('categoryId').value;
+        const data = {
+            name: document.getElementById('categoryName').value,
+            description: document.getElementById('categoryDescription').value,
+            isActive: document.getElementById('categoryActive').checked
+        };
+
+        if (!data.name) {
+            showAlert('Vui lòng nhập tên danh mục', 'warning');
+            return;
+        }
+
+        const request = categoryId
+            ? axios.put(`/api/admin/menu/categories/${categoryId}`, data)
+            : axios.post('/api/admin/menu/categories', data);
+
+        request
+            .then(response => {
+                showAlert(categoryId ? 'Cập nhật danh mục thành công' : 'Thêm danh mục thành công', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
+                loadCategories();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error saving category:', error);
+                showAlert(error.response?.data?.message || 'Lỗi khi lưu danh mục', 'danger');
+            });
+    }
+
+    function deleteCategory(categoryId) {
+        if (!confirm('Bạn có chắc muốn xóa danh mục này?')) return;
+
+        axios.delete(`/api/admin/menu/categories/${categoryId}`)
+            .then(response => {
+                showAlert('Xóa danh mục thành công', 'success');
+                loadCategories();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error deleting category:', error);
+                showAlert('Lỗi khi xóa danh mục', 'danger');
+            });
+    }
+
+    function loadItems() {
+        axios.get('/api/admin/menu/items')
+            .then(response => {
+                const items = response.data.data || response.data || [];
+                displayItems(items);
+            })
+            .catch(error => {
+                console.error('Error loading items:', error);
+                showAlert('Lỗi khi tải danh sách món ăn', 'danger');
+            });
+    }
+
+    function displayItems(items) {
+        const tbody = document.getElementById('itemsTableBody');
+
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có món ăn nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = items.map(item => `
+            <tr>
+                <td><strong>${item.itemCode || 'N/A'}</strong></td>
+                <td>${item.name}</td>
+                <td><span class="badge bg-secondary">${item.categoryName || 'N/A'}</span></td>
+                <td>${(item.price || 0).toLocaleString('vi-VN')} ₫</td>
+                <td>
+                    <span class="badge ${item.isActive ? 'bg-success' : 'bg-danger'}">
+                        ${item.isActive ? 'Hoạt động' : 'Ngừng'}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="editItem('${item.itemId}')" title="Chỉnh sửa">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteItem('${item.itemId}')" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openAddItemModal() {
+        document.getElementById('itemForm').reset();
+        document.getElementById('itemId').value = '';
+        document.getElementById('itemActive').checked = true;
+        document.getElementById('itemModalTitle').textContent = 'Thêm Món ăn';
+        loadItemCategories();
+        new bootstrap.Modal(document.getElementById('itemModal')).show();
+    }
+
+    function loadItemCategories() {
+        axios.get('/api/admin/menu/categories')
+            .then(response => {
+                const categories = response.data.data || response.data || [];
+                const select = document.getElementById('itemCategory');
+                select.innerHTML = '<option value="">-- Chọn danh mục --</option>';
+                categories.forEach(cat => {
+                    select.innerHTML += `<option value="${cat.categoryId}">${cat.name}</option>`;
+                });
+            })
+            .catch(error => console.error('Error loading categories:', error));
+    }
+
+    function editItem(itemId) {
+        axios.get(`/api/admin/menu/items/${itemId}`)
+            .then(response => {
+                const item = response.data.data || response.data;
+                document.getElementById('itemId').value = item.itemId;
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemDescription').value = item.description || '';
+                document.getElementById('itemPrice').value = item.price || 0;
+                document.getElementById('itemCalories').value = item.calories || 0;
+                document.getElementById('itemActive').checked = item.isActive;
+
+                loadItemCategories();
+                setTimeout(() => {
+                    document.getElementById('itemCategory').value = item.categoryId || '';
+                }, 100);
+
+                document.getElementById('itemModalTitle').textContent = 'Chỉnh sửa Món ăn';
+                new bootstrap.Modal(document.getElementById('itemModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading item:', error);
+                showAlert('Lỗi khi tải thông tin món ăn', 'danger');
+            });
+    }
+
+    function saveItem() {
+        const itemId = document.getElementById('itemId').value;
+        const data = {
+            name: document.getElementById('itemName').value,
+            description: document.getElementById('itemDescription').value,
+            price: parseFloat(document.getElementById('itemPrice').value),
+            calories: parseInt(document.getElementById('itemCalories').value) || 0,
+            categoryId: document.getElementById('itemCategory').value,
+            isActive: document.getElementById('itemActive').checked
+        };
+
+        if (!data.name || !data.categoryId || !data.price) {
+            showAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
+            return;
+        }
+
+        const request = itemId
+            ? axios.put(`/api/admin/menu/items/${itemId}`, data)
+            : axios.post('/api/admin/menu/items', data);
+
+        request
+            .then(response => {
+                showAlert(itemId ? 'Cập nhật món ăn thành công' : 'Thêm món ăn thành công', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+                loadItems();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error saving item:', error);
+                showAlert(error.response?.data?.message || 'Lỗi khi lưu món ăn', 'danger');
+            });
+    }
+
+    function deleteItem(itemId) {
+        if (!confirm('Bạn có chắc muốn xóa món ăn này?')) return;
+
+        axios.delete(`/api/admin/menu/items/${itemId}`)
+            .then(response => {
+                showAlert('Xóa món ăn thành công', 'success');
+                loadItems();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error deleting item:', error);
+                showAlert('Lỗi khi xóa món ăn', 'danger');
+            });
+    }
+
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // ============= OPTIONS FUNCTIONS =============
+
+    function loadItemsForOptions() {
+        axios.get('/api/admin/menu/items')
+            .then(response => {
+                const items = response.data.data || response.data || [];
+                const select = document.getElementById('optionItemSelect');
+                select.innerHTML = '<option value="">-- Chọn Món ăn --</option>';
+                items.forEach(item => {
+                    select.innerHTML += `<option value="${item.itemId}">${item.name}</option>`;
+                });
+            })
+            .catch(error => console.error('Error loading items:', error));
+    }
+
+    let currentSelectedItemId = null;
+    let currentSelectedOptionId = null;
+
+    function loadItemOptions() {
+        const itemId = document.getElementById('optionItemSelect').value;
+        if (!itemId) {
+            document.getElementById('optionsContainer').style.display = 'none';
+            return;
+        }
+
+        currentSelectedItemId = itemId;
+        currentSelectedOptionId = null;
+        document.getElementById('optionValuesContainer').style.display = 'none';
+
+        axios.get(`/api/admin/menu/items/${itemId}/options`)
+            .then(response => {
+                const options = response.data.data || response.data || [];
+                displayOptions(options);
+                document.getElementById('optionsContainer').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error loading options:', error);
+                showAlert('Lỗi khi tải tùy chọn', 'danger');
+            });
+    }
+
+    function displayOptions(options) {
+        const tbody = document.getElementById('optionsTableBody');
+
+        if (!options || options.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Không có tùy chọn nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = options.map(opt => `
+            <tr>
+                <td><strong>${opt.optionName}</strong></td>
+                <td>
+                    <span class="badge ${opt.isRequired ? 'bg-danger' : 'bg-secondary'}">
+                        ${opt.isRequired ? 'Bắt buộc' : 'Tùy chọn'}
+                    </span>
+                </td>
+                <td><span class="badge bg-info">${opt.values ? opt.values.length : 0} giá trị</span></td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-info" onclick="loadOptionValues(${opt.optionId}, '${opt.optionName}')" title="Chi tiết">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="editOption(${opt.optionId})" title="Sửa">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteOption(${opt.optionId})" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openAddOptionModal() {
+        if (!currentSelectedItemId) {
+            showAlert('Vui lòng chọn món ăn trước', 'warning');
+            return;
+        }
+        document.getElementById('optionForm').reset();
+        document.getElementById('optionId').value = '';
+        document.getElementById('optionRequired').checked = false;
+        document.getElementById('optionModalTitle').textContent = 'Thêm Tùy chọn';
+        new bootstrap.Modal(document.getElementById('optionModal')).show();
+    }
+
+    function editOption(optionId) {
+        axios.get(`/api/admin/menu/options/${optionId}`)
+            .then(response => {
+                const opt = response.data.data || response.data;
+                document.getElementById('optionId').value = opt.optionId;
+                document.getElementById('optionName').value = opt.optionName;
+                document.getElementById('optionRequired').checked = opt.isRequired;
+                document.getElementById('optionModalTitle').textContent = 'Sửa Tùy chọn';
+                new bootstrap.Modal(document.getElementById('optionModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading option:', error);
+                showAlert('Lỗi khi tải tùy chọn', 'danger');
+            });
+    }
+
+    function saveOption() {
+        const optionId = document.getElementById('optionId').value;
+        const data = {
+            optionName: document.getElementById('optionName').value,
+            isRequired: document.getElementById('optionRequired').checked
+        };
+
+        if (!data.optionName) {
+            showAlert('Vui lòng nhập tên tùy chọn', 'warning');
+            return;
+        }
+
+        const request = optionId
+            ? axios.put(`/api/admin/menu/options/${optionId}`, data)
+            : axios.post(`/api/admin/menu/items/${currentSelectedItemId}/options`, data);
+
+        request
+            .then(response => {
+                showAlert(optionId ? 'Cập nhật tùy chọn thành công' : 'Thêm tùy chọn thành công', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('optionModal')).hide();
+                loadItemOptions();
+            })
+            .catch(error => {
+                console.error('Error saving option:', error);
+                showAlert(error.response?.data?.message || 'Lỗi khi lưu tùy chọn', 'danger');
+            });
+    }
+
+    function deleteOption(optionId) {
+        if (!confirm('Bạn có chắc muốn xóa tùy chọn này?')) return;
+
+        axios.delete(`/api/admin/menu/options/${optionId}`)
+            .then(response => {
+                showAlert('Xóa tùy chọn thành công', 'success');
+                loadItemOptions();
+            })
+            .catch(error => {
+                console.error('Error deleting option:', error);
+                showAlert('Lỗi khi xóa tùy chọn', 'danger');
+            });
+    }
+
+    function loadOptionValues(optionId, optionName) {
+        currentSelectedOptionId = optionId;
+        document.getElementById('selectedOptionName').textContent = optionName;
+
+        axios.get(`/api/admin/menu/options/${optionId}/values`)
+            .then(response => {
+                const values = response.data.data || response.data || [];
+                displayOptionValues(values);
+                document.getElementById('optionValuesContainer').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error loading option values:', error);
+                showAlert('Lỗi khi tải giá trị tùy chọn', 'danger');
+            });
+    }
+
+    function displayOptionValues(values) {
+        const tbody = document.getElementById('optionValuesTableBody');
+
+        if (!values || values.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Không có giá trị nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = values.map(val => `
+            <tr>
+                <td><strong>${val.valueName}</strong></td>
+                <td>${(val.extraPrice || 0).toLocaleString('vi-VN')} ₫</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-warning" onclick="editOptionValue(${val.valueId})" title="Sửa">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteOptionValue(${val.valueId})" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openAddOptionValueModal() {
+        if (!currentSelectedOptionId) {
+            showAlert('Vui lòng chọn tùy chọn trước', 'warning');
+            return;
+        }
+        document.getElementById('optionValueForm').reset();
+        document.getElementById('optionValueId').value = '';
+        document.getElementById('optionValueModalTitle').textContent = 'Thêm Giá trị Tùy chọn';
+        new bootstrap.Modal(document.getElementById('optionValueModal')).show();
+    }
+
+    function editOptionValue(valueId) {
+        axios.get(`/api/admin/menu/option-values/${valueId}`)
+            .then(response => {
+                const val = response.data.data || response.data;
+                document.getElementById('optionValueId').value = val.valueId;
+                document.getElementById('valueName').value = val.valueName;
+                document.getElementById('valueExtraPrice').value = val.extraPrice || 0;
+                document.getElementById('optionValueModalTitle').textContent = 'Sửa Giá trị Tùy chọn';
+                new bootstrap.Modal(document.getElementById('optionValueModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading option value:', error);
+                showAlert('Lỗi khi tải giá trị tùy chọn', 'danger');
+            });
+    }
+
+    function saveOptionValue() {
+        const valueId = document.getElementById('optionValueId').value;
+        const data = {
+            valueName: document.getElementById('valueName').value,
+            extraPrice: parseFloat(document.getElementById('valueExtraPrice').value) || 0
+        };
+
+        if (!data.valueName) {
+            showAlert('Vui lòng nhập nhãn giá trị', 'warning');
+            return;
+        }
+
+        const request = valueId
+            ? axios.put(`/api/admin/menu/option-values/${valueId}`, data)
+            : axios.post(`/api/admin/menu/options/${currentSelectedOptionId}/values`, data);
+
+        request
+            .then(response => {
+                showAlert(valueId ? 'Cập nhật giá trị thành công' : 'Thêm giá trị thành công', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('optionValueModal')).hide();
+                loadOptionValues(currentSelectedOptionId, document.getElementById('selectedOptionName').textContent);
+            })
+            .catch(error => {
+                console.error('Error saving option value:', error);
+                showAlert(error.response?.data?.message || 'Lỗi khi lưu giá trị tùy chọn', 'danger');
+            });
+    }
+
+    function deleteOptionValue(valueId) {
+        if (!confirm('Bạn có chắc muốn xóa giá trị này?')) return;
+
+        axios.delete(`/api/admin/menu/option-values/${valueId}`)
+            .then(response => {
+                showAlert('Xóa giá trị thành công', 'success');
+                loadOptionValues(currentSelectedOptionId, document.getElementById('selectedOptionName').textContent);
+            })
+            .catch(error => {
+                console.error('Error deleting option value:', error);
+                showAlert('Lỗi khi xóa giá trị tùy chọn', 'danger');
+            });
+    }</script>
+
 </body>
 </html>
 

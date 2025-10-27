@@ -54,6 +54,7 @@ public class AdminCategoryServiceImpl implements AdminCategoryService {
         }
 
         category = categoryRepository.save(category);
+        log.info("Category created successfully: {}", category.getCategoryId());
         return convertToDTO(category);
     }
 
@@ -67,13 +68,16 @@ public class AdminCategoryServiceImpl implements AdminCategoryService {
         category.setDescription(dto.getDescription());
         category.setIsActive(dto.getIsActive());
 
-        if (dto.getParentId() != null) {
+        if (dto.getParentId() != null && !dto.getParentId().equals(categoryId)) {
             Category parent = categoryRepository.findById(dto.getParentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Parent category not found"));
             category.setParent(parent);
+        } else {
+            category.setParent(null);
         }
 
         category = categoryRepository.save(category);
+        log.info("Category updated successfully: {}", categoryId);
         return convertToDTO(category);
     }
 
@@ -83,6 +87,7 @@ public class AdminCategoryServiceImpl implements AdminCategoryService {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + categoryId));
         categoryRepository.delete(category);
+        log.info("Category deleted successfully: {}", categoryId);
     }
 
     @Override
@@ -106,6 +111,8 @@ public class AdminCategoryServiceImpl implements AdminCategoryService {
                 .description(category.getDescription())
                 .isActive(category.getIsActive())
                 .parentId(category.getParent() != null ? category.getParent().getCategoryId() : null)
+                .createdAt(category.getCreatedAt())
+                .updatedAt(category.getUpdatedAt())
                 .build();
     }
 }
