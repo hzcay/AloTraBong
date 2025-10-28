@@ -14,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -23,8 +22,6 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-    // UserServiceImpl already implements UserDetailsService
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
@@ -36,7 +33,6 @@ public class SecurityConfig {
         return new JwtAuthenticationFilter();
     }
 
-    // ====================== UNIFIED SECURITY CHAIN (JWT + FORM LOGIN) ======================
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -44,28 +40,65 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+
+                        // ===== STATIC / ASSETS PUBLIC =====
                         .requestMatchers(
-                                "/auth", "/register", "/forgot-password",
-                                "/css/**", "/js/**", "/images/**", "/webjars/**", "/h2-console/**",
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs/**",
-                                "/test/**", // Test endpoints
-                                "/", "/login", "/index" // trang public
-                        ).permitAll()
-                        // API endpoints
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/img/**", // 👈 thêm dòng này
+                                "/uploads/**", // 👈 nếu bạn serve ảnh review từ /uploads/...
+                                "/webjars/**",
+                                "/h2-console/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/docs/**",
+                                "/test/**")
+                        .permitAll()
+
+                        // ===== PUBLIC PAGES =====
+                        .requestMatchers(
+                                "/", "/index",
+                                "/login",
+                                "/auth",
+                                "/register",
+                                "/forgot-password")
+                        .permitAll()
+
+                        // ===== PUBLIC 'USER FACING' PAGES =====
+                        .requestMatchers(
+                                "/user", "/user/",
+                                "/user/home", "/user/home/**",
+                                "/user/product/**",
+                                "/user/branches", "/user/branch/list",
+                                "/user/coupon/list",
+                                "/user/favorite/list")
+                        .permitAll()
+
+                        // ===== PUBLIC API =====
                         .requestMatchers(
                                 "/api/auth/**",
-                                "/api/items/**", "/api/categories/**", "/api/branches/**"
-                        ).permitAll()
-                        // Role-based access
+                                "/api/items/**",
+                                "/api/categories/**",
+                                "/api/branches/**")
+                        .permitAll()
+
+                        // ===== AUTH REQUIRED =====
                         .requestMatchers("/dashboard").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/branch/**").hasAnyRole("ADMIN", "BRANCH_MANAGER")
                         .requestMatchers("/shipper/**").hasAnyRole("ADMIN", "SHIPPER")
+
                         .requestMatchers("/user/**").hasRole("USER")
-                        // API role-based access
-                        .requestMatchers("/api/cart/**", "/api/orders/**", "/api/users/profile").hasRole("USER")
+
+                        .requestMatchers(
+                                "/api/cart/**",
+                                "/api/orders/**",
+                                "/api/users/profile")
+                        .hasRole("USER")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER")
+
                         .anyRequest().authenticated())
                 .formLogin(login -> login
                         .loginPage("/auth")

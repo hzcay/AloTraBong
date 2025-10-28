@@ -5,17 +5,18 @@ import com.example.Alotrabong.dto.HomeItemVM;
 import com.example.Alotrabong.dto.ItemDTO;
 import com.example.Alotrabong.dto.OrderHistoryVM;
 import com.example.Alotrabong.dto.BranchListDTO;
+import com.example.Alotrabong.dto.AddressDTO;
+import com.example.Alotrabong.dto.AddressFormDTO;
 import com.example.Alotrabong.entity.*;
 import com.example.Alotrabong.repository.*;
 import com.example.Alotrabong.service.CartService;
 import com.example.Alotrabong.service.ItemService;
 import com.example.Alotrabong.service.OrderHistoryService;
+import com.example.Alotrabong.service.AddressService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -42,7 +43,6 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/user")
-@PreAuthorize("hasRole('USER')")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -50,6 +50,7 @@ public class UserController {
     private final ItemService itemService;
     private final CartService cartService;
     private final OrderHistoryService orderHistoryService;
+    private final AddressService addressService;
 
     // ===== Repositories =====
     private final ItemRepository itemRepository;
@@ -63,6 +64,35 @@ public class UserController {
     private final CouponRepository couponRepository;
     private final UserRepository userRepository;
 
+    // ===========================
+    // ====== NAV / HEADER =======
+    // ===========================
+
+    // Helper: luôn lấy tên hiển thị (fullName nếu có)
+    private String resolveDisplayName(Authentication auth) {
+        // chưa login -> null
+        if (auth == null || !auth.isAuthenticated()) {
+            return null;
+        }
+
+        String login = auth.getName(); // email/sđt/userId
+        if (login == null || login.isBlank()) {
+            return null;
+        }
+
+        User u = userRepository.findByLogin(login)
+                .orElseGet(() -> userRepository.findById(login).orElse(null));
+
+        if (u != null) {
+            String fullName = u.getFullName();
+            if (fullName != null && !fullName.isBlank()) {
+                return fullName;
+            }
+        }
+
+        return "/auth/login";
+    }
+
     // ===== HOME =====
     @GetMapping({ "", "/" })
     public String userRoot() {
@@ -71,8 +101,10 @@ public class UserController {
 
     @GetMapping({ "/home", "/home/index" })
     public String home(Model model, Authentication auth) {
-        model.addAttribute("userName",
-                (auth != null && auth.isAuthenticated()) ? auth.getName() : "Người dùng VIP");
+
+        // tên user cho header
+        String displayName = resolveDisplayName(auth);
+        model.addAttribute("userName", displayName);
 
         List<HomeItemVM> productsNew = mapItems(itemService.getNewItems(8));
         List<HomeItemVM> productsBest = mapItems(itemService.getTopSellingItems(8));
@@ -97,35 +129,36 @@ public class UserController {
                 .build()).collect(Collectors.toList());
     }
 
-    // Dinh dưỡng mặc định
+    // dinh dưỡng mặc định
     private static final Map<String, Object> DEFAULT_NUTRITION = Map.of(
-            "cal", 300, "protein", 6, "fat", 10, "carb", 45, "sodium", 160);
+            "cal", 300,
+            "protein", 6,
+            "fat", 10,
+            "carb", 45,
+            "sodium", 160);
 
     @GetMapping("/home/more")
     @ResponseBody
     public Map<String, Object> homeMore(@RequestParam String type,
             @RequestParam(required = false, defaultValue = "1000") Integer size) {
 
-        // Lấy nhiều hơn cho lần "Xem thêm"
         int limit = Math.max(1, Math.min(size, 2000));
 
         List<ItemDTO> src;
         switch ((type == null ? "" : type).toLowerCase()) {
             case "new" -> src = itemService.getNewItems(limit);
             case "best" -> src = itemService.getTopSellingItems(limit);
-            // “fav” mình tạm dùng best (tuỳ bạn có source riêng thì gọi service tương ứng)
-            case "fav" -> src = itemService.getTopSellingItems(limit);
+            case "fav" -> src = itemService.getTopSellingItems(limit); // tạm dùng best
             default -> src = itemService.getNewItems(limit);
         }
 
-        // map sang payload tối thiểu cho UI
         List<Map<String, Object>> items = src.stream().map(i -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", i.getItemId());
             m.put("name", i.getName());
             m.put("price", i.getPrice());
             m.put("thumbnailUrl", "/img/products/" + i.getItemId() + ".jpg");
-            m.put("slug", i.getItemId()); // hoặc i.getItemCode() nếu có
+            m.put("slug", i.getItemId());
             return m;
         }).toList();
 
@@ -142,22 +175,24 @@ public class UserController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "9") int size, // <--- thêm size
+            @RequestParam(defaultValue = "9") int size,
+            Authentication auth,
             Model model) {
 
-        // load categories/branches
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
         List<Category> categories = categoryRepository.findAll().stream()
                 .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
                 .toList();
+
         List<Branch> branches = branchRepository.findAll().stream()
                 .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
                 .toList();
 
-        // Pageable với size động
         size = Math.max(size, 1);
         Pageable pageable = PageRequest.of(Math.max(page, 0), size);
 
-        // ====== Lấy dữ liệu từ repo (giữ logic cũ) ======
         Page<Item> itemsPage;
         if (categoryId != null && !categoryId.isEmpty()) {
             itemsPage = itemRepository.findActiveByCategoryId(categoryId, pageable);
@@ -166,16 +201,12 @@ public class UserController {
         } else if ("new".equals(sort)) {
             itemsPage = itemRepository.findActiveOrderByCreatedAtDesc(pageable);
         } else if (q != null && !q.isEmpty()) {
-            // NOTE: cách này trả về full list rồi tự gói PageImpl → không chuẩn cho dữ liệu
-            // lớn
             List<Item> searchResults = itemRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(q);
             itemsPage = new PageImpl<>(searchResults, pageable, searchResults.size());
         } else {
             itemsPage = itemRepository.findByIsActiveTrue(pageable);
         }
 
-        // ====== (TẠM THỜI) lọc giá & sort TRONG TRANG HIỆN TẠI ======
-        // Lưu ý: làm thế này page có thể < size nếu món bị lọc rơi bớt.
         List<Item> filteredItems = itemsPage.getContent();
         if (minPrice != null || maxPrice != null) {
             filteredItems = filteredItems.stream()
@@ -194,15 +225,16 @@ public class UserController {
 
         if ("price_asc".equals(sort)) {
             filteredItems = filteredItems.stream()
-                    .sorted(Comparator.comparing(Item::getPrice, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .sorted(Comparator.comparing(Item::getPrice,
+                            Comparator.nullsLast(Comparator.naturalOrder())))
                     .toList();
         } else if ("price_desc".equals(sort)) {
             filteredItems = filteredItems.stream()
-                    .sorted(Comparator.comparing(Item::getPrice, Comparator.nullsLast(Comparator.reverseOrder())))
+                    .sorted(Comparator.comparing(Item::getPrice,
+                            Comparator.nullsLast(Comparator.reverseOrder())))
                     .toList();
         }
 
-        // map sang VM
         List<Map<String, Object>> productMaps = filteredItems.stream()
                 .map(item -> {
                     Map<String, Object> p = new HashMap<>();
@@ -218,8 +250,6 @@ public class UserController {
                 })
                 .toList();
 
-        // Giữ totalElements gốc để phân trang không lệch (dù số item trong trang có thể
-        // < size)
         Page<Map<String, Object>> resultPage = new PageImpl<>(productMaps, pageable, itemsPage.getTotalElements());
 
         model.addAttribute("page", resultPage);
@@ -231,7 +261,7 @@ public class UserController {
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("sort", sort);
-        model.addAttribute("size", size); // <--- để view giữ lại
+        model.addAttribute("size", size);
 
         return "user/product/list";
     }
@@ -239,7 +269,11 @@ public class UserController {
     @GetMapping("/product/detail/{idOrCode}")
     public String productDetail(@PathVariable String idOrCode,
             @RequestParam(required = false) String branchId,
+            Authentication auth,
             Model model) {
+
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
 
         Item item = tryFindItem(idOrCode).orElse(null);
         if (item == null || !Boolean.TRUE.equals(item.getIsActive())) {
@@ -260,7 +294,8 @@ public class UserController {
                     if (bip.getIsAvailable() != null)
                         available = bip.getIsAvailable();
                 }
-                var invOpt = inventoryRepository.findByBranch_BranchIdAndItem_ItemId(branchId, item.getItemId());
+                var invOpt = inventoryRepository
+                        .findByBranch_BranchIdAndItem_ItemId(branchId, item.getItemId());
                 if (invOpt.isPresent() && invOpt.get().getQuantity() != null) {
                     available = available && invOpt.get().getQuantity() > 0;
                 }
@@ -268,9 +303,12 @@ public class UserController {
         }
 
         List<ItemMedia> media = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(item.getItemId());
+
         List<Map<String, String>> gallery = media.stream()
                 .filter(m -> m.getMediaUrl() != null && !m.getMediaUrl().isBlank())
-                .map(m -> Map.of("url", m.getMediaUrl(), "thumbnailUrl", m.getMediaUrl()))
+                .map(m -> Map.of(
+                        "url", m.getMediaUrl(),
+                        "thumbnailUrl", m.getMediaUrl()))
                 .collect(Collectors.toList());
 
         String mainImageUrl = !gallery.isEmpty()
@@ -278,12 +316,16 @@ public class UserController {
                 : "/img/products/" + item.getItemId() + ".jpg";
 
         List<Review> reviews = reviewRepository.findByItemIdOrderByCreatedAtDesc(item.getItemId());
+
         List<Map<String, Object>> reviewVMs = new ArrayList<>();
         for (Review r : reviews) {
             List<ReviewMedia> rms = reviewMediaRepository.findByReview_ReviewId(r.getReviewId());
             List<Map<String, String>> rmedVM = rms.stream()
-                    .map(x -> Map.of("url", x.getMediaUrl(), "thumbnailUrl", x.getMediaUrl()))
+                    .map(x -> Map.of(
+                            "url", x.getMediaUrl(),
+                            "thumbnailUrl", x.getMediaUrl()))
                     .collect(Collectors.toList());
+
             Map<String, Object> rv = new HashMap<>();
             rv.put("userName", maskUser(r.getUserId()));
             rv.put("rating", r.getRating());
@@ -364,7 +406,8 @@ public class UserController {
         return reviews.stream()
                 .filter(r -> r.getRating() != null)
                 .mapToInt(Review::getRating)
-                .average().orElse(Double.NaN);
+                .average()
+                .orElse(Double.NaN);
     }
 
     private String formatVnCurrency(BigDecimal value) {
@@ -377,46 +420,51 @@ public class UserController {
         return df.format(value) + "đ";
     }
 
-    // ===== BRANCH (NEW): trang danh sách chi nhánh cho user =====
+    // ===== BRANCH LIST =====
     @GetMapping("/branches")
     public String listBranches(@RequestParam(value = "q", required = false) String q,
             @RequestParam(value = "city", required = false) String city,
             @RequestParam(value = "status", required = false) String status,
+            Authentication auth,
             HttpSession session,
             Model model) {
 
-        // 1) Lấy danh sách từ DB
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
         List<Branch> all = branchRepository.findAll();
 
-        // 2) Lọc theo query
         List<Branch> filtered = all.stream()
-                .filter(b -> b.getIsActive() != null && b.getIsActive()) // UI người dùng chỉ show active
+                .filter(b -> b.getIsActive() != null && b.getIsActive())
                 .filter(b -> q == null || q.isBlank()
                         || b.getName().toLowerCase().contains(q.toLowerCase())
-                        || (b.getAddress() != null && b.getAddress().toLowerCase().contains(q.toLowerCase())))
+                        || (b.getAddress() != null
+                                && b.getAddress().toLowerCase().contains(q.toLowerCase())))
                 .filter(b -> city == null || city.isBlank()
-                        || (b.getCity() != null && b.getCity().equalsIgnoreCase(city)))
+                        || (b.getCity() != null
+                                && b.getCity().equalsIgnoreCase(city)))
                 .collect(Collectors.toList());
 
         if (status != null && !status.isBlank()) {
             if (status.equalsIgnoreCase("OPEN")) {
-                filtered = filtered.stream().filter(b -> Boolean.TRUE.equals(b.getIsActive()))
+                filtered = filtered.stream()
+                        .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
                         .collect(Collectors.toList());
             } else if (status.equalsIgnoreCase("CLOSED")) {
-                filtered = filtered.stream().filter(b -> !Boolean.TRUE.equals(b.getIsActive()))
+                filtered = filtered.stream()
+                        .filter(b -> !Boolean.TRUE.equals(b.getIsActive()))
                         .collect(Collectors.toList());
             }
         }
 
-        // 3) Thành phố cho filter
         List<String> cities = all.stream()
                 .map(Branch::getCity)
                 .filter(c -> c != null && !c.isBlank())
                 .distinct()
                 .collect(Collectors.toList());
 
-        // 4) Map -> BranchListDTO để template có distanceKm/deliveryEtaMin/isDefault
         String defaultBranchId = (String) session.getAttribute("DEFAULT_BRANCH_ID");
+
         List<BranchListDTO> vms = filtered.stream()
                 .map(b -> BranchListDTO.builder()
                         .branchId(b.getBranchId())
@@ -425,20 +473,19 @@ public class UserController {
                         .phone(b.getPhone())
                         .isActive(Boolean.TRUE.equals(b.getIsActive()))
                         .openHours(b.getOpenHours() != null ? b.getOpenHours() : "08:00 - 22:00")
-                        .isDefault(defaultBranchId != null && defaultBranchId.equals(b.getBranchId()))
-                        // distanceKm & deliveryEtaMin: để null, sẽ tính sau (Haversine)
+                        .isDefault(defaultBranchId != null
+                                && defaultBranchId.equals(b.getBranchId()))
                         .build())
                 .collect(Collectors.toList());
 
-        // Build data cho bản đồ (không đụng DTO cũ)
         List<Map<String, Object>> mapPoints = filtered.stream()
-                .filter(b -> b.getLatitude() != null && b.getLongitude() != null) // chỉ lấy những branch có toạ độ
+                .filter(b -> b.getLatitude() != null && b.getLongitude() != null)
                 .map(b -> {
                     Map<String, Object> m = new HashMap<>();
                     m.put("id", b.getBranchId());
                     m.put("name", b.getName());
                     m.put("addr", b.getAddress());
-                    m.put("lat", b.getLatitude().doubleValue()); // BigDecimal -> Double cho JS dễ ăn
+                    m.put("lat", b.getLatitude().doubleValue());
                     m.put("lng", b.getLongitude().doubleValue());
                     m.put("isActive", Boolean.TRUE.equals(b.getIsActive()));
                     m.put("openHours", b.getOpenHours());
@@ -446,9 +493,7 @@ public class UserController {
                 })
                 .toList();
 
-        // add vào model
         model.addAttribute("mapPoints", mapPoints);
-
         model.addAttribute("branches", vms);
         model.addAttribute("cities", cities);
         model.addAttribute("q", q);
@@ -458,7 +503,6 @@ public class UserController {
         return "user/branch/list";
     }
 
-    // Giữ route cũ để khỏi gãy link cũ -> redirect sang route mới
     @GetMapping("/branch/list")
     public String legacyBranchListRedirect() {
         return "redirect:/user/branches";
@@ -473,164 +517,207 @@ public class UserController {
         return "redirect:/user/branches";
     }
 
-    // ===== ADDRESS (session-based demo – chạy ngay, chưa cần DB) =====
-    @Getter
-    @Setter
-    public static class AddressForm {
-        private String id;
-        private String fullName;
-        private String phone;
-        private String line;
-        private String ward;
-        private String district;
-        private String city;
-        private Boolean asDefault;
-    }
+    /* ===== ADDRESS CRUD ===== */
 
-    @Getter
-    @Setter
-    public static class AddressVM {
-        private String id;
-        private String fullName;
-        private String phone;
-        private String line;
-        private String ward;
-        private String district;
-        private String city;
-        private boolean isDefault;
-
-        static AddressVM fromForm(AddressForm f) {
-            AddressVM v = new AddressVM();
-            v.id = f.getId();
-            v.fullName = f.getFullName();
-            v.phone = f.getPhone();
-            v.line = f.getLine();
-            v.ward = f.getWard();
-            v.district = f.getDistrict();
-            v.city = f.getCity();
-            v.isDefault = Boolean.TRUE.equals(f.getAsDefault());
-            return v;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<AddressVM> getAddresses(HttpSession session) {
-        Object o = session.getAttribute("ADDRESSES");
-        if (o instanceof List<?> list) {
-            return (List<AddressVM>) list;
-        }
-        // seed demo nếu muốn có sẵn 1 địa chỉ
-        List<AddressVM> init = new ArrayList<>();
-        session.setAttribute("ADDRESSES", init);
-        return init;
-    }
-
-    private void setDefault(List<AddressVM> addresses, String id) {
-        for (AddressVM v : addresses)
-            v.setDefault(false);
-        addresses.stream().filter(a -> Objects.equals(a.getId(), id)).findFirst()
-                .ifPresent(a -> a.setDefault(true));
-    }
-
+    /**
+     * GET /user/addresses
+     * - Hiển thị danh sách địa chỉ + form tạo mới (formMode = "create")
+     */
     @GetMapping("/addresses")
-    public String addressesPage(Model model, HttpSession session) {
-        List<AddressVM> list = getAddresses(session);
+    public String addressesPage(Model model, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
+        String userKey = auth.getName();
+        List<AddressDTO> list = addressService.getAddressesForUser(userKey);
+
+        // form rỗng cho chế độ tạo mới
+        AddressFormDTO emptyForm = new AddressFormDTO();
+        emptyForm.setId(null);
+        emptyForm.setFullName("");
+        emptyForm.setPhone("");
+        emptyForm.setLine("");
+        emptyForm.setDistrict("");
+        emptyForm.setCity("");
+        emptyForm.setIsDefault(false);
+
         model.addAttribute("addresses", list);
         model.addAttribute("formMode", "create");
-        model.addAttribute("addressForm", new AddressForm());
+        model.addAttribute("addressForm", emptyForm);
+        model.addAttribute("error", null);
+
         return "user/address/manage";
     }
 
+    /**
+     * GET /user/addresses/{id}/edit
+     * - Hiển thị lại cùng template nhưng formMode = "edit"
+     * - Fill form bằng địa chỉ có sẵn
+     */
     @GetMapping("/addresses/{id}/edit")
-    public String editAddress(@PathVariable String id, Model model, HttpSession session) {
-        List<AddressVM> list = getAddresses(session);
-        AddressVM vm = list.stream().filter(a -> Objects.equals(a.getId(), id)).findFirst()
+    public String editAddressPage(
+            @PathVariable("id") Integer id,
+            Model model,
+            Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
+        String userKey = auth.getName();
+        List<AddressDTO> list = addressService.getAddressesForUser(userKey);
+
+        // tìm địa chỉ cần edit trong list userKey
+        AddressDTO target = list.stream()
+                .filter(a -> Objects.equals(a.getId(), id))
+                .findFirst()
                 .orElse(null);
-        if (vm == null) {
-            model.addAttribute("error", "Không tìm thấy địa chỉ.");
+
+        if (target == null) {
+            // Không tìm thấy -> quay lại template nhưng báo lỗi
+            AddressFormDTO emptyForm = new AddressFormDTO();
+            emptyForm.setId(null);
+            emptyForm.setFullName("");
+            emptyForm.setPhone("");
+            emptyForm.setLine("");
+            emptyForm.setDistrict("");
+            emptyForm.setCity("");
+            emptyForm.setIsDefault(false);
+
             model.addAttribute("addresses", list);
             model.addAttribute("formMode", "create");
-            model.addAttribute("addressForm", new AddressForm());
+            model.addAttribute("addressForm", emptyForm);
+            model.addAttribute("error", "Không tìm thấy địa chỉ.");
+
             return "user/address/manage";
         }
-        AddressForm f = new AddressForm();
-        f.setId(vm.getId());
-        f.setFullName(vm.getFullName());
-        f.setPhone(vm.getPhone());
-        f.setLine(vm.getLine());
-        f.setWard(vm.getWard());
-        f.setDistrict(vm.getDistrict());
-        f.setCity(vm.getCity());
-        f.setAsDefault(vm.isDefault());
+
+        // map DTO -> form để show lên input
+        AddressFormDTO form = new AddressFormDTO();
+        form.setId(target.getId());
+        form.setFullName(target.getFullName());
+        form.setPhone(target.getPhone());
+        form.setLine(target.getLine());
+        form.setDistrict(target.getDistrict());
+        form.setCity(target.getCity());
+        form.setIsDefault(target.isDefault());
 
         model.addAttribute("addresses", list);
         model.addAttribute("formMode", "edit");
-        model.addAttribute("addressForm", f);
+        model.addAttribute("addressForm", form);
+        model.addAttribute("error", null);
+
         return "user/address/manage";
     }
 
+    /**
+     * POST /user/addresses/create
+     * - Tạo địa chỉ mới
+     */
     @PostMapping("/addresses/create")
-    public String createAddress(@ModelAttribute AddressForm form, HttpSession session,
+    public String createAddress(
+            @ModelAttribute AddressFormDTO addressForm,
+            Authentication auth,
             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        List<AddressVM> list = getAddresses(session);
-        AddressVM vm = AddressVM.fromForm(form);
-        vm.setId(UUID.randomUUID().toString());
-        if (Boolean.TRUE.equals(form.getAsDefault())) {
-            setDefault(list, vm.getId()); // clear trước
-            vm.setDefault(true);
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
         }
-        list.add(vm);
-        ra.addFlashAttribute("toastSuccess", "Đã thêm địa chỉ!");
+
+        String userKey = auth.getName();
+
+        try {
+            addressService.createAddress(userKey, addressForm);
+            ra.addFlashAttribute("toastSuccess", "Đã thêm địa chỉ!");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("toastError", ex.getMessage());
+        }
+
         return "redirect:/user/addresses";
     }
 
+    /**
+     * POST /user/addresses/update
+     * - Cập nhật địa chỉ
+     */
     @PostMapping("/addresses/update")
-    public String updateAddress(@ModelAttribute AddressForm form, HttpSession session,
+    public String updateAddress(
+            @ModelAttribute AddressFormDTO addressForm,
+            Authentication auth,
             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        List<AddressVM> list = getAddresses(session);
-        AddressVM vm = list.stream().filter(a -> Objects.equals(a.getId(), form.getId())).findFirst()
-                .orElse(null);
-        if (vm == null) {
-            ra.addFlashAttribute("toastError", "Không tìm thấy địa chỉ để cập nhật.");
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+
+        String userKey = auth.getName();
+
+        if (addressForm.getId() == null) {
+            ra.addFlashAttribute("toastError", "Thiếu ID địa chỉ để cập nhật.");
             return "redirect:/user/addresses";
         }
-        vm.setFullName(form.getFullName());
-        vm.setPhone(form.getPhone());
-        vm.setLine(form.getLine());
-        vm.setWard(form.getWard());
-        vm.setDistrict(form.getDistrict());
-        vm.setCity(form.getCity());
 
-        if (Boolean.TRUE.equals(form.getAsDefault())) {
-            setDefault(list, vm.getId());
+        try {
+            addressService.updateAddress(userKey, addressForm);
+            ra.addFlashAttribute("toastSuccess", "Đã lưu thay đổi!");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("toastError", ex.getMessage());
         }
-        ra.addFlashAttribute("toastSuccess", "Đã lưu thay đổi!");
+
         return "redirect:/user/addresses";
     }
 
+    /**
+     * POST /user/addresses/{id}/delete
+     * - Xoá địa chỉ cụ thể
+     */
     @PostMapping("/addresses/{id}/delete")
-    public String deleteAddress(@PathVariable String id, HttpSession session,
+    public String deleteAddress(
+            @PathVariable("id") Integer id,
+            Authentication auth,
             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        List<AddressVM> list = getAddresses(session);
-        boolean removed = list.removeIf(a -> Objects.equals(a.getId(), id));
-        if (removed) {
-            ra.addFlashAttribute("toastSuccess", "Đã xoá địa chỉ!");
-        } else {
-            ra.addFlashAttribute("toastError", "Không tìm thấy địa chỉ để xoá.");
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
         }
+
+        String userKey = auth.getName();
+
+        try {
+            addressService.deleteAddress(userKey, id);
+            ra.addFlashAttribute("toastSuccess", "Đã xoá địa chỉ!");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("toastError", ex.getMessage());
+        }
+
         return "redirect:/user/addresses";
     }
 
+    /**
+     * POST /user/addresses/{id}/default
+     * - Đặt 1 địa chỉ làm mặc định cho user
+     */
     @PostMapping("/addresses/{id}/default")
-    public String setDefaultAddress(@PathVariable String id, HttpSession session,
+    public String setDefaultAddress(
+            @PathVariable("id") Integer id,
+            Authentication auth,
             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        List<AddressVM> list = getAddresses(session);
-        if (list.stream().noneMatch(a -> Objects.equals(a.getId(), id))) {
-            ra.addFlashAttribute("toastError", "Không tìm thấy địa chỉ.");
-            return "redirect:/user/addresses";
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
         }
-        setDefault(list, id);
-        ra.addFlashAttribute("toastSuccess", "Đã đặt làm mặc định!");
+
+        String userKey = auth.getName();
+
+        try {
+            addressService.setDefault(userKey, id);
+            ra.addFlashAttribute("toastSuccess", "Đã đặt làm mặc định!");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("toastError", ex.getMessage());
+        }
+
         return "redirect:/user/addresses";
     }
 
@@ -638,14 +725,13 @@ public class UserController {
     @PostMapping("/cart")
     public String addToCartFromForm(
             @RequestParam(value = "itemId", required = false) String itemId,
-            @RequestParam(value = "productId", required = false) String productId, // form hiện tại dùng productId
+            @RequestParam(value = "productId", required = false) String productId,
             @RequestParam(value = "branchId", required = false) String branchId,
             @RequestParam(value = "quantity", required = false) Integer quantity,
             Authentication auth,
             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
 
         String resolvedItemId = (itemId != null && !itemId.isBlank()) ? itemId : productId;
-
         if (resolvedItemId == null || resolvedItemId.isBlank()) {
             ra.addFlashAttribute("toastError", "Thiếu mã sản phẩm.");
             return "redirect:/user/cart";
@@ -673,6 +759,10 @@ public class UserController {
     public String cart(@RequestParam(required = false) String branchId,
             Authentication auth,
             Model model) {
+
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
         Branch branch = resolveBranch(branchId);
         String resolvedBranchId = branch != null ? branch.getBranchId() : null;
 
@@ -687,8 +777,11 @@ public class UserController {
             var it = new HashMap<String, Object>();
             var item = itemRepository.findById(d.getItemId()).orElse(null);
             String slug = item != null ? item.getItemCode() : d.getItemId();
-            String thumb = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(d.getItemId())
-                    .stream().findFirst().map(ItemMedia::getMediaUrl)
+            String thumb = itemMediaRepository
+                    .findByItem_ItemIdOrderBySortOrderAsc(d.getItemId())
+                    .stream()
+                    .findFirst()
+                    .map(ItemMedia::getMediaUrl)
                     .orElse("/img/products/" + d.getItemId() + ".jpg");
             String branchName = branch != null ? branch.getName() : "";
 
@@ -727,22 +820,40 @@ public class UserController {
 
     // ===== CHECKOUT (GET ONLY – POST nằm ở CheckoutFlowController) =====
     @GetMapping("/checkout")
-    public String checkout(@RequestParam(required = false, defaultValue = "") String branchId,
+    public String checkout(
+            @RequestParam(required = false, defaultValue = "") String branchIdParam,
             Authentication auth,
             HttpSession session,
             Model model) {
 
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
+        // user hiện tại
         String userIdOrLogin = (auth != null && auth.isAuthenticated())
                 ? auth.getName()
-                : "user-id-placeholder";
+                : null;
 
-        var dtos = cartService.getCartItems(userIdOrLogin, branchId);
+        // resolve branch từ DB
+        Branch branch = resolveBranch(branchIdParam);
+        String resolvedBranchId = (branch != null ? branch.getBranchId() : null);
+
+        // lấy giỏ hàng theo branch thật
+        var dtos = cartService.getCartItems(
+                userIdOrLogin != null ? userIdOrLogin : "user-id-placeholder",
+                resolvedBranchId);
+
         var items = new ArrayList<Map<String, Object>>();
         for (var d : dtos) {
             var it = new HashMap<String, Object>();
-            String thumb = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(d.getItemId())
-                    .stream().findFirst().map(ItemMedia::getMediaUrl)
+
+            String thumb = itemMediaRepository
+                    .findByItem_ItemIdOrderBySortOrderAsc(d.getItemId())
+                    .stream()
+                    .findFirst()
+                    .map(ItemMedia::getMediaUrl)
                     .orElse("/img/products/" + d.getItemId() + ".jpg");
+
             it.put("itemId", d.getItemId());
             it.put("name", d.getItemName());
             it.put("thumbnailUrl", thumb);
@@ -752,14 +863,16 @@ public class UserController {
             items.add(it);
         }
 
+        // tính tiền
         BigDecimal subtotal = dtos.stream()
                 .map(CartItemDTO::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         String appliedCode = (String) session.getAttribute("appliedCouponCode");
-        BigDecimal discount = "ALO20".equalsIgnoreCase(appliedCode)
-                ? new BigDecimal("20000")
-                : BigDecimal.ZERO;
+        BigDecimal discount = (appliedCode != null
+                && "ALO20".equalsIgnoreCase(appliedCode))
+                        ? new BigDecimal("20000")
+                        : BigDecimal.ZERO;
 
         BigDecimal shipping = new BigDecimal("15000");
         BigDecimal grand = subtotal.add(shipping).subtract(discount);
@@ -770,38 +883,42 @@ public class UserController {
         summary.put("shippingFee", shipping);
         summary.put("grandTotal", grand);
 
-        var addresses = new ArrayList<Map<String, Object>>();
-        addresses.add(Map.of(
-                "id", "addr-1",
-                "fullName", "Nguyễn Văn A",
-                "phone", "0900000000",
-                "line", "Số 1 đường X",
-                "ward", "P.Y",
-                "district", "Q.Z",
-                "city", "TP.HCM",
-                "default", true));
+        // địa chỉ từ DB
+        List<AddressDTO> addressList = (userIdOrLogin != null)
+                ? addressService.getAddressesForUser(userIdOrLogin)
+                : List.of();
 
+        // chọn sẵn địa chỉ
         String selectedAddressId = (String) session.getAttribute("selectedAddressId");
+        if ((selectedAddressId == null || selectedAddressId.isBlank()) && userIdOrLogin != null) {
+            AddressDTO def = addressService.getDefaultAddressForUser(userIdOrLogin);
+            if (def != null) {
+                selectedAddressId = String.valueOf(def.getId());
+            }
+        }
+
+        // lấy state khác từ session
         String selectedPayment = (String) session.getAttribute("selectedPayment");
         String note = (String) session.getAttribute("checkoutNote");
         String couponError = (String) session.getAttribute("couponError");
 
+        // bơm vào model
         model.addAttribute("items", items);
         model.addAttribute("summary", summary);
-        model.addAttribute("branchId", branchId);
-        model.addAttribute("addresses", addresses);
+        model.addAttribute("branchId", resolvedBranchId);
+
+        model.addAttribute("addresses", addressList);
         model.addAttribute("selectedAddressId", selectedAddressId);
         model.addAttribute("selectedPayment", selectedPayment);
         model.addAttribute("note", note);
-        model.addAttribute("appliedCoupon", appliedCode != null ? Map.of("code", appliedCode) : null);
+        model.addAttribute("appliedCoupon",
+                appliedCode != null ? Map.of("code", appliedCode) : null);
         model.addAttribute("couponError", couponError);
 
         return "user/checkout/checkout";
     }
 
-    // ===== ORDER =====
-
-    /** (A) Lịch sử đơn hàng + filter + phân trang */
+    // ===== ORDER HISTORY =====
     @GetMapping("/order/history")
     public String orderHistory(
             @RequestParam(required = false) OrderStatus status,
@@ -812,18 +929,18 @@ public class UserController {
             Authentication auth,
             Model model) {
 
-        // 1) bắt buộc login
         if (auth == null || !auth.isAuthenticated()) {
             return "redirect:/login";
         }
 
-        // 2) lấy user từ auth.getName() (có thể là email/sđt/id)
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
         final String login = auth.getName();
         User user = userRepository.findByLogin(login)
                 .orElseGet(() -> userRepository.findById(login).orElse(null));
 
         if (user == null) {
-            // fallback an toàn nếu ko resolve đc user để view không nổ
             model.addAttribute("page", Page.<OrderHistoryVM>empty());
             model.addAttribute("status", status != null ? status.name() : "");
             model.addAttribute("from", from);
@@ -832,22 +949,17 @@ public class UserController {
             return "user/order/history";
         }
 
-        // 3) parse from/to ngày kiểu "2025-10-27" safe
         LocalDate fromDate = safeParseDate(from);
         LocalDate toDate = safeParseDate(to);
-
-        // nếu from > to thì đảo lại cho hợp lý
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
             LocalDate tmp = fromDate;
             fromDate = toDate;
             toDate = tmp;
         }
 
-        // 4) clamp paging (size min=5 max=50)
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(5, Math.min(size, 50));
 
-        // 5) gọi service lấy Page<OrderHistoryVM>
         Page<OrderHistoryVM> vmPage = orderHistoryService.getHistory(
                 user,
                 status,
@@ -856,7 +968,6 @@ public class UserController {
                 safePage,
                 safeSize);
 
-        // 6) nhét vô model cho Thymeleaf
         model.addAttribute("page", vmPage);
         model.addAttribute("status", status != null ? status.name() : "");
         model.addAttribute("from", from);
@@ -865,20 +976,20 @@ public class UserController {
         return "user/order/history";
     }
 
-    /** (A.2) Chi tiết 1 đơn của user hiện tại */
     @GetMapping("/order/detail/{code}")
     public String orderDetail(
             @PathVariable String code,
-            @RequestParam(required = false) String action, // <-- nhận thêm action (?action=cancel)
+            @RequestParam(required = false) String action,
             Authentication auth,
             Model model) {
 
-        // bắt buộc login
         if (auth == null || !auth.isAuthenticated()) {
             return "redirect:/login";
         }
 
-        // resolve user
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
         final String login = auth.getName();
         User user = userRepository.findByLogin(login)
                 .orElseGet(() -> userRepository.findById(login).orElse(null));
@@ -888,19 +999,15 @@ public class UserController {
             return "user/order/detail";
         }
 
-        // gọi service build OrderDetailVM
         var detail = orderHistoryService.getOrderDetailForUser(user, code);
 
         if (detail == null) {
-            // không tồn tại / không thuộc user
             model.addAttribute("error", "Không tìm thấy đơn hàng hoặc bạn không có quyền xem.");
             return "user/order/detail";
         }
 
-        // ok -> gắn data đơn
         model.addAttribute("order", detail);
 
-        // nếu URL có ?action=cancel -> bật confirm box ở view
         if ("cancel".equalsIgnoreCase(action)) {
             model.addAttribute("cancelMode", true);
         }
@@ -908,7 +1015,6 @@ public class UserController {
         return "user/order/detail";
     }
 
-    /** (B) Redirect legacy để template cũ /orders vẫn chạy */
     @GetMapping("/orders")
     public String ordersRedirect(
             @RequestParam(required = false) String status,
@@ -917,7 +1023,6 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        // build URL redirect qua endpoint thật /user/order/history
         String qs = org.springframework.web.util.UriComponentsBuilder
                 .fromPath("/user/order/history")
                 .queryParam("status", status == null ? "" : status)
@@ -931,38 +1036,32 @@ public class UserController {
         return "redirect:" + qs;
     }
 
-    /** (B.2) Redirect legacy chi tiết đơn -> dùng route mới */
     @GetMapping("/orders/{code}")
     public String ordersDetailRedirect(@PathVariable String code) {
-        // code = orderId (UUID/string) bên Order
         return "redirect:/user/order/detail/" + code;
     }
 
-    /** (C) Xác nhận hủy đơn (POST từ popup confirm trong detail.html) */
     @PostMapping("/order/{code}/cancel")
     public String cancelOrder(
             @PathVariable String code,
             Authentication auth,
             Model model) {
 
-        // login check
         if (auth == null || !auth.isAuthenticated()) {
             return "redirect:/login";
         }
 
-        // resolve user
         final String login = auth.getName();
         User user = userRepository.findByLogin(login)
                 .orElseGet(() -> userRepository.findById(login).orElse(null));
 
         if (user == null) {
-            // không biết user -> quay lại detail (view sẽ thấy error nếu bạn render nó)
             model.addAttribute("error", "Không xác định được người dùng.");
             return "redirect:/user/order/detail/" + code;
         }
 
-        // gọi service hủy
         boolean ok = orderHistoryService.cancelOrderForUser(user, code);
+        // bạn có thể check 'ok' để flash message
         return "redirect:/user/order/detail/" + code;
     }
 
@@ -981,7 +1080,8 @@ public class UserController {
 
     @GetMapping("/address/manage")
     public String addressManage() {
-        return "user/address/manage";
+        // route legacy cũ, nếu UI bạn vẫn gọi /user/address/manage có thể redirect
+        return "redirect:/user/addresses";
     }
 
     // ===== FAVORITE (session-based) =====
@@ -995,7 +1095,6 @@ public class UserController {
         return s;
     }
 
-    /** Thêm vào yêu thích (form: POST /user/favorite/add?productId=...) */
     @PostMapping("/favorite/add")
     public String addFavorite(@RequestParam("productId") String itemId,
             HttpSession session,
@@ -1011,7 +1110,6 @@ public class UserController {
         return "redirect:/user/favorite/list";
     }
 
-    /** Bỏ khỏi yêu thích (form: POST /user/favorite/{id}/remove) */
     @PostMapping("/favorite/{id}/remove")
     public String removeFavorite(@PathVariable("id") String itemId,
             HttpSession session,
@@ -1025,9 +1123,6 @@ public class UserController {
         return "redirect:/user/favorite/list";
     }
 
-    /**
-     * Chuyển trạng thái yêu thích (form: POST /user/favorite/toggle?productId=...)
-     */
     @PostMapping("/favorite/toggle")
     public String toggleFavorite(@RequestParam("productId") String itemId,
             HttpSession session,
@@ -1048,23 +1143,26 @@ public class UserController {
         return "redirect:/user/favorite/list";
     }
 
-    /** Trang liệt kê yêu thích */
     @GetMapping("/favorite/list")
-    public String favoriteList(Model model, HttpSession session) {
+    public String favoriteList(Model model, HttpSession session, Authentication auth) {
+
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
         var fav = getFavoriteSet(session);
 
-        // rỗng thì trả sớm cho view hiện khung Empty
         if (fav.isEmpty()) {
             model.addAttribute("items", java.util.Collections.emptyList());
             model.addAttribute("page", null);
             return "user/favorite/list";
         }
 
-        // map dữ liệu tối thiểu cho view
         var items = itemRepository.findAllById(fav).stream().map(i -> {
-            var thumb = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(i.getItemId())
-                    .stream().findFirst().map(ItemMedia::getMediaUrl)
-                    // dùng placeholder để tránh 404 static
+            var thumb = itemMediaRepository
+                    .findByItem_ItemIdOrderBySortOrderAsc(i.getItemId())
+                    .stream()
+                    .findFirst()
+                    .map(ItemMedia::getMediaUrl)
                     .orElse("/img/placeholder-product.jpg");
             var m = new java.util.HashMap<String, Object>();
             m.put("id", i.getItemId());
@@ -1076,13 +1174,17 @@ public class UserController {
         }).toList();
 
         model.addAttribute("items", items);
-        model.addAttribute("page", null); // nếu cần phân trang: wrap PageImpl như product list
+        model.addAttribute("page", null);
         return "user/favorite/list";
     }
 
     // ===== COUPON =====
     @GetMapping("/coupon/list")
-    public String couponList(Model model, HttpSession session) {
+    public String couponList(Model model, HttpSession session, Authentication auth) {
+
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
         var now = java.time.LocalDateTime.now();
         var coupons = couponRepository.findByIsActiveTrue()
                 .stream()
@@ -1138,7 +1240,11 @@ public class UserController {
             @RequestParam(required = false) String backUrl,
             @RequestHeader(value = "Referer", required = false) String referer,
             HttpServletRequest request,
+            Authentication auth,
             Model model) {
+
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
 
         Item item = tryFindItem(itemIdOrCode).orElse(null);
         if (item == null || !Boolean.TRUE.equals(item.getIsActive())) {
@@ -1146,9 +1252,11 @@ public class UserController {
         }
 
         List<ItemMedia> media = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(item.getItemId());
+
         String thumb = (media != null && !media.isEmpty() && media.get(0).getMediaUrl() != null)
                 ? media.get(0).getMediaUrl()
                 : "/img/products/" + item.getItemId() + ".jpg";
+
         Map<String, Object> productMini = new HashMap<>();
         productMini.put("id", item.getItemId());
         productMini.put("name", item.getName());
@@ -1175,7 +1283,11 @@ public class UserController {
     }
 
     @GetMapping("/chat/room/{roomId}")
-    public String chatRoom(@PathVariable String roomId) {
+    public String chatRoom(@PathVariable String roomId, Authentication auth, Model model) {
+
+        // tên user cho header
+        model.addAttribute("userName", resolveDisplayName(auth));
+
         return "user/chat/room";
     }
 
@@ -1201,7 +1313,7 @@ public class UserController {
                 .orElse(null);
     }
 
-    // ===== legacy redirects: hứng /checkout cũ rồi redirect về /user/checkout
+    // legacy redirect /checkout -> /user/checkout
     @Controller("legacyRedirectController")
     @PreAuthorize("permitAll()")
     static class UserLegacyRedirects {
@@ -1220,7 +1332,7 @@ public class UserController {
             @RequestParam(value = "media", required = false) List<MultipartFile> media,
             Authentication auth,
             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        // 1) Validate cơ bản
+
         if (productId == null || productId.isBlank()) {
             ra.addFlashAttribute("error", "Thiếu mã sản phẩm.");
             return "redirect:/user/review/write?itemId=" + productId;
@@ -1236,7 +1348,6 @@ public class UserController {
                     + (orderCode != null ? "&orderCode=" + orderCode : "");
         }
 
-        // 2) Tìm sản phẩm để redirect đúng slug
         var itemOpt = itemRepository.findById(productId);
         if (itemOpt.isEmpty()) {
             ra.addFlashAttribute("error", "Sản phẩm không tồn tại.");
@@ -1244,13 +1355,11 @@ public class UserController {
         }
         var item = itemOpt.get();
 
-        // 3) Lưu Review
         Review r = new Review();
         r.setItemId(item.getItemId());
         r.setUserId((auth != null && auth.isAuthenticated()) ? auth.getName() : "guest");
         r.setRating(rating);
         r.setComment(content);
-        // nếu entity có field orderCode thì set, còn không thì bỏ dòng này
         try {
             r.getClass().getMethod("setOrderCode", String.class).invoke(r, orderCode);
         } catch (Exception ignore) {
@@ -1258,7 +1367,6 @@ public class UserController {
         r.setCreatedAt(LocalDateTime.now());
         r = reviewRepository.save(r);
 
-        // 4) Lưu media (tuỳ chọn) vào thư mục local: ./uploads/reviews/{reviewId}/
         if (media != null && !media.isEmpty()) {
             Path base = Paths.get("uploads", "reviews", r.getReviewId());
             try {
@@ -1275,10 +1383,10 @@ public class UserController {
                     Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
                     ReviewMedia rm = new ReviewMedia();
                     rm.setReview(r);
-                    rm.setMediaUrl("/uploads/reviews/" + r.getReviewId() + "/" + cleanName); // public URL
+                    rm.setMediaUrl("/uploads/reviews/" + r.getReviewId() + "/" + cleanName);
                     reviewMediaRepository.save(rm);
                 } catch (Exception ex) {
-                    // log lỗi nhưng vẫn cho review thành công
+                    // swallow lỗi upload file, vẫn cho review ok
                 }
             }
         }
