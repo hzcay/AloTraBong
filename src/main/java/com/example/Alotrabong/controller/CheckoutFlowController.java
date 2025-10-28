@@ -73,7 +73,7 @@ public class CheckoutFlowController {
 public String confirmOrder(@RequestParam String addressId,
                            @RequestParam String payment,
                            @RequestParam(required = false) String note,
-                           @RequestParam(value = "branchId", required = false, defaultValue = "aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1") String branchId,
+                           @RequestParam(value = "branchId", required = false) String branchId,
                            Authentication auth,
                            HttpSession session,
                            RedirectAttributes ra) {

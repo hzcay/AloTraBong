@@ -155,7 +155,7 @@
             <!-- Gộp địa chỉ bằng syntax literal |...| cho gọn -->
             <div
               class="mb-2"
-              th:text="|${ad.line}, ${ad.ward}, ${ad.district}, ${ad.city}|"
+              th:text="|${ad.line}, ${ad.district}, ${ad.city}|"
             >
               Số 1, P.X, Q.Y, TP.Z
             </div>
@@ -267,15 +267,6 @@
               style="grid-template-columns: repeat(2, 1fr); gap: 12px"
             >
               <label class="grid">
-                <span class="text-muted">Phường/Xã</span>
-                <input
-                  class="input"
-                  name="ward"
-                  th:value="${addressForm?.ward}"
-                  required
-                />
-              </label>
-              <label class="grid">
                 <span class="text-muted">Quận/Huyện</span>
                 <input
                   class="input"
@@ -299,8 +290,8 @@
             <label class="center" style="gap: 8px; justify-content: flex-start">
               <input
                 type="checkbox"
-                name="asDefault"
-                th:checked="${addressForm?.asDefault}"
+                name="isDefault"
+                th:checked="${addressForm?.isDefault}"
               />
               <span>Đặt làm địa chỉ mặc định</span>
             </label>
