@@ -77,4 +77,9 @@ public interface OrderRepository extends JpaRepository<Order, String> {
 
     // ===== Tìm theo code/ID =====
     Order findFirstByOrderId(String orderId);
+    
+    // ===== Revenue reporting methods =====
+    List<Order> findByStatusAndUpdatedAtBetween(OrderStatus status, LocalDateTime start, LocalDateTime end);
+    
+    List<Order> findByUpdatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

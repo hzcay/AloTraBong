@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,4 +62,13 @@ public interface BranchCommissionRepository extends JpaRepository<BranchCommissi
            "ORDER BY bc.commissionValue DESC")
     List<BranchCommission> findByCommissionValueRange(@Param("minValue") java.math.BigDecimal minValue, 
                                                       @Param("maxValue") java.math.BigDecimal maxValue);
+    
+    // Tìm commission theo branch và thời gian hiệu lực (cho revenue reporting)
+    @Query("SELECT bc FROM BranchCommission bc WHERE bc.branch.branchId = :branchId " +
+           "AND bc.effectiveFrom <= :dateTime " +
+           "AND (bc.effectiveTo IS NULL OR bc.effectiveTo >= :dateTime) " +
+           "AND bc.isActive = true " +
+           "ORDER BY bc.effectiveFrom DESC")
+    Optional<BranchCommission> findByBranchIdAndEffectiveDate(@Param("branchId") String branchId, 
+                                                               @Param("dateTime") LocalDateTime dateTime);
 }

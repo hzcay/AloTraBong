@@ -41,10 +41,10 @@ public class AdminController {
         return "admin/branch-commissions";
     }
 
-    @GetMapping("/reports")
-    public String reports(Model model) {
-        model.addAttribute("title", "Reports");
-        return "admin/reports";
+    @GetMapping("/revenue-reports")
+    public String revenueReports(Model model) {
+        model.addAttribute("title", "Revenue Reports");
+        return "admin/revenue-reports";
     }
 
     @GetMapping("/settings")

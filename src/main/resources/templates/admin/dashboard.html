@@ -4,35 +4,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - AloTraBong</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary-color: #ff6b35;
             --secondary-color: #f7931e;
             --dark-color: #1a1a1a;
             --light-color: #f5f5f5;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
         }
         body {
             background-color: var(--light-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         .admin-wrapper {
             display: flex;
             min-height: 100vh;
         }
-        /* Sidebar */
         .sidebar {
             width: 250px;
             background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
             min-height: 100vh;
-            padding: 0;
             position: fixed;
             left: 0;
             top: 0;
@@ -123,7 +123,6 @@
             background-color: rgba(220, 53, 69, 0.2);
             color: #ff6b6b;
         }
-        /* Main Content */
         .main-content-wrapper {
             margin-left: 250px;
             flex: 1;
@@ -141,51 +140,129 @@
         .page-header h1 {
             color: var(--dark-color);
             font-weight: 600;
+            margin: 0;
+        }
+        .page-header .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
         }
         .stat-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-top: 4px solid var(--primary-color);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
-        .stat-card h3 {
+        .stat-card.users { border-left-color: var(--info-color); }
+        .stat-card.branches { border-left-color: var(--success-color); }
+        .stat-card.promotions { border-left-color: var(--warning-color); }
+        .stat-card.commissions { border-left-color: var(--danger-color); }
+        
+        .stat-card .stat-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 50px;
+            opacity: 0.1;
+            color: var(--primary-color);
+        }
+        .stat-card.users .stat-icon { color: var(--info-color); }
+        .stat-card.branches .stat-icon { color: var(--success-color); }
+        .stat-card.promotions .stat-icon { color: var(--warning-color); }
+        .stat-card.commissions .stat-icon { color: var(--danger-color); }
+        
+        .stat-card h6 {
             color: #666;
             font-size: 14px;
             font-weight: 600;
             text-transform: uppercase;
             margin-bottom: 10px;
+            letter-spacing: 0.5px;
         }
         .stat-card .stat-value {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--dark-color);
+            margin-bottom: 5px;
         }
-        .stat-card .stat-icon {
-            font-size: 40px;
-            color: var(--primary-color);
-            opacity: 0.2;
-            float: right;
+        .stat-card .stat-change {
+            font-size: 12px;
+            font-weight: 500;
         }
+        .stat-card .stat-change.positive { color: var(--success-color); }
+        .stat-card .stat-change.negative { color: var(--danger-color); }
+        
         .card-custom {
             background: white;
-            border-radius: 10px;
+            border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             border: none;
         }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
+        .card-custom h5 {
+            color: var(--dark-color);
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-custom h5 i {
+            color: var(--primary-color);
+        }
+        
+        
+        .quick-action {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 20px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .quick-action:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -198,55 +275,125 @@
     <div class="main-content-wrapper">
         <div class="main-content">
             <div class="page-header">
-                <h1><i class="bi bi-speedometer2"></i> Admin Dashboard</h1>
+                <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+                <div class="subtitle">Tổng quan hệ thống quản lý AloTraBong</div>
             </div>
 
             <!-- Statistics Row -->
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="stat-card">
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card users">
                         <div class="stat-icon"><i class="bi bi-people"></i></div>
-                        <h3>Total Users</h3>
-                        <div class="stat-value">1,234</div>
+                        <h6>Tổng Người dùng</h6>
+                        <div class="stat-value" id="totalUsers">-</div>
+                        <div class="stat-change positive" id="activeUsersChange">
+                            <i class="bi bi-arrow-up"></i> <span id="activeUsers">-</span> đang hoạt động
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card branches">
                         <div class="stat-icon"><i class="bi bi-building"></i></div>
-                        <h3>Active Branches</h3>
-                        <div class="stat-value">45</div>
+                        <h6>Chi nhánh</h6>
+                        <div class="stat-value" id="totalBranches">-</div>
+                        <div class="stat-change positive" id="activeBranchesChange">
+                            <i class="bi bi-check-circle"></i> <span id="activeBranches">-</span> đang hoạt động
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-cart-check"></i></div>
-                        <h3>Today Orders</h3>
-                        <div class="stat-value">387</div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card promotions">
+                        <div class="stat-icon"><i class="bi bi-ticket-perforated"></i></div>
+                        <h6>Coupons</h6>
+                        <div class="stat-value" id="totalPromotions">-</div>
+                        <div class="stat-change positive" id="activePromotionsChange">
+                            <i class="bi bi-lightning"></i> <span id="activePromotions">-</span> đang hoạt động
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
-                        <h3>Total Revenue</h3>
-                        <div class="stat-value">$45,920</div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card commissions">
+                        <div class="stat-icon"><i class="bi bi-percent"></i></div>
+                        <h6>Chiết khấu</h6>
+                        <div class="stat-value" id="totalCommissions">-</div>
+                        <div class="stat-change positive" id="activeCommissionsChange">
+                            <i class="bi bi-graph-up"></i> <span id="activeCommissions">-</span> chính sách
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Main Content Cards -->
-            <div class="row mt-4">
-                <div class="col-md-6">
+            <!-- Charts Row -->
+            <div class="row">
+                <div class="col-lg-6">
                     <div class="card-custom">
-                        <h5><i class="bi bi-graph-up"></i> Recent Activity</h5>
-                        <hr>
-                        <p class="text-muted">Dashboard content will be displayed here</p>
+                        <h5><i class="bi bi-graph-up"></i> Thống kê người dùng</h5>
+                        <div class="chart-container">
+                            <canvas id="userStatsChart"></canvas>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-lg-6">
                     <div class="card-custom">
-                        <h5><i class="bi bi-bell"></i> Notifications</h5>
-                        <hr>
-                        <p class="text-muted">Recent notifications will appear here</p>
+                        <h5><i class="bi bi-building"></i> Thống kê chi nhánh</h5>
+                        <div class="chart-container">
+                            <canvas id="branchStatsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Stats Row -->
+            <div class="row mt-4">
+                <div class="col-lg-6">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-ticket-perforated"></i> Thống kê Coupons</h5>
+                        <div class="chart-container">
+                            <canvas id="couponStatsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-percent"></i> Thống kê Chiết khấu</h5>
+                        <div class="chart-container">
+                            <canvas id="commissionStatsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Row -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-lightning"></i> Thao tác nhanh</h5>
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <a href="/admin/users" class="quick-action">
+                                    <i class="bi bi-person-plus"></i>
+                                    <span>Thêm người dùng</span>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <a href="/admin/branches" class="quick-action">
+                                    <i class="bi bi-building-add"></i>
+                                    <span>Thêm chi nhánh</span>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <a href="/admin/promotions" class="quick-action">
+                                    <i class="bi bi-ticket-perforated"></i>
+                                    <span>Tạo coupon</span>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <a href="/admin/branch-commissions" class="quick-action">
+                                    <i class="bi bi-percent"></i>
+                                    <span>Cấu hình chiết khấu</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -255,6 +402,200 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardData();
+        initializeCharts();
+    });
+
+    function loadDashboardData() {
+        axios.get('/api/admin/reports/dashboard-summary')
+            .then(response => {
+                const data = response.data;
+                
+                // Update statistics cards
+                document.getElementById('totalUsers').textContent = data.totalUsers || 0;
+                document.getElementById('activeUsers').textContent = data.activeUsers || 0;
+                document.getElementById('totalBranches').textContent = data.totalBranches || 0;
+                document.getElementById('activeBranches').textContent = data.activeBranches || 0;
+                document.getElementById('totalPromotions').textContent = data.totalPromotions || 0;
+                document.getElementById('activePromotions').textContent = data.activePromotions || 0;
+                document.getElementById('totalCommissions').textContent = data.totalCommissions || 0;
+                document.getElementById('activeCommissions').textContent = data.activeCommissions || 0;
+                
+                // Update charts with real data
+                updateCharts(data);
+            })
+            .catch(error => {
+                console.error('Error loading dashboard data:', error);
+                // Set default values on error
+                document.getElementById('totalUsers').textContent = '0';
+                document.getElementById('activeUsers').textContent = '0';
+                document.getElementById('totalBranches').textContent = '0';
+                document.getElementById('activeBranches').textContent = '0';
+                document.getElementById('totalPromotions').textContent = '0';
+                document.getElementById('activePromotions').textContent = '0';
+                document.getElementById('totalCommissions').textContent = '0';
+                document.getElementById('activeCommissions').textContent = '0';
+                
+                // Update charts with zero data
+                updateCharts({
+                    totalUsers: 0, activeUsers: 0,
+                    totalBranches: 0, activeBranches: 0,
+                    totalPromotions: 0, activePromotions: 0,
+                    totalCommissions: 0, activeCommissions: 0
+                });
+            });
+    }
+
+    function updateCharts(data) {
+        // Update User Stats Chart
+        const userChart = Chart.getChart('userStatsChart');
+        if (userChart) {
+            const lockedUsers = (data.totalUsers || 0) - (data.activeUsers || 0);
+            userChart.data.datasets[0].data = [data.activeUsers || 0, lockedUsers];
+            userChart.update();
+        }
+
+        // Update Branch Stats Chart
+        const branchChart = Chart.getChart('branchStatsChart');
+        if (branchChart) {
+            branchChart.data.datasets[0].data = [data.totalBranches || 0, data.activeBranches || 0];
+            branchChart.update();
+        }
+
+        // Update Coupon Stats Chart
+        const couponChart = Chart.getChart('couponStatsChart');
+        if (couponChart) {
+            const expiredCoupons = (data.totalPromotions || 0) - (data.activePromotions || 0);
+            couponChart.data.datasets[0].data = [data.activePromotions || 0, expiredCoupons];
+            couponChart.update();
+        }
+
+        // Update Commission Stats Chart
+        const commissionChart = Chart.getChart('commissionStatsChart');
+        if (commissionChart) {
+            commissionChart.data.datasets[0].data = [data.totalCommissions || 0, data.activeCommissions || 0];
+            commissionChart.update();
+        }
+    }
+
+    function initializeCharts() {
+        // User Stats Chart (Pie Chart)
+        const userCtx = document.getElementById('userStatsChart').getContext('2d');
+        new Chart(userCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Người dùng hoạt động', 'Người dùng bị khóa'],
+                datasets: [{
+                    data: [0, 0], // Will be updated by loadDashboardData
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Branch Stats Chart (Bar Chart)
+        const branchCtx = document.getElementById('branchStatsChart').getContext('2d');
+        new Chart(branchCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Tổng chi nhánh', 'Chi nhánh hoạt động'],
+                datasets: [{
+                    label: 'Số lượng',
+                    data: [0, 0], // Will be updated by loadDashboardData
+                    backgroundColor: ['#ff6b35', '#28a745'],
+                    borderWidth: 1,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+
+        // Coupon Stats Chart (Pie Chart)
+        const couponCtx = document.getElementById('couponStatsChart').getContext('2d');
+        new Chart(couponCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Coupons hoạt động', 'Coupons hết hạn'],
+                datasets: [{
+                    data: [0, 0], // Will be updated by loadDashboardData
+                    backgroundColor: ['#ffc107', '#6c757d'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Commission Stats Chart (Bar Chart)
+        const commissionCtx = document.getElementById('commissionStatsChart').getContext('2d');
+        new Chart(commissionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Tổng chính sách', 'Chính sách hoạt động'],
+                datasets: [{
+                    label: 'Số lượng',
+                    data: [0, 0], // Will be updated by loadDashboardData
+                    backgroundColor: ['#dc3545', '#28a745'],
+                    borderWidth: 1,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
 </body>
 </html>
-

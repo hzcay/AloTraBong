@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống kê Doanh thu - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #ff6b35;
+            --secondary-color: #f7931e;
+            --dark-color: #1a1a1a;
+            --light-color: #f5f5f5;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+        body {
+            background-color: var(--light-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.5);
+            border-radius: 3px;
+        }
+        .sidebar-header {
+            padding: 25px 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+        .sidebar-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        .sidebar-menu .menu-section {
+            margin-bottom: 20px;
+        }
+        .sidebar-menu .menu-title {
+            padding: 10px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sidebar-menu .nav-link {
+            color: #ccc;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+            margin: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .sidebar-menu .nav-link:hover {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+        .sidebar-menu .nav-link.active {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.15);
+            font-weight: 600;
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #444;
+            position: sticky;
+            bottom: 0;
+            background: rgba(0,0,0,0.2);
+        }
+        .sidebar-footer .nav-link {
+            padding: 10px 15px;
+            margin: 0;
+            border-radius: 5px;
+        }
+        .sidebar-footer .nav-link:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+        .main-content-wrapper {
+            margin-left: 250px;
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--light-color);
+        }
+        .main-content {
+            padding: 30px;
+        }
+        .page-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+        .page-header h1 {
+            color: var(--dark-color);
+            font-weight: 600;
+            margin: 0;
+        }
+        .page-header .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .card-custom {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-custom h5 {
+            color: var(--dark-color);
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-custom h5 i {
+            color: var(--primary-color);
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .stat-card.revenue { border-left-color: var(--success-color); }
+        .stat-card.orders { border-left-color: var(--info-color); }
+        .stat-card.system { border-left-color: var(--warning-color); }
+        .stat-card.branch { border-left-color: var(--danger-color); }
+        
+        .stat-card .stat-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 50px;
+            opacity: 0.1;
+            color: var(--primary-color);
+        }
+        .stat-card.revenue .stat-icon { color: var(--success-color); }
+        .stat-card.orders .stat-icon { color: var(--info-color); }
+        .stat-card.system .stat-icon { color: var(--warning-color); }
+        .stat-card.branch .stat-icon { color: var(--danger-color); }
+        
+        .stat-card h6 {
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .stat-card .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        .stat-card .stat-change {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .stat-card .stat-change.positive { color: var(--success-color); }
+        .stat-card .stat-change.negative { color: var(--danger-color); }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
+        }
+        
+        .table-custom {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="admin-wrapper">
+    <!-- Include Sidebar -->
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar('reports')}"></div>
+
+    <!-- Main Content -->
+    <div class="main-content-wrapper">
+        <div class="main-content">
+            <div class="page-header">
+                <h1><i class="bi bi-graph-up"></i> Thống kê Doanh thu</h1>
+                <div class="subtitle">Phân tích doanh thu và chiết khấu theo chi nhánh</div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Chi nhánh</label>
+                        <select class="form-select" id="branchFilter">
+                            <option value="">Tất cả chi nhánh</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Từ ngày</label>
+                        <input type="date" class="form-control" id="fromDate">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Đến ngày</label>
+                        <input type="date" class="form-control" id="toDate">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Phương thức</label>
+                        <select class="form-select" id="paymentMethodFilter">
+                            <option value="">Tất cả</option>
+                            <option value="ONLINE">Online</option>
+                            <option value="COD">COD</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" onclick="loadRevenueData()">
+                            <i class="bi bi-search"></i> Tải dữ liệu
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Statistics -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card revenue">
+                        <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+                        <h6>Tổng Doanh thu</h6>
+                        <div class="stat-value" id="totalRevenue">-</div>
+                        <div class="stat-change positive" id="revenueChange">
+                            <i class="bi bi-arrow-up"></i> <span id="avgOrderValue">-</span> AOV
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card orders">
+                        <div class="stat-icon"><i class="bi bi-cart-check"></i></div>
+                        <h6>Tổng Đơn hàng</h6>
+                        <div class="stat-value" id="totalOrders">-</div>
+                        <div class="stat-change positive" id="ordersChange">
+                            <i class="bi bi-check-circle"></i> <span id="deliveredOrders">-</span> đã giao
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card system">
+                        <div class="stat-icon"><i class="bi bi-building"></i></div>
+                        <h6>Hệ thống hưởng</h6>
+                        <div class="stat-value" id="systemShare">-</div>
+                        <div class="stat-change positive" id="systemChange">
+                            <i class="bi bi-percent"></i> <span id="commissionRate">-</span> tỷ lệ
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card branch">
+                        <div class="stat-icon"><i class="bi bi-shop"></i></div>
+                        <h6>Thu Chi nhánh</h6>
+                        <div class="stat-value" id="branchIncome">-</div>
+                        <div class="stat-change positive" id="branchChange">
+                            <i class="bi bi-graph-up"></i> <span id="branchCount">-</span> chi nhánh
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-graph-up"></i> Doanh thu theo thời gian</h5>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-pie-chart"></i> Phương thức thanh toán</h5>
+                        <div class="chart-container">
+                            <canvas id="paymentMethodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tables Row -->
+            <div class="row mt-4">
+                <div class="col-lg-6">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-building"></i> Doanh thu theo Chi nhánh</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Chi nhánh</th>
+                                        <th>Đơn hàng</th>
+                                        <th>Doanh thu</th>
+                                        <th>Hệ thống</th>
+                                        <th>Chi nhánh</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="branchRevenueTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            <div class="spinner-border spinner-border-sm"></div> Đang tải...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-trophy"></i> Top sản phẩm</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Sản phẩm</th>
+                                        <th>Số lượng</th>
+                                        <th>Doanh thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topItemsTableBody">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-4">
+                                            <div class="spinner-border spinner-border-sm"></div> Đang tải...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+<script>
+    let revenueChart, paymentMethodChart;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDateFilters();
+        loadBranches();
+        initializeCharts();
+        loadRevenueData();
+    });
+
+    function initializeDateFilters() {
+        const today = new Date();
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+        
+        document.getElementById('fromDate').value = lastMonth.toISOString().split('T')[0];
+        document.getElementById('toDate').value = today.toISOString().split('T')[0];
+    }
+
+    function loadBranches() {
+        axios.get('/api/admin/branches/all')
+            .then(response => {
+                const branches = response.data || [];
+                const select = document.getElementById('branchFilter');
+                select.innerHTML = '<option value="">Tất cả chi nhánh</option>';
+                branches.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch.branchId;
+                    option.textContent = branch.name;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error loading branches:', error));
+    }
+
+    function loadRevenueData() {
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        const branchId = document.getElementById('branchFilter').value;
+        
+        // Load summary
+        loadRevenueSummary(fromDate, toDate, branchId);
+        
+        // Load charts
+        loadRevenueChart(fromDate, toDate, branchId);
+        loadPaymentMethodChart(fromDate, toDate, branchId);
+        
+        // Load tables
+        loadBranchRevenueTable(fromDate, toDate, branchId);
+        loadTopItemsTable(fromDate, toDate, branchId);
+    }
+
+    function loadRevenueSummary(fromDate, toDate, branchId) {
+        const params = new URLSearchParams();
+        if (fromDate) params.append('fromDate', fromDate);
+        if (toDate) params.append('toDate', toDate);
+        if (branchId) params.append('branchId', branchId);
+        
+        axios.get(`/api/admin/revenue/summary?${params}`)
+            .then(response => {
+                const data = response.data;
+                
+                document.getElementById('totalRevenue').textContent = 
+                    formatCurrency(data.totalRevenue || 0);
+                document.getElementById('totalOrders').textContent = data.totalOrders || 0;
+                document.getElementById('systemShare').textContent = 
+                    formatCurrency(data.systemShare || 0);
+                document.getElementById('branchIncome').textContent = 
+                    formatCurrency(data.branchIncome || 0);
+                document.getElementById('avgOrderValue').textContent = 
+                    formatCurrency(data.avgOrderValue || 0);
+            })
+            .catch(error => {
+                console.error('Error loading revenue summary:', error);
+                showAlert('Lỗi khi tải thống kê tổng quan', 'danger');
+            });
+    }
+
+    function loadRevenueChart(fromDate, toDate, branchId) {
+        const params = new URLSearchParams();
+        if (fromDate) params.append('fromDate', fromDate);
+        if (toDate) params.append('toDate', toDate);
+        if (branchId) params.append('branchId', branchId);
+        params.append('period', 'daily');
+        
+        axios.get(`/api/admin/revenue/by-date?${params}`)
+            .then(response => {
+                const data = response.data || [];
+                
+                const labels = data.map(item => item.reportDate);
+                const revenueData = data.map(item => item.totalRevenue);
+                const ordersData = data.map(item => item.totalOrders);
+                
+                if (revenueChart) {
+                    revenueChart.destroy();
+                }
+                
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                revenueChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Doanh thu',
+                                data: revenueData,
+                                borderColor: '#ff6b35',
+                                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                                tension: 0.4,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Số đơn',
+                                data: ordersData,
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                tension: 0.4,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Doanh thu (VNĐ)'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Số đơn hàng'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                },
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading revenue chart:', error);
+            });
+    }
+
+    function loadPaymentMethodChart(fromDate, toDate, branchId) {
+        const params = new URLSearchParams();
+        if (fromDate) params.append('fromDate', fromDate);
+        if (toDate) params.append('toDate', toDate);
+        if (branchId) params.append('branchId', branchId);
+        
+        axios.get(`/api/admin/revenue/payment-breakdown?${params}`)
+            .then(response => {
+                const data = response.data || {};
+                
+                if (paymentMethodChart) {
+                    paymentMethodChart.destroy();
+                }
+                
+                const ctx = document.getElementById('paymentMethodChart').getContext('2d');
+                paymentMethodChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Online', 'COD'],
+                        datasets: [{
+                            data: [data.onlineOrders || 0, data.codOrders || 0],
+                            backgroundColor: ['#ff6b35', '#28a745'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading payment method chart:', error);
+            });
+    }
+
+    function loadBranchRevenueTable(fromDate, toDate, branchId) {
+        const params = new URLSearchParams();
+        params.append('page', '0');
+        params.append('size', '10');
+        if (fromDate) params.append('fromDate', fromDate);
+        if (toDate) params.append('toDate', toDate);
+        if (branchId) params.append('branchId', branchId);
+        
+        axios.get(`/api/admin/revenue/by-branch?${params}`)
+            .then(response => {
+                const data = response.data.content || [];
+                const tbody = document.getElementById('branchRevenueTableBody');
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Không có dữ liệu</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(item => `
+                    <tr>
+                        <td><strong>${item.branchName}</strong></td>
+                        <td>${item.totalOrders}</td>
+                        <td>${formatCurrency(item.totalRevenue)}</td>
+                        <td>${formatCurrency(item.systemShare)}</td>
+                        <td>${formatCurrency(item.branchIncome)}</td>
+                    </tr>
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading branch revenue table:', error);
+                document.getElementById('branchRevenueTableBody').innerHTML = 
+                    '<tr><td colspan="5" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>';
+            });
+    }
+
+    function loadTopItemsTable(fromDate, toDate, branchId) {
+        const params = new URLSearchParams();
+        params.append('page', '0');
+        params.append('size', '10');
+        if (fromDate) params.append('fromDate', fromDate);
+        if (toDate) params.append('toDate', toDate);
+        if (branchId) params.append('branchId', branchId);
+        
+        axios.get(`/api/admin/revenue/by-item?${params}`)
+            .then(response => {
+                const data = response.data.content || [];
+                const tbody = document.getElementById('topItemsTableBody');
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Không có dữ liệu</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(item => `
+                    <tr>
+                        <td><strong>${item.itemName}</strong></td>
+                        <td>${item.itemQuantity}</td>
+                        <td>${formatCurrency(item.itemRevenue)}</td>
+                    </tr>
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading top items table:', error);
+                document.getElementById('topItemsTableBody').innerHTML = 
+                    '<tr><td colspan="3" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>';
+            });
+    }
+
+    function initializeCharts() {
+        // Initialize empty charts
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+        
+        const paymentCtx = document.getElementById('paymentMethodChart').getContext('2d');
+        paymentMethodChart = new Chart(paymentCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    function formatCurrency(amount) {
+        if (!amount) return '0 ₫';
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    }
+
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+</script>
+</body>
+</html>

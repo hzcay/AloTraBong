@@ -4,7 +4,7 @@ import com.example.Alotrabong.entity.Order;
 import com.example.Alotrabong.entity.OrderItem;
 import com.example.Alotrabong.entity.OrderStatus;
 
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 
 import org.springframework.data.domain.Pageable;  
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,4 +32,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
             @Param("okStatuses") List<OrderStatus> okStatuses,
             Pageable pageable
     );
+    
+    @Query("SELECT oi FROM OrderItem oi WHERE oi.order.orderId IN :orderIds")
+    List<OrderItem> findByOrderIdIn(@Param("orderIds") List<String> orderIds);
 }
