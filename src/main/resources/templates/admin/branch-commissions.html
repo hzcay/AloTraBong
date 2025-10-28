@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Chiết khấu Chi nhánh - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #ff6b35;
+            --secondary-color: #f7931e;
+            --dark-color: #1a1a1a;
+            --light-color: #f5f5f5;
+        }
+        body {
+            background-color: var(--light-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, var(--dark-color) 0%, #2a2a2a 100%);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.5);
+            border-radius: 3px;
+        }
+        .sidebar-header {
+            padding: 25px 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+        .sidebar-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        .sidebar-menu .menu-section {
+            margin-bottom: 20px;
+        }
+        .sidebar-menu .menu-title {
+            padding: 10px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sidebar-menu .nav-link {
+            color: #ccc;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+            margin: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .sidebar-menu .nav-link:hover {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+        .sidebar-menu .nav-link.active {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            background-color: rgba(255, 107, 53, 0.15);
+            font-weight: 600;
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #444;
+            position: sticky;
+            bottom: 0;
+            background: rgba(0,0,0,0.2);
+        }
+        .sidebar-footer .nav-link {
+            padding: 10px 15px;
+            margin: 0;
+            border-radius: 5px;
+        }
+        .sidebar-footer .nav-link:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+        .main-content-wrapper {
+            margin-left: 250px;
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--light-color);
+        }
+        .main-content {
+            padding: 30px;
+        }
+        .page-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+        .page-header h1 {
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        .card-custom {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+        .nav-tabs .nav-link {
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+        }
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: none;
+        }
+        .commission-calculator {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .commission-result {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+<div class="admin-wrapper">
+    <!-- Include Sidebar -->
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar('branch-commissions')}"></div>
+
+    <div class="main-content-wrapper">
+    <div class="main-content">
+        <div class="page-header">
+            <h1><i class="bi bi-percent"></i> Quản lý Chiết khấu Chi nhánh</h1>
+            <p class="text-muted">Cấu hình tỷ lệ chiết khấu cho từng chi nhánh theo doanh thu</p>
+        </div>
+
+        <!-- Statistics Row -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card-custom text-center">
+                    <h6 class="text-muted mb-2">Tổng Chiết khấu</h6>
+                    <h3 class="text-primary" id="totalCommissions">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-custom text-center">
+                    <h6 class="text-muted mb-2">Đang Hoạt động</h6>
+                    <h3 class="text-success" id="activeCommissions">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-custom text-center">
+                    <h6 class="text-muted mb-2">Sắp Hết hạn</h6>
+                    <h3 class="text-warning" id="expiringCommissions">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-custom text-center">
+                    <h6 class="text-muted mb-2">Đã Hết hạn</h6>
+                    <h3 class="text-danger" id="expiredCommissions">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commission Calculator -->
+        <div class="commission-calculator">
+            <h5><i class="bi bi-calculator"></i> Tính Chiết khấu</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Chi nhánh</label>
+                    <select class="form-select" id="calcBranchId">
+                        <option value="">-- Chọn chi nhánh --</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Tổng đơn hàng (VNĐ)</label>
+                    <input type="number" class="form-control" id="calcOrderTotal" placeholder="1000000" step="1000">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Ngày đơn hàng</label>
+                    <input type="date" class="form-control" id="calcOrderDate">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <button class="btn btn-primary" onclick="calculateCommission()">
+                        <i class="bi bi-calculator"></i> Tính Chiết khấu
+                    </button>
+                </div>
+            </div>
+            <div id="commissionResult" class="commission-result mt-3" style="display: none;">
+                <div id="commissionResultText"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="card-custom">
+            <div class="row align-items-center mb-3">
+                <div class="col">
+                    <h5>Danh sách Chiết khấu Chi nhánh</h5>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" onclick="openAddCommissionModal()">
+                        <i class="bi bi-plus-lg"></i> Thêm Chiết khấu
+                    </button>
+                </div>
+            </div>
+            <hr>
+
+            <!-- Filter Row -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tìm kiếm</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm theo chi nhánh...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Loại chiết khấu</label>
+                    <select class="form-select" id="typeFilter">
+                        <option value="">Tất cả</option>
+                        <option value="PERCENT">Phần trăm</option>
+                        <option value="FIXED">Số tiền cố định</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Trạng thái</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">Tất cả</option>
+                        <option value="active">Đang hoạt động</option>
+                        <option value="expired">Đã hết hạn</option>
+                        <option value="expiring">Sắp hết hạn</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-outline-secondary d-block w-100" onclick="loadCommissions()">
+                        <i class="bi bi-search"></i> Lọc
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Chi nhánh</th>
+                            <th>Loại</th>
+                            <th>Giá trị</th>
+                            <th>Thời gian hiệu lực</th>
+                            <th>Trạng thái</th>
+                            <th>Ghi chú</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="commissionsTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm"></div> Đang tải...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add/Edit Commission Modal -->
+        <div class="modal fade" id="commissionModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="commissionModalTitle">Thêm Chiết khấu</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="commissionForm">
+                            <input type="hidden" id="commissionId">
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Chi nhánh <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="branchId" required>
+                                            <option value="">-- Chọn chi nhánh --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Loại chiết khấu <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="commissionType" required onchange="updateValueHelpText()">
+                                            <option value="">-- Chọn loại --</option>
+                                            <option value="PERCENT">Phần trăm (%)</option>
+                                            <option value="FIXED">Số tiền cố định</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Giá trị <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="commissionValue" required step="0.01" placeholder="0">
+                                        <div class="form-text" id="valueHelpText">Nhập giá trị chiết khấu</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="effectiveFrom" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Ngày kết thúc</label>
+                                        <input type="date" class="form-control" id="effectiveTo">
+                                        <div class="form-text">Để trống nếu không giới hạn thời gian</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-check mt-4">
+                                            <input class="form-check-input" type="checkbox" id="isActive" checked>
+                                            <label class="form-check-label" for="isActive">
+                                                Kích hoạt ngay
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Ghi chú</label>
+                                <textarea class="form-control" id="note" rows="3" placeholder="Nhập ghi chú về chiết khấu này..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" id="saveCommissionBtn">Lưu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCommissions();
+        loadStatistics();
+        loadBranchesForDropdown();
+        setupEventListeners();
+    });
+
+    function setupEventListeners() {
+        document.getElementById('saveCommissionBtn').addEventListener('click', saveCommission);
+        
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(() => {
+                loadCommissions();
+            }, 500));
+        }
+    }
+
+    function loadStatistics() {
+        axios.get('/api/admin/branch-commissions/stats/summary')
+            .then(response => {
+                const stats = response.data;
+                document.getElementById('totalCommissions').textContent = stats.totalCommissions || 0;
+                document.getElementById('activeCommissions').textContent = stats.activeCommissions || 0;
+                document.getElementById('expiringCommissions').textContent = stats.expiringCommissions || 0;
+                document.getElementById('expiredCommissions').textContent = stats.expiredCommissions || 0;
+            })
+            .catch(err => {
+                console.error('Error loading statistics:', err);
+                document.getElementById('totalCommissions').textContent = '0';
+                document.getElementById('activeCommissions').textContent = '0';
+                document.getElementById('expiringCommissions').textContent = '0';
+                document.getElementById('expiredCommissions').textContent = '0';
+            });
+    }
+
+    function loadCommissions() {
+        const search = document.getElementById('searchInput').value;
+        const type = document.getElementById('typeFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        
+        let url = '/api/admin/branch-commissions/all';
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (type) params.append('type', type);
+        if (status) params.append('status', status);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        axios.get(url)
+            .then(response => {
+                const commissions = response.data || [];
+                displayCommissions(commissions);
+            })
+            .catch(error => {
+                console.error('Error loading commissions:', error);
+                showAlert('Lỗi khi tải danh sách chiết khấu', 'danger');
+            });
+    }
+
+    function displayCommissions(commissions) {
+        const tbody = document.getElementById('commissionsTableBody');
+
+        if (!commissions || commissions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Không có chiết khấu nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = commissions.map(commission => `
+            <tr>
+                <td><strong>${commission.branchName}</strong></td>
+                <td>
+                    <span class="badge ${commission.commissionType === 'PERCENT' ? 'bg-info' : 'bg-secondary'}">
+                        ${commission.commissionTypeDisplay}
+                    </span>
+                </td>
+                <td><strong>${commission.commissionValueDisplay}</strong></td>
+                <td>
+                    <small>${commission.effectivePeriodDisplay}</small>
+                    ${commission.isExpiringSoon ? '<br><span class="badge bg-warning">Sắp hết hạn</span>' : ''}
+                </td>
+                <td>
+                    <span class="badge ${commission.isActive ? 'bg-success' : 'bg-danger'}">
+                        ${commission.statusDisplay}
+                    </span>
+                </td>
+                <td>${commission.note || '<i class="text-muted">Không có</i>'}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="editCommission(${commission.commissionId})" title="Sửa">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        ${commission.isActive ? 
+                            `<button class="btn btn-outline-warning" onclick="deactivateCommission(${commission.commissionId})" title="Tắt">` :
+                            `<button class="btn btn-outline-success" onclick="activateCommission(${commission.commissionId})" title="Bật">`}
+                            <i class="bi bi-power"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteCommission(${commission.commissionId})" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function loadBranchesForDropdown() {
+        axios.get('/api/admin/branches/all')
+            .then(response => {
+                const branches = response.data || [];
+                const selects = ['branchId', 'calcBranchId'];
+                
+                selects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        select.innerHTML = '<option value="">-- Chọn chi nhánh --</option>';
+                        branches.forEach(branch => {
+                            select.innerHTML += `<option value="${branch.branchId}">${branch.name}</option>`;
+                        });
+                    }
+                });
+            })
+            .catch(error => console.error('Error loading branches:', error));
+    }
+
+    function openAddCommissionModal() {
+        document.getElementById('commissionForm').reset();
+        document.getElementById('commissionId').value = '';
+        document.getElementById('isActive').checked = true;
+        document.getElementById('effectiveFrom').value = new Date().toISOString().split('T')[0];
+        document.getElementById('commissionModalTitle').textContent = 'Thêm Chiết khấu';
+        updateValueHelpText();
+        new bootstrap.Modal(document.getElementById('commissionModal')).show();
+    }
+
+    function editCommission(commissionId) {
+        axios.get(`/api/admin/branch-commissions/${commissionId}`)
+            .then(response => {
+                const commission = response.data;
+                document.getElementById('commissionId').value = commission.commissionId;
+                document.getElementById('branchId').value = commission.branchId;
+                document.getElementById('commissionType').value = commission.commissionType;
+                document.getElementById('commissionValue').value = commission.commissionValue;
+                document.getElementById('effectiveFrom').value = commission.effectiveFrom;
+                document.getElementById('effectiveTo').value = commission.effectiveTo || '';
+                document.getElementById('note').value = commission.note || '';
+                document.getElementById('isActive').checked = commission.isActive;
+                document.getElementById('commissionModalTitle').textContent = 'Sửa Chiết khấu';
+                updateValueHelpText();
+                new bootstrap.Modal(document.getElementById('commissionModal')).show();
+            })
+            .catch(error => {
+                console.error('Error loading commission:', error);
+                showAlert('Lỗi khi tải thông tin chiết khấu', 'danger');
+            });
+    }
+
+    function saveCommission() {
+        const commissionId = document.getElementById('commissionId').value;
+        const data = {
+            branchId: document.getElementById('branchId').value,
+            commissionType: document.getElementById('commissionType').value,
+            commissionValue: parseFloat(document.getElementById('commissionValue').value),
+            effectiveFrom: document.getElementById('effectiveFrom').value,
+            effectiveTo: document.getElementById('effectiveTo').value || null,
+            note: document.getElementById('note').value,
+            isActive: document.getElementById('isActive').checked
+        };
+
+        if (!data.branchId || !data.commissionType || !data.commissionValue || !data.effectiveFrom) {
+            showAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
+            return;
+        }
+
+        const request = commissionId
+            ? axios.put(`/api/admin/branch-commissions/${commissionId}`, data)
+            : axios.post('/api/admin/branch-commissions', data);
+
+        request
+            .then(response => {
+                showAlert(commissionId ? 'Cập nhật chiết khấu thành công' : 'Thêm chiết khấu thành công', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('commissionModal')).hide();
+                loadCommissions();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error saving commission:', error);
+                showAlert(error.response?.data?.message || 'Lỗi khi lưu chiết khấu', 'danger');
+            });
+    }
+
+    function deleteCommission(commissionId) {
+        if (!confirm('Bạn có chắc muốn xóa chiết khấu này?')) return;
+
+        axios.delete(`/api/admin/branch-commissions/${commissionId}`)
+            .then(response => {
+                showAlert('Xóa chiết khấu thành công', 'success');
+                loadCommissions();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error deleting commission:', error);
+                showAlert('Lỗi khi xóa chiết khấu', 'danger');
+            });
+    }
+
+    function activateCommission(commissionId) {
+        axios.post(`/api/admin/branch-commissions/${commissionId}/activate`)
+            .then(response => {
+                showAlert('Kích hoạt chiết khấu thành công', 'success');
+                loadCommissions();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error activating commission:', error);
+                showAlert('Lỗi khi kích hoạt chiết khấu', 'danger');
+            });
+    }
+
+    function deactivateCommission(commissionId) {
+        axios.post(`/api/admin/branch-commissions/${commissionId}/deactivate`)
+            .then(response => {
+                showAlert('Tắt chiết khấu thành công', 'success');
+                loadCommissions();
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('Error deactivating commission:', error);
+                showAlert('Lỗi khi tắt chiết khấu', 'danger');
+            });
+    }
+
+    function calculateCommission() {
+        const branchId = document.getElementById('calcBranchId').value;
+        const orderTotal = document.getElementById('calcOrderTotal').value;
+        const orderDate = document.getElementById('calcOrderDate').value;
+
+        if (!branchId || !orderTotal) {
+            showAlert('Vui lòng chọn chi nhánh và nhập tổng đơn hàng', 'warning');
+            return;
+        }
+
+        const params = new URLSearchParams();
+        params.append('orderTotal', orderTotal);
+        if (orderDate) params.append('orderDate', orderDate);
+
+        axios.get(`/api/admin/branch-commissions/calculate/${branchId}?${params.toString()}`)
+            .then(response => {
+                const result = response.data;
+                const commissionAmount = result.calculatedCommission;
+                const commissionRate = result.commissionRate;
+                
+                document.getElementById('commissionResultText').innerHTML = `
+                    <div><strong>Chiết khấu: ${commissionAmount.toLocaleString('vi-VN')} ₫</strong></div>
+                    <div>Tỷ lệ: ${commissionRate.toFixed(2)}%</div>
+                `;
+                document.getElementById('commissionResult').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error calculating commission:', error);
+                showAlert('Lỗi khi tính chiết khấu', 'danger');
+            });
+    }
+
+    function updateValueHelpText() {
+        const type = document.getElementById('commissionType').value;
+        const helpText = document.getElementById('valueHelpText');
+        
+        if (type === 'PERCENT') {
+            helpText.textContent = 'Nhập phần trăm chiết khấu (ví dụ: 10 cho 10%)';
+        } else if (type === 'FIXED') {
+            helpText.textContent = 'Nhập số tiền chiết khấu cố định (VNĐ)';
+        } else {
+            helpText.textContent = 'Nhập giá trị chiết khấu';
+        }
+    }
+
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+</script>
+
+</body>
+</html>

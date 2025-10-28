@@ -27,6 +27,7 @@ public class AdminApiController {
     private final AdminCategoryService adminCategoryService;
     private final AdminPromotionService adminPromotionService;
     private final AdminShippingService adminShippingService;
+    private final AdminBranchCommissionService adminBranchCommissionService;
     private final AdminReportService adminReportService;
 
     // ==================== USER MANAGEMENT ====================
@@ -457,6 +458,8 @@ public class AdminApiController {
         summary.put("activeBranches", adminBranchService.getActiveBranchesCount());
         summary.put("totalPromotions", adminPromotionService.getTotalPromotionsCount());
         summary.put("activePromotions", adminPromotionService.getActivePromotionsCount());
+        summary.put("totalCommissions", adminBranchCommissionService.getTotalCommissionsCount());
+        summary.put("activeCommissions", adminBranchCommissionService.getActiveCommissionsCount());
         return ResponseEntity.ok(summary);
     }
 }
