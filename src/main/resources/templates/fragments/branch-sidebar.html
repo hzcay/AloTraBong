@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- Branch Manager Sidebar Fragment -->
+    <div th:fragment="branchSidebar(activeMenu)" class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="bi bi-building"></i> Branch Manager</h4>
+            <p>Quản lý Chi nhánh</p>
+            <div th:if="${currentBranch != null}" class="branch-badge">
+                <i class="bi bi-geo-alt"></i> <span th:text="${currentBranch.name}">Chi nhánh</span>
+            </div>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">Main</div>
+                <a class="nav-link" th:classappend="${activeMenu == 'dashboard'} ? 'active'" href="/branch-manager/dashboard">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-title">Management</div>
+                <a class="nav-link" th:classappend="${activeMenu == 'orders'} ? 'active'" href="/branch-manager/orders">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Đơn hàng</span>
+                </a>
+                <a class="nav-link" th:classappend="${activeMenu == 'menu'} ? 'active'" href="/branch-manager/menu">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Menu & Kho</span>
+                </a>
+                <a class="nav-link" th:classappend="${activeMenu == 'add-items'} ? 'active'" href="/branch-manager/add-items">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Thêm sản phẩm</span>
+                </a>
+                <a class="nav-link" th:classappend="${activeMenu == 'shippers'} ? 'active'" href="/branch-manager/shippers">
+                    <i class="bi bi-truck"></i>
+                    <span>Shipper</span>
+                </a>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-title">Business</div>
+                <a class="nav-link" th:classappend="${activeMenu == 'promotions'} ? 'active'" href="/branch-manager/promotions">
+                    <i class="bi bi-tag"></i>
+                    <span>Khuyến mãi</span>
+                </a>
+                <a class="nav-link" th:classappend="${activeMenu == 'reports'} ? 'active'" href="/branch-manager/reports">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Báo cáo</span>
+                </a>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-title">Settings</div>
+                <a class="nav-link" th:classappend="${activeMenu == 'settings'} ? 'active'" href="/branch-manager/settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Cài đặt</span>
+                </a>
+                <a class="nav-link" href="/logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+</body>
+</html>

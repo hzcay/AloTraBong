@@ -35,4 +35,10 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
     void deleteManagerByBranchId(@Param("branchId") String branchId, @Param("roleCode") RoleCode roleCode);
 
     boolean existsByUserAndBranch(User user, Branch branch);
+    
+    // Find UserRole by user and role name
+    Optional<UserRole> findByUserAndRole_RoleName(User user, String roleName);
+
+    // Prefer RoleCode to avoid string mismatches; ensure branch is assigned (not null)
+    Optional<UserRole> findFirstByUser_UserIdAndRole_RoleCodeAndBranchIsNotNull(String userId, RoleCode roleCode);
 }

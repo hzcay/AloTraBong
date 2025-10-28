@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Quản lý Đơn hàng</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <!-- Common Branch Manager Styles -->
+    <th:block th:replace="fragments/branch-styles :: branchStyles"></th:block>
+    
+    <style>
+        .page-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+        
+        .order-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .order-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .order-id {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .order-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #856404;
+        }
+        
+        .status-confirmed {
+            background-color: rgba(0, 123, 255, 0.2);
+            color: #004085;
+        }
+        
+        .status-delivered {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: #155724;
+        }
+        
+        .status-cancelled {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #721c24;
+        }
+        
+        .order-items {
+            margin-bottom: 15px;
+        }
+        
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .order-total {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1.1em;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 0.8em;
+        }
+        
+        .filter-tabs {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .filter-tab {
+            padding: 8px 16px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-tab:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .filter-tab.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+<div class="branch-wrapper">
+    <!-- Sidebar -->
+    <th:block th:replace="fragments/branch-sidebar :: branchSidebar('orders')"></th:block>
+    
+    <!-- Main Content -->
+    <div class="main-content-wrapper">
+        <div class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1><i class="bi bi-cart-check"></i> Quản lý Đơn hàng</h1>
+                <p>Theo dõi và xử lý đơn hàng của chi nhánh</p>
+            </div>
+            
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <a href="#" class="filter-tab active" data-status="">Tất cả</a>
+                <a href="#" class="filter-tab" data-status="PENDING">Chờ xử lý</a>
+                <a href="#" class="filter-tab" data-status="CONFIRMED">Đã xác nhận</a>
+                <a href="#" class="filter-tab" data-status="DELIVERED">Đã giao</a>
+                <a href="#" class="filter-tab" data-status="CANCELLED">Đã hủy</a>
+            </div>
+            
+            <!-- Orders List -->
+            <div class="card-custom">
+                <div class="row align-items-center mb-3">
+                    <div class="col">
+                        <h5>Danh sách Đơn hàng</h5>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" onclick="refreshOrders()">
+                            <i class="bi bi-arrow-clockwise"></i> Làm mới
+                        </button>
+                    </div>
+                </div>
+                <hr>
+                
+                <!-- Orders Container -->
+                <div id="ordersContainer">
+                    <!-- Orders will be loaded here via AJAX -->
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Orders pagination" class="mt-4">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Pagination will be generated here -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết Đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="orderDetailContent">
+                <!-- Order detail content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="updateOrderStatusBtn">Cập nhật Trạng thái</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Shipper Modal -->
+<div class="modal fade" id="assignShipperModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Phân công Shipper</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Chọn Shipper</label>
+                    <select class="form-select" id="shipperSelect">
+                        <option value="">-- Chọn Shipper --</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="assignShipperBtn">Phân công</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentPage = 0;
+    let currentStatus = '';
+    let currentOrderId = '';
+    
+    // Load orders on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadOrders();
+        loadShippers();
+        
+        // Filter tab click handlers
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Update active tab
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update current status and reload
+                currentStatus = this.dataset.status;
+                currentPage = 0;
+                loadOrders();
+            });
+        });
+    });
+    
+    function loadOrders() {
+        const params = new URLSearchParams({
+            page: currentPage,
+            size: 10
+        });
+        
+        if (currentStatus) {
+            params.append('status', currentStatus);
+        }
+        
+        fetch(`/branch-manager/api/orders?${params}`)
+            .then(response => response.json())
+            .then(data => {
+                displayOrders(data.content);
+                updatePagination(data);
+            })
+            .catch(error => {
+                console.error('Error loading orders:', error);
+            });
+    }
+    
+    function displayOrders(orders) {
+        const container = document.getElementById('ordersContainer');
+        
+        if (orders.length === 0) {
+            container.innerHTML = '<div class="text-center py-4"><p class="text-muted">Không có đơn hàng nào</p></div>';
+            return;
+        }
+        
+        container.innerHTML = orders.map(order => `
+            <div class="order-card">
+                <div class="order-header">
+                    <div class="order-id">Đơn #${order.orderId}</div>
+                    <div class="order-status status-${order.status.toLowerCase()}">${getStatusText(order.status)}</div>
+                </div>
+                
+                <div class="order-items">
+                    <div class="order-item">
+                        <span><strong>Khách hàng:</strong> ${order.userId}</span>
+                        <span><strong>Thời gian:</strong> ${formatDateTime(order.createdAt)}</span>
+                    </div>
+                    <div class="order-item">
+                        <span><strong>Số lượng món:</strong> ${order.itemCount || 0}</span>
+                        <span><strong>Phí ship:</strong> ${formatMoney(order.shippingFee || 0)}</span>
+                    </div>
+                </div>
+                
+                <div class="order-footer">
+                    <div class="order-total">Tổng: ${formatMoney(order.totalAmount)}</div>
+                    <div class="order-actions">
+                        <button class="btn btn-outline-primary btn-sm" onclick="viewOrderDetail('${order.orderId}')">
+                            <i class="bi bi-eye"></i> Xem
+                        </button>
+                        ${getActionButtons(order)}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function getActionButtons(order) {
+        let buttons = '';
+        
+        if (order.status === 'PENDING') {
+            buttons += `
+                <button class="btn btn-success btn-sm" onclick="updateOrderStatus('${order.orderId}', 'CONFIRMED')">
+                    <i class="bi bi-check"></i> Xác nhận
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="updateOrderStatus('${order.orderId}', 'CANCELLED')">
+                    <i class="bi bi-x"></i> Hủy
+                </button>
+            `;
+        } else if (order.status === 'CONFIRMED') {
+            buttons += `
+                <button class="btn btn-primary btn-sm" onclick="assignShipper('${order.orderId}')">
+                    <i class="bi bi-truck"></i> Gán Shipper
+                </button>
+            `;
+        }
+        
+        return buttons;
+    }
+    
+    function getStatusText(status) {
+        const statusMap = {
+            'PENDING': 'Chờ xử lý',
+            'CONFIRMED': 'Đã xác nhận',
+            'DELIVERED': 'Đã giao',
+            'CANCELLED': 'Đã hủy'
+        };
+        return statusMap[status] || status;
+    }
+    
+    function formatMoney(amount) {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    }
+    
+    function formatDateTime(dateTime) {
+        return new Date(dateTime).toLocaleString('vi-VN');
+    }
+    
+    function updatePagination(data) {
+        const pagination = document.getElementById('pagination');
+        const totalPages = data.totalPages;
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        let paginationHTML = '';
+        
+        // Previous button
+        if (data.number > 0) {
+            paginationHTML += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="changePage(${data.number - 1})">Trước</a>
+                </li>
+            `;
+        }
+        
+        // Page numbers
+        for (let i = 0; i < totalPages; i++) {
+            paginationHTML += `
+                <li class="page-item ${i === data.number ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${i})">${i + 1}</a>
+                </li>
+            `;
+        }
+        
+        // Next button
+        if (data.number < totalPages - 1) {
+            paginationHTML += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="changePage(${data.number + 1})">Sau</a>
+                </li>
+            `;
+        }
+        
+        pagination.innerHTML = paginationHTML;
+    }
+    
+    function changePage(page) {
+        currentPage = page;
+        loadOrders();
+    }
+    
+    function refreshOrders() {
+        loadOrders();
+    }
+    
+    function updateOrderStatus(orderId, status) {
+        if (confirm('Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng?')) {
+            fetch(`/branch-manager/api/orders/${orderId}/status?status=${status}`, {
+                method: 'PUT'
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Cập nhật trạng thái thành công!');
+                loadOrders();
+            })
+            .catch(error => {
+                console.error('Error updating order status:', error);
+                alert('Có lỗi xảy ra khi cập nhật trạng thái!');
+            });
+        }
+    }
+    
+    function assignShipper(orderId) {
+        currentOrderId = orderId;
+        const modal = new bootstrap.Modal(document.getElementById('assignShipperModal'));
+        modal.show();
+    }
+    
+    function loadShippers() {
+        fetch('/branch-manager/api/shippers')
+            .then(response => response.json())
+            .then(shippers => {
+                const select = document.getElementById('shipperSelect');
+                select.innerHTML = '<option value="">-- Chọn Shipper --</option>' +
+                    shippers.map(shipper => `
+                        <option value="${shipper.shipperId}">${shipper.userId} - ${shipper.vehiclePlate || 'Không có biển số'}</option>
+                    `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading shippers:', error);
+            });
+    }
+    
+    document.getElementById('assignShipperBtn').addEventListener('click', function() {
+        const shipperId = document.getElementById('shipperSelect').value;
+        
+        if (!shipperId) {
+            alert('Vui lòng chọn shipper!');
+            return;
+        }
+        
+        fetch(`/branch-manager/api/orders/${currentOrderId}/assign-shipper`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ shipperId: shipperId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Phân công shipper thành công!');
+            bootstrap.Modal.getInstance(document.getElementById('assignShipperModal')).hide();
+            loadOrders();
+        })
+        .catch(error => {
+            console.error('Error assigning shipper:', error);
+            alert('Có lỗi xảy ra khi phân công shipper!');
+        });
+    });
+    
+    function viewOrderDetail(orderId) {
+        // TODO: Implement order detail view
+        alert('Tính năng xem chi tiết đơn hàng đang được phát triển!');
+    }
+</script>
+</body>
+</html>

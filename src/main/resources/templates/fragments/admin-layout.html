@@ -307,7 +307,12 @@
         <div class="main-content-wrapper">
             <!-- Top Navbar -->
             <div class="top-navbar">
-                <div class="top-navbar-title" id="pageTitle">Dashboard</div>
+                <div class="top-navbar-title" id="pageTitle">
+                    Dashboard
+                    <span th:if="${currentBranch != null}" class="badge bg-primary ms-2">
+                        CN: <span th:text="${currentBranch.name}">Chi nhánh</span>
+                    </span>
+                </div>
                 <div class="top-navbar-right">
                     <div class="user-info">
                         <div class="user-avatar" th:text="${#authentication.principal.username?.charAt(0)}">A</div>

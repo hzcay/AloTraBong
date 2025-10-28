@@ -13,25 +13,21 @@ public class BranchController {
 
     @GetMapping("/dashboard")
     public String branchDashboard(Model model) {
-        model.addAttribute("title", "Branch Dashboard");
-        return "branch/dashboard";
+        return "redirect:/branch-manager/dashboard";
     }
 
     @GetMapping("/orders")
     public String branchOrders(Model model) {
-        model.addAttribute("title", "Branch Orders");
-        return "branch/orders";
+        return "redirect:/branch-manager/orders";
     }
 
     @GetMapping("/menu")
     public String branchMenu(Model model) {
-        model.addAttribute("title", "Branch Menu");
-        return "branch/menu";
+        return "redirect:/branch-manager/menu";
     }
 
     @GetMapping("/staff")
     public String branchStaff(Model model) {
-        model.addAttribute("title", "Branch Staff");
-        return "branch/staff";
+        return "redirect:/branch-manager/shippers";
     }
 }

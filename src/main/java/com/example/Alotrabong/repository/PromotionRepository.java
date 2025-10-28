@@ -14,4 +14,8 @@ public interface PromotionRepository extends JpaRepository<Promotion, String> {
     List<Promotion> findByBranchIdAndIsActiveTrue(String branchId);
 
     long countByIsActive(Boolean isActive);
+    
+    // Branch Manager specific methods
+    List<Promotion> findByBranchId(String branchId);
+    Promotion findByPromotionIdAndBranchId(String promotionId, String branchId);
 }

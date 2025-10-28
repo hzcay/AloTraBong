@@ -24,4 +24,8 @@ public interface ShipperRepository extends JpaRepository<Shipper, String> {
     
     @Query("SELECT COUNT(s) FROM Shipper s WHERE s.isActive = true")
     long countActiveShippers();
+    
+    // Branch Manager specific methods
+    List<Shipper> findByBranch_BranchId(String branchId);
+    Shipper findByShipperIdAndBranch_BranchId(String shipperId, String branchId);
 }

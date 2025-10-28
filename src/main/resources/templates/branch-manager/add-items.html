@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${title}">Thêm sản phẩm vào Chi nhánh</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    
+    <!-- Common Branch Manager Styles -->
+    <th:block th:replace="fragments/branch-styles :: branchStyles"></th:block>
+    
+    <style>
+        .page-header {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .item-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .item-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 1.1em;
+        }
+        
+        .item-code {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .item-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .info-section {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        .info-title {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 10px;
+        }
+        
+        .base-price {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .category-name {
+            font-size: 1em;
+            color: var(--success-color);
+        }
+        
+        .search-filter {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        }
+        
+        .btn-outline-success {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .btn-outline-success:hover {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .main-content-wrapper {
+                margin-left: 0;
+            }
+            
+            .item-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="branch-wrapper">
+    <!-- Sidebar -->
+    <th:block th:replace="fragments/branch-sidebar :: branchSidebar('add-items')"></th:block>
+    
+    <!-- Main Content -->
+    <div class="main-content-wrapper">
+        <div class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1><i class="bi bi-plus-circle"></i> Thêm sản phẩm vào Chi nhánh</h1>
+                <p>Chọn sản phẩm từ danh sách và thiết lập giá bán, tồn kho cho chi nhánh</p>
+            </div>
+            
+            <!-- Search and Filter -->
+            <div class="search-filter">
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm sản phẩm...">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">Tất cả danh mục</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" onclick="refreshAvailableItems()">
+                            <i class="bi bi-arrow-clockwise"></i> Làm mới
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Available Items List -->
+            <div class="card-custom">
+                <div class="row align-items-center mb-3">
+                    <div class="col">
+                        <h5>Sản phẩm có thể thêm vào chi nhánh</h5>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-info" id="itemCount">0 sản phẩm</span>
+                    </div>
+                </div>
+                <hr>
+                
+                <!-- Items Container -->
+                <div id="itemsContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Đang tải danh sách sản phẩm...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Thêm sản phẩm vào Chi nhánh</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Sản phẩm</label>
+                        <input type="text" class="form-control" id="addItemName" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Danh mục</label>
+                        <input type="text" class="form-control" id="addItemCategory" readonly>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Giá gốc</label>
+                        <input type="text" class="form-control" id="addItemBasePrice" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Giá bán tại chi nhánh <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="addItemSalePrice" min="0" step="1000" placeholder="Nhập giá bán...">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Số lượng ban đầu</label>
+                        <input type="number" class="form-control" id="addItemQuantity" min="0" value="0" placeholder="Nhập số lượng...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Safety Stock</label>
+                        <input type="number" class="form-control" id="addItemSafetyStock" min="0" value="10" placeholder="Nhập safety stock...">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="addItemAvailable" checked>
+                        <label class="form-check-label" for="addItemAvailable">
+                            Cho phép bán ngay
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-success" id="confirmAddItemBtn">
+                    <i class="bi bi-check-lg"></i> Thêm vào chi nhánh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentItemId = '';
+    
+    // Load available items on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAvailableItems();
+        
+        // Search input handler
+        document.getElementById('searchInput').addEventListener('input', function() {
+            setTimeout(loadAvailableItems, 300); // Debounce search
+        });
+        
+        // Filter handlers
+        document.getElementById('categoryFilter').addEventListener('change', loadAvailableItems);
+    });
+    
+    function loadAvailableItems() {
+        const searchTerm = document.getElementById('searchInput').value;
+        const category = document.getElementById('categoryFilter').value;
+        
+        fetch('/branch-manager/api/available-items')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(items => {
+                // Apply filters
+                let filteredItems = items;
+                
+                if (searchTerm) {
+                    filteredItems = filteredItems.filter(item => 
+                        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (item.itemCode && item.itemCode.toLowerCase().includes(searchTerm.toLowerCase()))
+                    );
+                }
+                
+                if (category) {
+                    filteredItems = filteredItems.filter(item => item.categoryName === category);
+                }
+                
+                displayItems(filteredItems);
+                loadCategories(items); // Load categories for filter
+                updateItemCount(filteredItems.length);
+            })
+            .catch(error => {
+                console.error('Error loading available items:', error);
+                document.getElementById('itemsContainer').innerHTML = 
+                    '<div class="text-center py-4"><p class="text-danger">Có lỗi xảy ra khi tải dữ liệu!</p></div>';
+            });
+    }
+    
+    function loadCategories(items) {
+        const categories = [...new Set(items.map(item => item.categoryName))].filter(Boolean);
+        const categoryFilter = document.getElementById('categoryFilter');
+        
+        // Keep current selection
+        const currentValue = categoryFilter.value;
+        
+        // Clear and rebuild options
+        categoryFilter.innerHTML = '<option value="">Tất cả danh mục</option>';
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            if (category === currentValue) option.selected = true;
+            categoryFilter.appendChild(option);
+        });
+    }
+    
+    function displayItems(items) {
+        const container = document.getElementById('itemsContainer');
+        
+        if (items.length === 0) {
+            container.innerHTML = '<div class="text-center py-4"><p class="text-muted">Không có sản phẩm nào có thể thêm vào chi nhánh</p></div>';
+            return;
+        }
+        
+        container.innerHTML = items.map(item => `
+            <div class="item-card">
+                <div class="item-header">
+                    <div>
+                        <div class="item-name">${item.name || 'N/A'}</div>
+                        <div class="item-code">Mã: ${item.itemCode || 'N/A'}</div>
+                    </div>
+                    <button class="btn btn-outline-success" onclick="showAddItemModal('${item.itemId}', '${item.name}', '${item.categoryName}', ${item.price})">
+                        <i class="bi bi-plus-lg"></i> Thêm vào chi nhánh
+                    </button>
+                </div>
+                
+                <div class="item-info">
+                    <div class="info-section">
+                        <div class="info-title">Giá gốc</div>
+                        <div class="base-price">${formatMoney(item.price || 0)}</div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="info-title">Danh mục</div>
+                        <div class="category-name">${item.categoryName || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                ${item.description ? `<div class="mt-3"><small class="text-muted">${item.description}</small></div>` : ''}
+            </div>
+        `).join('');
+    }
+    
+    function updateItemCount(count) {
+        document.getElementById('itemCount').textContent = `${count} sản phẩm`;
+    }
+    
+    function formatMoney(amount) {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    }
+    
+    function showAddItemModal(itemId, itemName, categoryName, basePrice) {
+        currentItemId = itemId;
+        document.getElementById('addItemName').value = itemName || 'N/A';
+        document.getElementById('addItemCategory').value = categoryName || 'N/A';
+        document.getElementById('addItemBasePrice').value = formatMoney(basePrice || 0);
+        document.getElementById('addItemSalePrice').value = basePrice || 0;
+        document.getElementById('addItemQuantity').value = 0;
+        document.getElementById('addItemSafetyStock').value = 10;
+        document.getElementById('addItemAvailable').checked = true;
+        
+        const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
+        modal.show();
+    }
+    
+    function refreshAvailableItems() {
+        loadAvailableItems();
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.main-content');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto dismiss after 3 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 3000);
+    }
+    
+    // Modal event handler
+    document.getElementById('confirmAddItemBtn').addEventListener('click', function() {
+        const salePrice = document.getElementById('addItemSalePrice').value;
+        const quantity = document.getElementById('addItemQuantity').value;
+        const safetyStock = document.getElementById('addItemSafetyStock').value;
+        const isAvailable = document.getElementById('addItemAvailable').checked;
+        
+        if (!salePrice || salePrice <= 0) {
+            showAlert('Vui lòng nhập giá bán hợp lệ!', 'warning');
+            return;
+        }
+        
+        const request = {
+            itemId: currentItemId,
+            salePrice: parseFloat(salePrice),
+            initialQuantity: parseInt(quantity) || 0,
+            safetyStock: parseInt(safetyStock) || 10,
+            isAvailable: isAvailable
+        };
+        
+        // Get CSRF token
+        const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+        
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        
+        if (token && header) {
+            headers[header] = token;
+        }
+        
+        fetch('/branch-manager/api/menu/add-item', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(request)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            showAlert('Thêm sản phẩm vào chi nhánh thành công!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('addItemModal')).hide();
+            loadAvailableItems(); // Refresh list
+        })
+        .catch(error => {
+            console.error('Error adding item to branch:', error);
+            showAlert('Có lỗi xảy ra khi thêm sản phẩm!', 'danger');
+        });
+    });
+</script>
+</body>
+</html>

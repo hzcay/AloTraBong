@@ -42,4 +42,6 @@ public interface ItemRepository extends JpaRepository<Item, String> {
         Page<Item> findActiveByCategoryId(@Param("categoryId") String categoryId, Pageable pageable);
 
         Optional<Item> findByItemCode(String itemCode);
+        
+        List<Item> findByIsActive(Boolean isActive);
 }
