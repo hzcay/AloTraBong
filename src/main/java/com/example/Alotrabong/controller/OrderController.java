@@ -5,6 +5,8 @@ import com.example.Alotrabong.dto.CreateOrderRequest;
 import com.example.Alotrabong.dto.OrderDTO;
 import com.example.Alotrabong.entity.OrderStatus;
 import com.example.Alotrabong.service.OrderService;
+import com.example.Alotrabong.service.VnpayService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -25,6 +28,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final VnpayService vnpayService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
@@ -104,5 +108,19 @@ public class OrderController {
     private String getUserIdFromAuth(Authentication authentication) {
         // TODO: Implement based on your JWT authentication setup
         return "user-id-placeholder"; // Placeholder
+    }
+
+    @GetMapping("/vnpay-return")
+    @Operation(summary = "VNPAY browser return (user redirect)")
+    public ResponseEntity<Void> vnpayReturn(@RequestParam Map<String, String> params) {
+        boolean ok = vnpayService.handleReturn(params);
+        String txnRef = params.get("vnp_TxnRef");
+        String rsp    = params.get("vnp_ResponseCode");
+
+        String target = (ok && "00".equals(rsp))
+                ? "/user/checkout/success?orderRef=" + txnRef
+                : "/user/checkout/fail?orderRef=" + txnRef + "&code=" + rsp;
+
+        return ResponseEntity.status(302).header("Location", target).build();
     }
 }

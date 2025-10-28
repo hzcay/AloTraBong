@@ -20,15 +20,16 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
     List<OrderItem> findByOrder(Order order);
 
     @Query("""
-              SELECT oi.item.itemId, SUM(oi.quantity)
-              FROM OrderItem oi
-              WHERE oi.order.status IN :okStatuses
-                AND oi.order.createdAt >= :since
-              GROUP BY oi.item.itemId
-              ORDER BY SUM(oi.quantity) DESC
-            """)
+            SELECT oi.item.itemId, SUM(oi.quantity)
+            FROM OrderItem oi
+            WHERE oi.order.status IN :okStatuses
+              AND oi.order.createdAt >= :since
+            GROUP BY oi.item.itemId
+            ORDER BY SUM(oi.quantity) DESC
+          """)
     List<Object[]> findTopSellingSince(
             @Param("since") LocalDateTime since,
-            @Param("okStatuses") List<OrderStatus> okStatuses, // dùng đúng enum này
-            Pageable pageable);
+            @Param("okStatuses") List<OrderStatus> okStatuses,
+            Pageable pageable
+    );
 }

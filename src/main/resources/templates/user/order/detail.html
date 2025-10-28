@@ -1,228 +1,204 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="vi"
-      th:replace="~{fragments/layout :: layout(~{::content}, ${product != null ? product.name : 'Chi tiết món'})}">
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="vi"
+      th:replace="~{fragments/layout :: layout(~{::content}, 'Chi tiết đơn hàng')}">
 <div th:fragment="content">
 
-  <!-- BREADCRUMB (option) -->
   <section class="section">
-    <div class="container center-between">
-      <nav class="text-muted">
-        <a th:href="@{/}" class="nav">Trang chủ</a> /
-        <a th:href="@{/menu}" class="nav">Menu</a> /
-        <span th:text="${product?.name}">Tên món</span>
-      </nav>
-      <a th:href="@{/menu}" class="btn">← Quay lại Menu</a>
-    </div>
-  </section>
+    <div class="container" style="max-width:800px;margin:auto">
 
-  <!-- PRODUCT DETAIL -->
-  <section class="section">
-    <div class="container grid" style="grid-template-columns:1.05fr .95fr;align-items:start;gap:28px">
-
-      <!-- LEFT: MEDIA -->
-      <div class="grid" style="gap:12px">
-        <div class="card">
-          <!-- Ảnh chính có id để switch bằng JS -->
-          <img id="pd-main"
-               th:src="${product?.mainImageUrl}"
-               alt="Ảnh chính"
-               onerror="this.onerror=null;this.src='/img/placeholder.jpg'"/>
-        </div>
-
-        <!-- gallery thumbs (NULL-SAFE) -->
-        <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:8px"
-             th:if="${product != null and product.gallery != null and !#lists.isEmpty(product.gallery)}">
-          <button type="button" class="card" style="padding:0;border:none;background:transparent;cursor:pointer"
-                  th:each="m : ${product.gallery}"
-                  th:attr="data-src=${m.url}">
-            <img th:src="${m.thumbnailUrl != null ? m.thumbnailUrl : m.url}"
-                 alt="Thumb"
-                 onerror="this.onerror=null;this.src='/img/placeholder.jpg'">
-          </button>
+      <!-- TH: lỗi / không tìm thấy đơn / không có quyền -->
+      <div th:if="${error != null}"
+           class="card pad"
+           style="border:1px solid var(--line); background:#fff3cd; color:#664d03; margin-bottom:16px;">
+        <b th:text="${error}">
+          Không tìm thấy đơn hàng hoặc bạn không có quyền xem.
+        </b>
+        <div style="margin-top:8px">
+          <a class="btn" th:href="@{/user/order/history}">← Về lịch sử đơn</a>
         </div>
       </div>
 
-      <!-- RIGHT: INFO & CTA -->
-      <article>
-        <h1 class="m-0 mb-2 bold" style="font-size:28px" th:text="${product?.name}">Tên món</h1>
+      <!-- TH: có dữ liệu order -->
+      <div th:if="${order != null}">
 
-        <div class="center" style="gap:10px;justify-content:flex-start" th:if="${product?.rating != null}">
-          <div title="Đánh giá trung bình">
-            ⭐ <b th:text="${#numbers.formatDecimal(product.rating,1,1)}">4.8</b>
-          </div>
-          <span class="text-muted">|</span>
-          <a href="#reviews" class="text-muted" th:text="${product?.reviewCount + ' đánh giá'}">12 đánh giá</a>
-        </div>
+        <!-- ====== Thông tin đơn hàng / trạng thái / nút hủy ====== -->
+        <div class="card pad" style="margin-bottom:16px">
+          <div class="center-between" style="flex-wrap:wrap;row-gap:8px">
 
-        <div class="mb-2" style="margin-top:10px">
-          <!-- FIX: BigDecimal -> formatDecimal (ngăn cách nghìn bằng dấu chấm, không phần thập phân) -->
-          <strong style="font-size:22px"
-                  th:text="${product?.price == null ? '—' : #numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT') + 'đ'}">
-            59.000đ
-          </strong>
-          <span class="badge" th:if="${product?.isBestSeller}">Bán chạy</span>
-          <span class="badge" th:if="${product?.isNew}">Mới</span>
-          <span class="badge" th:if="${product?.isFavorite}">Yêu thích</span>
-        </div>
+            <!-- Cột trái: info -->
+            <div style="display:flex; flex-direction:column; gap:4px; font-size:.9rem; line-height:1.4">
+              <div>
+                <b>Mã đơn:</b>
+                <span th:text="${order.code}">ALB12345</span>
+              </div>
 
-        <p class="text-muted mb-3" th:text="${product?.shortDesc}">
-          Mô tả ngắn gọn món ăn, khẩu vị, thành phần nổi bật…
-        </p>
+              <div>
+                <b>Thời gian đặt:</b>
+                <span th:text="${#temporals.format(order.createdAt,'dd/MM/yyyy HH:mm')}">
+                  25/10/2025 12:00
+                </span>
+              </div>
 
-        <!-- CTA row -->
-        <div class="center" style="gap:10px;justify-content:flex-start" th:if="${product?.available}">
-          <form th:action="@{/cart}" method="post" class="center" style="gap:10px">
-            <input type="hidden" name="productId" th:value="${product?.id}">
-            <input class="input" type="number" name="qty" value="1" min="1" style="max-width:110px">
-            <button class="btn btn-primary" type="submit">+ Thêm vào giỏ</button>
-          </form>
+              <div>
+                <b>Chi nhánh:</b>
+                <span th:text="${order.branchName}">Chi nhánh ABC</span>
+              </div>
 
-          <form th:action="@{/favorites}" method="post">
-            <input type="hidden" name="productId" th:value="${product?.id}">
-            <button class="btn" type="submit" title="Thêm vào yêu thích">❤️</button>
-          </form>
-        </div>
-        <div th:if="${product != null and !product.available}" class="text-muted">Tạm hết hàng tại chi nhánh này.</div>
+              <div th:if="${order.deliveryAddress != null}">
+                <b>Giao tới:</b>
+                <span th:text="${order.deliveryAddress}">123 Lê Lợi, Q.1</span>
+              </div>
 
-        <!-- NUTRITION / DESCRIPTION / REVIEWS TABS -->
-        <div class="mb-2" style="margin-top:18px;border-bottom:1px solid var(--line);display:flex;gap:14px">
-          <button type="button" class="tab is-active" data-tab="desc">Mô tả</button>
-          <button type="button" class="tab" data-tab="nutri">Dinh dưỡng</button>
-          <button type="button" class="tab" data-tab="reviews">Đánh giá</button>
-        </div>
+              <div th:if="${order.customerNote != null}">
+                <b>Ghi chú:</b>
+                <span th:text="${order.customerNote}">Ít đá, ít cay</span>
+              </div>
 
-        <!-- Panel: Mô tả -->
-        <div data-panel="desc">
-          <p th:utext="${product?.longDesc}">
-            Nội dung mô tả chi tiết món, nguồn gốc, khẩu vị, cách chế biến, lưu ý dị ứng…
-          </p>
-        </div>
-
-        <!-- Panel: Dinh dưỡng -->
-        <div data-panel="nutri" hidden>
-          <div class="grid" style="grid-template-columns:repeat(2,1fr)">
-            <div class="card pad">
-              <div class="center-between"><span>Năng lượng</span><b th:text="${product?.nutrition?.cal} + ' kcal'">350 kcal</b></div>
-              <div class="center-between"><span>Đạm</span><b th:text="${product?.nutrition?.protein} + ' g'">12 g</b></div>
-              <div class="center-between"><span>Béo</span><b th:text="${product?.nutrition?.fat} + ' g'">15 g</b></div>
-              <div class="center-between"><span>Carb</span><b th:text="${product?.nutrition?.carb} + ' g'">28 g</b></div>
-              <div class="center-between"><span>Natri</span><b th:text="${product?.nutrition?.sodium} + ' mg'">420 mg</b></div>
+              <div th:if="${order.paymentMethod != null}">
+                <b>Thanh toán:</b>
+                <span th:text="${order.paymentMethod}">Tiền mặt</span>
+              </div>
             </div>
-            <div class="card pad">
-              <p class="m-0 text-muted">* Thông tin có thể thay đổi theo chi nhánh / thời điểm.</p>
+
+            <!-- Cột phải: trạng thái + action -->
+            <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; row-gap:8px">
+
+              <!-- badge trạng thái -->
+              <div th:switch="${order.status}">
+                <div th:case="'PENDING'"      class="tag tag-pending">Chờ xác nhận</div>
+                <div th:case="'CONFIRMED'"    class="tag tag-confirm">Đã xác nhận</div>
+                <div th:case="'PREPARING'"    class="tag tag-prep">Đang làm món</div>
+                <div th:case="'READY'"        class="tag tag-ready">Sẵn sàng lấy</div>
+                <div th:case="'DELIVERING'"   class="tag tag-ship">Đang giao</div>
+                <div th:case="'DELIVERED'"    class="tag tag-done">Đã giao</div>
+                <div th:case="'CANCELLED'"    class="tag tag-cancel">Đã hủy</div>
+                <div th:case="'REFUNDED'"     class="tag tag-refund">Hoàn tiền</div>
+                <div th:case="*"
+                     class="tag tag-other"
+                     th:text="${order.status}">
+                  KHÁC
+                </div>
+              </div>
+
+              <!-- nút hủy đơn (chỉ show nếu còn hủy đc) -->
+              <a class="btn"
+                 th:if="${order.cancellable}"
+                 th:href="@{'/user/order/detail/' + ${order.code} + '?action=cancel'}">
+                Hủy đơn
+              </a>
             </div>
+
           </div>
         </div>
 
-        <!-- Panel: Đánh giá -->
-        <div data-panel="reviews" id="reviews" hidden>
-          <!-- Write review CTA -->
-          <div class="center-between mb-2">
-            <h3 class="m-0 bold">Đánh giá từ khách hàng</h3>
-            <a th:href="@{'/review/write'(productId=${product?.id})}" class="btn">Viết đánh giá</a>
+        <!-- ====== Popup / block confirm hủy (bật khi ?action=cancel) ====== -->
+        <div th:if="${cancelMode}"
+             class="card pad"
+             style="border:1px solid #f5c2c7; background:#f8d7da; color:#842029; margin-bottom:16px;">
+          <b>Hủy đơn hàng?</b>
+          <div style="font-size:.9rem; line-height:1.4; margin-top:4px;">
+            Sau khi hủy, đơn sẽ không được chuẩn bị nữa.
           </div>
 
-          <!-- Review list -->
+          <form th:action="@{'/user/order/' + ${order.code} + '/cancel'}"
+                method="post"
+                style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+
+            <button class="btn" type="submit"
+                    style="background:#842029;color:#fff;border:1px solid #842029;">
+              Xác nhận hủy đơn
+            </button>
+
+            <a class="btn"
+               th:href="@{'/user/order/detail/' + ${order.code}}"
+               style="background:#fff;border:1px solid var(--line);color:inherit;">
+              Thoát
+            </a>
+          </form>
+        </div>
+
+        <!-- ====== Danh sách món trong đơn ====== -->
+        <div class="card pad" style="margin-bottom:16px">
+          <h3 style="margin-top:0;margin-bottom:12px;font-size:1rem;font-weight:600">
+            Món đã gọi
+          </h3>
+
           <div class="grid" style="gap:12px">
-            <article class="card pad" th:each="rv : ${reviews}">
-              <div class="center-between mb-1">
-                <div class="center" style="gap:8px;justify-content:flex-start">
-                  <div class="avatar" th:text="${#strings.substring(rv.userName,0,1)}">U</div>
-                  <div>
-                    <b th:text="${rv.userName}">User</b>
-                    <div class="text-muted" th:text="${#temporals.format(rv.createdAt, 'dd/MM/yyyy HH:mm')}">12/10/2025 12:21</div>
+            <div class="center-between"
+                 th:each="it : ${order.items}"
+                 style="align-items:flex-start">
+
+              <div class="center" style="gap:12px;justify-content:flex-start">
+                <!-- thumbnail -->
+                <div class="card" style="width:56px;height:56px;overflow:hidden;flex-shrink:0;">
+                  <img th:src="${it.thumbnailUrl}" alt=""
+                       style="width:100%;height:100%;object-fit:cover">
+                </div>
+
+                <!-- info món -->
+                <div style="display:flex;flex-direction:column;row-gap:4px;font-size:.9rem;line-height:1.4">
+                  <b th:text="${it.name}">Tên món</b>
+
+                  <div class="text-muted">
+                    <span th:text="${it.qty}">1</span>
+                    x
+                    <span th:text="${@vnd.format(it.unitPrice)}">0 đ</span>
                   </div>
                 </div>
-                <div title="Điểm">
-                  ⭐ <b th:text="${rv.rating}">5</b>/5
-                </div>
               </div>
 
-              <p th:text="${rv.content}">Nội dung đánh giá (≥ 50 ký tự).</p>
-
-              <!-- media (NULL-SAFE) -->
-              <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:8px"
-                   th:if="${rv.media != null and !#lists.isEmpty(rv.media)}">
-                <a class="card" th:each="m : ${rv.media}" th:href="${m.url}" target="_blank" rel="noopener">
-                  <img th:src="${m.thumbnailUrl != null ? m.thumbnailUrl : m.url}" alt=""
-                       onerror="this.onerror=null;this.src='/img/placeholder.jpg'">
-                </a>
+              <!-- Tổng tiền dòng -->
+              <div style="text-align:right;font-weight:600;white-space:nowrap;font-size:.9rem;">
+                <span th:text="${@vnd.format(it.lineTotal)}">0 đ</span>
               </div>
-            </article>
 
-            <!-- empty -->
-            <div th:if="${reviews == null or #lists.isEmpty(reviews)}" class="text-muted p-2">
-              Chưa có đánh giá. Hãy là người đầu tiên!
             </div>
           </div>
         </div>
-      </article>
-    </div>
-  </section>
 
-  <!-- RELATED PRODUCTS (NULL-SAFE) -->
-  <section class="section" th:if="${related != null and !#lists.isEmpty(related)}">
-    <div class="container">
-      <header class="section-head">
-        <h2 class="section-title">Món tương tự</h2>
-        <a th:href="@{/menu}" class="btn">Xem Menu</a>
-      </header>
+        <!-- ====== Tổng kết tiền ====== -->
+        <div class="card pad">
+          <h3 style="margin-top:0;margin-bottom:12px;font-size:1rem;font-weight:600">
+            Thanh toán
+          </h3>
 
-      <div class="grid grid-4">
-        <article class="card pad" th:each="p : ${related}">
-          <img th:src="${p.thumbnailUrl}" alt=""
-               onerror="this.onerror=null;this.src='/img/placeholder.jpg'">
-          <h3 class="m-0 mb-1 bold" th:text="${p.name}">Tên món</h3>
-          <div class="center-between">
-            <!-- FIX: BigDecimal ở related -->
-            <strong th:text="${p.price == null ? '—' : #numbers.formatDecimal(p.price, 0, 'COMMA', 0, 'POINT') + 'đ'}">
-              49.000đ
-            </strong>
-            <div class="center" style="gap:8px">
-              <form th:action="@{/favorites}" method="post">
-                <input type="hidden" name="productId" th:value="${p.id}">
-                <button class="btn" type="submit" title="Yêu thích">❤️</button>
-              </form>
-              <form th:action="@{/cart}" method="post">
-                <input type="hidden" name="productId" th:value="${p.id}">
-                <button class="btn" type="submit">+ Giỏ</button>
-              </form>
+          <div style="display:flex;flex-direction:column;row-gap:6px;font-size:.95rem">
+
+            <div class="center-between">
+              <span>Tạm tính</span>
+              <b th:text="${@vnd.format(order.subtotal)}">0 đ</b>
             </div>
+
+            <div class="center-between" th:if="${order.shippingFee != null}">
+              <span>Phí giao hàng</span>
+              <b th:text="${@vnd.format(order.shippingFee)}">0 đ</b>
+            </div>
+
+            <div class="center-between"
+                 th:if="${order.discount != null && order.discount != 0}">
+              <span>Giảm giá</span>
+              <b th:text="'-' + ${@vnd.format(order.discount)}">-0 đ</b>
+            </div>
+
+            <div class="center-between"
+                 style="border-top:1px solid var(--line);padding-top:8px;margin-top:4px">
+              <span>Tổng thanh toán</span>
+              <b style="font-size:1.1rem"
+                 th:text="${@vnd.format(order.grandTotal)}">0 đ</b>
+            </div>
+
           </div>
-          <a th:href="@{'/p/' + ${p.slug}}" class="text-muted">Xem chi tiết →</a>
-        </article>
-      </div>
+
+          <div style="margin-top:16px">
+            <a class="btn" th:href="@{/user/order/history}">← Quay lại lịch sử</a>
+          </div>
+        </div>
+
+      </div> <!-- /if order != null -->
+
     </div>
   </section>
-
-  <!-- ===== Tabs + Gallery JS (ĐẶT TRONG FRAGMENT) ===== -->
-  <script>
-    (function(){
-      // Tabs
-      const tabs = Array.from(document.querySelectorAll('.tab'));
-      const panels = {
-        desc: document.querySelector('[data-panel="desc"]'),
-        nutri: document.querySelector('[data-panel="nutri"]'),
-        reviews: document.querySelector('[data-panel="reviews"]')
-      };
-      tabs.forEach(t => {
-        if (!t.type) t.type = 'button';
-        t.addEventListener('click', () => {
-          tabs.forEach(x => x.classList.remove('is-active'));
-          t.classList.add('is-active');
-          Object.values(panels).forEach(p => p && (p.hidden = true));
-          const key = t.dataset.tab;
-          if (panels[key]) panels[key].hidden = false;
-        });
-      });
-
-      // gallery switch
-      const main = document.querySelector('#pd-main');
-      document.querySelectorAll('[data-src]').forEach(b => {
-        b.addEventListener('click', () => { if (main) main.src = b.dataset.src; });
-      });
-    })();
-  </script>
 
 </div>
 </html>
