@@ -3,11 +3,14 @@ package com.example.Alotrabong.controller;
 import com.example.Alotrabong.dto.CartItemDTO;
 import com.example.Alotrabong.dto.HomeItemVM;
 import com.example.Alotrabong.dto.ItemDTO;
+import com.example.Alotrabong.dto.OrderHistoryVM;
 import com.example.Alotrabong.dto.BranchListDTO;
 import com.example.Alotrabong.entity.*;
 import com.example.Alotrabong.repository.*;
 import com.example.Alotrabong.service.CartService;
 import com.example.Alotrabong.service.ItemService;
+import com.example.Alotrabong.service.OrderHistoryService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.Getter;
@@ -23,10 +26,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,6 +49,7 @@ public class UserController {
     // ===== Services =====
     private final ItemService itemService;
     private final CartService cartService;
+    private final OrderHistoryService orderHistoryService;
 
     // ===== Repositories =====
     private final ItemRepository itemRepository;
@@ -50,6 +61,7 @@ public class UserController {
     private final ReviewRepository reviewRepository;
     private final ReviewMediaRepository reviewMediaRepository;
     private final CouponRepository couponRepository;
+    private final UserRepository userRepository;
 
     // ===== HOME =====
     @GetMapping({ "", "/" })
@@ -715,7 +727,7 @@ public class UserController {
 
     // ===== CHECKOUT (GET ONLY – POST nằm ở CheckoutFlowController) =====
     @GetMapping("/checkout")
-    public String checkout(@RequestParam(required = false, defaultValue = "b1") String branchId,
+    public String checkout(@RequestParam(required = false, defaultValue = "") String branchId,
             Authentication auth,
             HttpSession session,
             Model model) {
@@ -787,15 +799,184 @@ public class UserController {
         return "user/checkout/checkout";
     }
 
-    // ===== ORDER / FAVORITE / RECENT / COUPON / REVIEW / CHAT =====
+    // ===== ORDER =====
+
+    /** (A) Lịch sử đơn hàng + filter + phân trang */
     @GetMapping("/order/history")
-    public String orderHistory() {
+    public String orderHistory(
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication auth,
+            Model model) {
+
+        // 1) bắt buộc login
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+
+        // 2) lấy user từ auth.getName() (có thể là email/sđt/id)
+        final String login = auth.getName();
+        User user = userRepository.findByLogin(login)
+                .orElseGet(() -> userRepository.findById(login).orElse(null));
+
+        if (user == null) {
+            // fallback an toàn nếu ko resolve đc user để view không nổ
+            model.addAttribute("page", Page.<OrderHistoryVM>empty());
+            model.addAttribute("status", status != null ? status.name() : "");
+            model.addAttribute("from", from);
+            model.addAttribute("to", to);
+            model.addAttribute("error", "Không xác định được người dùng.");
+            return "user/order/history";
+        }
+
+        // 3) parse from/to ngày kiểu "2025-10-27" safe
+        LocalDate fromDate = safeParseDate(from);
+        LocalDate toDate = safeParseDate(to);
+
+        // nếu from > to thì đảo lại cho hợp lý
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            LocalDate tmp = fromDate;
+            fromDate = toDate;
+            toDate = tmp;
+        }
+
+        // 4) clamp paging (size min=5 max=50)
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.max(5, Math.min(size, 50));
+
+        // 5) gọi service lấy Page<OrderHistoryVM>
+        Page<OrderHistoryVM> vmPage = orderHistoryService.getHistory(
+                user,
+                status,
+                fromDate,
+                toDate,
+                safePage,
+                safeSize);
+
+        // 6) nhét vô model cho Thymeleaf
+        model.addAttribute("page", vmPage);
+        model.addAttribute("status", status != null ? status.name() : "");
+        model.addAttribute("from", from);
+        model.addAttribute("to", to);
+
         return "user/order/history";
     }
 
+    /** (A.2) Chi tiết 1 đơn của user hiện tại */
     @GetMapping("/order/detail/{code}")
-    public String orderDetail(@PathVariable String code) {
+    public String orderDetail(
+            @PathVariable String code,
+            @RequestParam(required = false) String action, // <-- nhận thêm action (?action=cancel)
+            Authentication auth,
+            Model model) {
+
+        // bắt buộc login
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+
+        // resolve user
+        final String login = auth.getName();
+        User user = userRepository.findByLogin(login)
+                .orElseGet(() -> userRepository.findById(login).orElse(null));
+
+        if (user == null) {
+            model.addAttribute("error", "Không xác định được người dùng.");
+            return "user/order/detail";
+        }
+
+        // gọi service build OrderDetailVM
+        var detail = orderHistoryService.getOrderDetailForUser(user, code);
+
+        if (detail == null) {
+            // không tồn tại / không thuộc user
+            model.addAttribute("error", "Không tìm thấy đơn hàng hoặc bạn không có quyền xem.");
+            return "user/order/detail";
+        }
+
+        // ok -> gắn data đơn
+        model.addAttribute("order", detail);
+
+        // nếu URL có ?action=cancel -> bật confirm box ở view
+        if ("cancel".equalsIgnoreCase(action)) {
+            model.addAttribute("cancelMode", true);
+        }
+
         return "user/order/detail";
+    }
+
+    /** (B) Redirect legacy để template cũ /orders vẫn chạy */
+    @GetMapping("/orders")
+    public String ordersRedirect(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        // build URL redirect qua endpoint thật /user/order/history
+        String qs = org.springframework.web.util.UriComponentsBuilder
+                .fromPath("/user/order/history")
+                .queryParam("status", status == null ? "" : status)
+                .queryParam("from", from == null ? "" : from)
+                .queryParam("to", to == null ? "" : to)
+                .queryParam("page", Math.max(page, 0))
+                .queryParam("size", Math.max(5, Math.min(size, 50)))
+                .build()
+                .toUriString();
+
+        return "redirect:" + qs;
+    }
+
+    /** (B.2) Redirect legacy chi tiết đơn -> dùng route mới */
+    @GetMapping("/orders/{code}")
+    public String ordersDetailRedirect(@PathVariable String code) {
+        // code = orderId (UUID/string) bên Order
+        return "redirect:/user/order/detail/" + code;
+    }
+
+    /** (C) Xác nhận hủy đơn (POST từ popup confirm trong detail.html) */
+    @PostMapping("/order/{code}/cancel")
+    public String cancelOrder(
+            @PathVariable String code,
+            Authentication auth,
+            Model model) {
+
+        // login check
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+
+        // resolve user
+        final String login = auth.getName();
+        User user = userRepository.findByLogin(login)
+                .orElseGet(() -> userRepository.findById(login).orElse(null));
+
+        if (user == null) {
+            // không biết user -> quay lại detail (view sẽ thấy error nếu bạn render nó)
+            model.addAttribute("error", "Không xác định được người dùng.");
+            return "redirect:/user/order/detail/" + code;
+        }
+
+        // gọi service hủy
+        boolean ok = orderHistoryService.cancelOrderForUser(user, code);
+        return "redirect:/user/order/detail/" + code;
+    }
+
+    /* ===================== Helpers private ===================== */
+
+    private LocalDate safeParseDate(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(raw);
+        } catch (Exception ignore) {
+            return null;
+        }
     }
 
     @GetMapping("/address/manage")
@@ -803,7 +984,6 @@ public class UserController {
         return "user/address/manage";
     }
 
-    // ===== FAVORITE (session-based) =====
     // ===== FAVORITE (session-based) =====
     @SuppressWarnings("unchecked")
     private Set<String> getFavoriteSet(HttpSession session) {
@@ -846,8 +1026,7 @@ public class UserController {
     }
 
     /**
-     * (Tuỳ chọn) Toggle nhanh: đang yêu thích thì bỏ, chưa thì thêm.
-     * Dùng: POST /user/favorite/toggle?productId=...
+     * Chuyển trạng thái yêu thích (form: POST /user/favorite/toggle?productId=...)
      */
     @PostMapping("/favorite/toggle")
     public String toggleFavorite(@RequestParam("productId") String itemId,
@@ -1023,7 +1202,6 @@ public class UserController {
     }
 
     // ===== legacy redirects: hứng /checkout cũ rồi redirect về /user/checkout
-    // =====
     @Controller("legacyRedirectController")
     @PreAuthorize("permitAll()")
     static class UserLegacyRedirects {
@@ -1031,5 +1209,83 @@ public class UserController {
         public String redirectCheckoutLegacy() {
             return "redirect:/user/checkout";
         }
+    }
+
+    @PostMapping("/review/submit")
+    public String submitReview(
+            @RequestParam("productId") String productId,
+            @RequestParam(value = "orderCode", required = false) String orderCode,
+            @RequestParam("rating") Integer rating,
+            @RequestParam("content") String content,
+            @RequestParam(value = "media", required = false) List<MultipartFile> media,
+            Authentication auth,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        // 1) Validate cơ bản
+        if (productId == null || productId.isBlank()) {
+            ra.addFlashAttribute("error", "Thiếu mã sản phẩm.");
+            return "redirect:/user/review/write?itemId=" + productId;
+        }
+        if (rating == null || rating < 1 || rating > 5) {
+            ra.addFlashAttribute("error", "Điểm phải từ 1 đến 5.");
+            return "redirect:/user/review/write?itemId=" + productId
+                    + (orderCode != null ? "&orderCode=" + orderCode : "");
+        }
+        if (content == null || content.trim().length() < 50) {
+            ra.addFlashAttribute("error", "Nội dung tối thiểu 50 ký tự.");
+            return "redirect:/user/review/write?itemId=" + productId
+                    + (orderCode != null ? "&orderCode=" + orderCode : "");
+        }
+
+        // 2) Tìm sản phẩm để redirect đúng slug
+        var itemOpt = itemRepository.findById(productId);
+        if (itemOpt.isEmpty()) {
+            ra.addFlashAttribute("error", "Sản phẩm không tồn tại.");
+            return "redirect:/user/home";
+        }
+        var item = itemOpt.get();
+
+        // 3) Lưu Review
+        Review r = new Review();
+        r.setItemId(item.getItemId());
+        r.setUserId((auth != null && auth.isAuthenticated()) ? auth.getName() : "guest");
+        r.setRating(rating);
+        r.setComment(content);
+        // nếu entity có field orderCode thì set, còn không thì bỏ dòng này
+        try {
+            r.getClass().getMethod("setOrderCode", String.class).invoke(r, orderCode);
+        } catch (Exception ignore) {
+        }
+        r.setCreatedAt(LocalDateTime.now());
+        r = reviewRepository.save(r);
+
+        // 4) Lưu media (tuỳ chọn) vào thư mục local: ./uploads/reviews/{reviewId}/
+        if (media != null && !media.isEmpty()) {
+            Path base = Paths.get("uploads", "reviews", r.getReviewId());
+            try {
+                Files.createDirectories(base);
+            } catch (Exception ignore) {
+            }
+            for (MultipartFile file : media) {
+                if (file == null || file.isEmpty())
+                    continue;
+                String cleanName = file.getOriginalFilename() == null ? "media"
+                        : file.getOriginalFilename().replaceAll("[^a-zA-Z0-9._-]", "_");
+                Path dest = base.resolve(cleanName);
+                try (var in = file.getInputStream()) {
+                    Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+                    ReviewMedia rm = new ReviewMedia();
+                    rm.setReview(r);
+                    rm.setMediaUrl("/uploads/reviews/" + r.getReviewId() + "/" + cleanName); // public URL
+                    reviewMediaRepository.save(rm);
+                } catch (Exception ex) {
+                    // log lỗi nhưng vẫn cho review thành công
+                }
+            }
+        }
+
+        ra.addFlashAttribute("success", "Cảm ơn bạn đã đánh giá ❤️");
+
+        String slug = item.getItemCode() != null ? item.getItemCode() : item.getItemId();
+        return "redirect:/user/product/detail/" + slug;
     }
 }

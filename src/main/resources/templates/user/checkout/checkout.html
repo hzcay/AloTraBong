@@ -5,21 +5,40 @@
   th:replace="~{fragments/layout :: layout(~{::content}, 'Thanh toán')}"
 >
   <div th:fragment="content">
+    <!-- ===== Style nhỏ cho pay-tile & state ===== -->
+    <style>
+      .pay-method {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+      }
+      .pay-tile {
+        user-select: none;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: 120ms ease;
+        background: var(--surface);
+        cursor: pointer;
+      }
+      .pay-tile:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,.06); }
+      .pay-tile.is-selected {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent);
+      }
+    </style>
+
     <!-- BREADCRUMB -->
     <section class="section" aria-label="Đường dẫn">
       <div class="container center-between" style="gap: 12px">
         <nav class="text-muted center" style="gap: 8px">
           <a th:href="@{/}" class="nav center" style="gap: 6px">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                d="M10.5 2.1a2 2 0 0 1 3 0l7.5 7.8a1 1 0 0 1-1.4 1.4L20 10.9V20a2 2 0 0 1-2 2h-4v-6H10v6H6a2 2 0 0 1-2-2v-9.1l-.6.4a1 1 0 1 1-1.2-1.6l8.3-7.6Z"
-              />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M10.5 2.1a2 2 0 0 1 3 0l7.5 7.8a1 1 0 0 1-1.4 1.4L20 10.9V20a2 2 0 0 1-2 2h-4v-6H10v6H6a2 2 0 0 1-2-2v-9.1l-.6.4a1 1 0 1 1-1.2-1.6l8.3-7.6Z"/>
             </svg>
             Trang chủ
           </a>
@@ -37,54 +56,29 @@
 
     <!-- CHECKOUT -->
     <section class="section">
-      <div
-        class="container grid"
-        style="grid-template-columns: 1fr 0.55fr; align-items: start; gap: 16px"
-      >
+      <div class="container grid" style="grid-template-columns: 1fr 0.55fr; align-items: start; gap: 16px">
         <!-- LEFT: Address + Payment -->
         <section class="grid" style="gap: 14px">
           <!-- 1) ĐỊA CHỈ GIAO HÀNG -->
           <div class="card pad">
             <div class="center-between mb-2">
               <h3 class="m-0 bold text-upper">Địa chỉ giao hàng</h3>
-              <a th:href="@{/user/address/manage}" class="btn"
-                >Quản lý địa chỉ</a
-              >
+              <a th:href="@{/user/address/manage}" class="btn">Quản lý địa chỉ</a>
             </div>
 
-            <!-- Danh sách địa chỉ -->
-            <form
-              th:action="@{/user/checkout/address}"
-              method="post"
-              class="grid"
-              style="gap: 10px"
-            >
-              <!-- CSRF (nếu bật) -->
-              <!-- <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/> -->
+            <form th:action="@{/user/checkout/address}" method="post" class="grid" style="gap: 10px">
+              <!-- CSRF -->
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <!-- payload -->
               <input type="hidden" name="branchId" th:value="${branchId}" />
 
-              <label
-                class="center-between card pad"
-                th:each="ad : ${addresses}"
-              >
-                <div
-                  class="center"
-                  style="gap: 10px; justify-content: flex-start"
-                >
-                  <input
-                    type="radio"
-                    name="addressId"
-                    th:value="${ad.id}"
-                    th:checked="${ad.default}"
-                  />
+              <label class="center-between card pad" th:each="ad : ${addresses}">
+                <div class="center" style="gap: 10px; justify-content: flex-start">
+                  <input type="radio" name="addressId" th:value="${ad.id}" th:checked="${ad.default}" />
                   <div>
                     <b th:text="${ad.fullName}">Nguyễn Văn A</b>
-                    <div class="text-muted" th:text="${ad.phone}">
-                      0900000000
-                    </div>
-                    <div
-                      th:text="${ad.line + ', ' + ad.ward + ', ' + ad.district + ', ' + ad.city}"
-                    >
+                    <div class="text-muted" th:text="${ad.phone}">0900000000</div>
+                    <div th:text="${ad.line + ', ' + ad.ward + ', ' + ad.district + ', ' + ad.city}">
                       Số 1, P.X, Q.Y, TP.Z
                     </div>
                   </div>
@@ -93,93 +87,73 @@
               </label>
 
               <div th:if="${#lists.isEmpty(addresses)}" class="text-muted">
-                Chưa có địa chỉ.
-                <a th:href="@{/user/address/manage}">Thêm ngay →</a>
+                Chưa có địa chỉ. <a th:href="@{/user/address/manage}">Thêm ngay →</a>
               </div>
 
               <div class="center" style="justify-content: flex-start; gap: 8px">
-                <button class="btn btn-primary" type="submit">
-                  Chọn địa chỉ này
-                </button>
-                <a th:href="@{/user/address/manage}" class="btn"
-                  >Thêm địa chỉ mới</a
-                >
+                <button class="btn btn-primary" type="submit">Chọn địa chỉ này</button>
+                <a th:href="@{/user/address/manage}" class="btn">Thêm địa chỉ mới</a>
               </div>
             </form>
           </div>
 
-          <!-- 2) PHƯƠNG THỨC THANH TOÁN -->
+          <!-- 2) PHƯƠNG THỨC + CONFIRM: GỘP CHUNG 1 FORM -->
           <div class="card pad">
             <h3 class="m-0 mb-2 bold text-upper">Phương thức thanh toán</h3>
-            <form
-              th:action="@{/user/checkout/payment}"
-              method="post"
-              id="payment-form"
-            >
+
+            <!-- MỘT FORM DUY NHẤT -->
+            <form id="checkout-form" class="grid" style="gap: 10px" method="post">
+              <!-- CSRF (dùng chung cho cả 2 nút/2 action) -->
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+              <!-- branch/address/note để submit cả 2 luồng -->
               <input type="hidden" name="branchId" th:value="${branchId}" />
+              <input id="chosen-address" type="hidden" name="addressId" th:value="${selectedAddressId}" />
+              <input id="chosen-note" type="hidden" name="note" th:value="${note}" />
 
               <div class="pay-method">
                 <label class="pay-tile" data-code="COD">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="COD"
-                    hidden
-                    th:checked="${selectedPayment == null or selectedPayment == 'COD'}"
-                  />
+                  <input type="radio" name="payment" value="COD" hidden
+                         th:checked="${selectedPayment == null || selectedPayment == 'COD'}" />
                   <span>COD</span>
                 </label>
 
                 <label class="pay-tile" data-code="VNPAY">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="VNPAY"
-                    hidden
-                    th:checked="${selectedPayment == 'VNPAY'}"
-                  />
+                  <input type="radio" name="payment" value="VNPAY" hidden
+                         th:checked="${selectedPayment == 'VNPAY'}" />
                   <span>VNPAY</span>
                 </label>
 
                 <label class="pay-tile" data-code="MOMO">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="MOMO"
-                    hidden
-                    th:checked="${selectedPayment == 'MOMO'}"
-                  />
+                  <input type="radio" name="payment" value="MOMO" hidden
+                         th:checked="${selectedPayment == 'MOMO'}" />
                   <span>MOMO</span>
                 </label>
               </div>
 
               <label class="grid" style="margin-top: 12px">
                 <span class="text-muted">Ghi chú đơn hàng (tuỳ chọn)</span>
-                <textarea
-                  class="textarea"
-                  name="note"
-                  rows="3"
-                  th:text="${note}"
-                ></textarea>
+                <textarea class="textarea" id="note-area" rows="3" th:text="${note}"></textarea>
               </label>
 
-              <div
-                class="center"
-                style="justify-content: flex-start; gap: 8px; margin-top: 10px"
-              >
-                <button class="btn btn-primary" type="submit">
+              <!-- 2 nút, cùng 1 form, khác action -->
+              <div class="center" style="justify-content: flex-start; gap: 8px; margin-top: 10px">
+                <!-- Lưu lựa chọn payment -->
+                <button class="btn" type="submit"
+                        formaction="/user/checkout/payment" formmethod="post">
                   Chọn phương thức
+                </button>
+
+                <!-- Xác nhận đặt hàng -->
+                <button id="confirm-btn" class="btn btn-primary" type="submit"
+                        formaction="/user/checkout/confirm" formmethod="post"
+                        th:disabled="${#lists.isEmpty(items)}">
+                  Xác nhận đặt hàng →
                 </button>
               </div>
 
-              <div
-                th:if="${paymentError != null}"
-                class="text-muted"
-                style="color: var(--danger); margin-top: 8px"
-              >
-                <b th:text="${paymentError}"
-                  >Vui lòng chọn phương thức thanh toán.</b
-                >
+              <div th:if="${paymentError != null}" class="text-muted" style="color: var(--danger); margin-top: 8px">
+                <b th:text="${paymentError}">Vui lòng chọn phương thức thanh toán.</b>
               </div>
             </form>
           </div>
@@ -187,77 +161,50 @@
           <!-- 3) MÃ GIẢM GIÁ -->
           <div class="card pad">
             <h3 class="m-0 mb-2 bold text-upper">Mã giảm giá</h3>
-            <form
-              th:action="@{/user/checkout/apply-coupon}"
-              method="post"
-              class="center"
-              style="gap: 10px; justify-content: flex-start; flex-wrap: wrap"
-            >
-              <!-- CSRF (nếu bật) -->
-              <!-- <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/> -->
+            <form th:action="@{/user/checkout/apply-coupon}" method="post" class="center"
+                  style="gap: 10px; justify-content: flex-start; flex-wrap: wrap">
+              <!-- CSRF -->
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <!-- payload -->
               <input type="hidden" name="branchId" th:value="${branchId}" />
-
-              <input
-                class="input"
-                name="code"
-                th:value="${appliedCoupon != null ? appliedCoupon.code : ''}"
-                placeholder="Nhập mã…"
-                style="max-width: 260px; border-style: dashed"
-              />
+              <input class="input" name="code"
+                     th:value="${appliedCoupon != null ? appliedCoupon.code : ''}"
+                     placeholder="Nhập mã…" style="max-width: 260px; border-style: dashed" />
               <button class="btn" type="submit">Áp dụng</button>
 
               <div th:if="${appliedCoupon != null}" class="badge">
-                <span th:text="${'Đã áp dụng: ' + appliedCoupon.code}"
-                  >ALO20</span
-                >
+                <span th:text="${'Đã áp dụng: ' + appliedCoupon.code}">ALO20</span>
                 <a th:href="@{/user/coupon/list}" class="nav">Xem thêm mã</a>
               </div>
 
-              <div
-                th:if="${couponError != null}"
-                class="text-muted"
-                style="color: var(--danger)"
-              >
+              <div th:if="${couponError != null}" class="text-muted" style="color: var(--danger)">
                 <b th:text="${couponError}">Mã không hợp lệ</b>
               </div>
             </form>
           </div>
         </section>
 
-        <!-- RIGHT: Order summary + Place order -->
+        <!-- RIGHT: Order summary -->
         <aside class="card pad">
           <h3 class="m-0 mb-2 bold text-upper">Tóm tắt đơn</h3>
 
-          <!-- Items mini list -->
           <div class="grid mb-2" style="gap: 10px">
             <div class="center-between" th:each="it : ${items}">
               <div class="center" style="gap: 8px; justify-content: flex-start">
-                <div
-                  class="card"
-                  style="width: 48px; height: 48px; overflow: hidden"
-                >
-                  <img
-                    th:src="${it.thumbnailUrl}"
-                    alt=""
-                    style="width: 100%; height: 100%; object-fit: cover"
-                    onerror="this.onerror=null;this.src='/img/placeholder.jpg'"
-                  />
+                <div class="card" style="width: 48px; height: 48px; overflow: hidden">
+                  <img th:src="${it.thumbnailUrl}" alt=""
+                       style="width: 100%; height: 100%; object-fit: cover"
+                       onerror="this.onerror=null;this.src='/img/placeholder.jpg'" />
                 </div>
                 <div>
                   <b th:text="${it.name}">Tên món</b>
                   <div class="text-muted">
                     <span th:text="${it.qty}">1</span> x
-                    <span
-                      th:text="${#numbers.formatDecimal(it.unitPrice != null ? it.unitPrice : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}"
-                      >0đ</span
-                    >
+                    <span th:text="${#numbers.formatDecimal(it.unitPrice != null ? it.unitPrice : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</span>
                   </div>
                 </div>
               </div>
-              <b
-                th:text="${#numbers.formatDecimal(it.subtotal != null ? it.subtotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}"
-                >0đ</b
-              >
+              <b th:text="${#numbers.formatDecimal(it.subtotal != null ? it.subtotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</b>
             </div>
 
             <div th:if="${#lists.isEmpty(items)}" class="text-muted">
@@ -265,178 +212,108 @@
             </div>
           </div>
 
-          <!-- price lines -->
           <div class="center-between mb-1">
             <span>Tạm tính</span>
-            <b
-              th:text="${#numbers.formatDecimal(summary != null && summary.subtotal != null ? summary.subtotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}"
-              >0đ</b
-            >
+            <b th:text="${#numbers.formatDecimal(summary != null && summary.subtotal != null ? summary.subtotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</b>
           </div>
 
-          <div
-            class="center-between mb-1"
-            th:if="${summary != null && summary.discount != null && summary.discount.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
-          >
+          <div class="center-between mb-1"
+               th:if="${summary != null && summary.discount != null && summary.discount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
             <span>Giảm giá</span>
-            <b
-              th:text="${'- ' + #numbers.formatDecimal(summary.discount, 1, 0) + 'đ'}"
-              >-0đ</b
-            >
+            <b th:text="${'- ' + #numbers.formatDecimal(summary.discount, 1, 0) + 'đ'}">-0đ</b>
           </div>
 
           <div class="center-between mb-1">
             <span>Phí giao</span>
-            <b
-              th:text="${#numbers.formatDecimal(summary != null && summary.shippingFee != null ? summary.shippingFee : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}"
-              >0đ</b
-            >
+            <b th:text="${#numbers.formatDecimal(summary != null && summary.shippingFee != null ? summary.shippingFee : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</b>
           </div>
 
-          <div
-            class="center-between"
-            style="
-              margin: 10px 0;
-              border-top: 1px solid var(--line);
-              padding-top: 10px;
-            "
-          >
+          <div class="center-between" style="margin: 10px 0; border-top: 1px solid var(--line); padding-top: 10px;">
             <span class="bold">Tổng thanh toán</span>
-            <b
-              style="font-size: 20px"
-              th:text="${#numbers.formatDecimal(summary != null && summary.grandTotal != null ? summary.grandTotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}"
-              >0đ</b
-            >
+            <b style="font-size: 20px"
+               th:text="${#numbers.formatDecimal(summary != null && summary.grandTotal != null ? summary.grandTotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</b>
           </div>
-
-          <!-- confirm -->
-          <form
-            th:action="@{/user/checkout/confirm}"
-            method="post"
-            class="grid"
-            style="gap: 10px; margin-top: 10px"
-          >
-            <input type="hidden" name="branchId" th:value="${branchId}" />
-
-            <!-- thêm id để JS cập nhật trực tiếp -->
-            <input
-              id="confirm-address"
-              type="hidden"
-              name="addressId"
-              th:value="${selectedAddressId}"
-            />
-            <input
-              id="confirm-payment"
-              type="hidden"
-              name="payment"
-              th:value="${selectedPayment != null ? selectedPayment : 'COD'}"
-            />
-            <input
-              id="confirm-note"
-              type="hidden"
-              name="note"
-              th:value="${note}"
-            />
-
-            <!-- bỏ điều kiện selectedAddressId để không bị khoá nút; backend vẫn kiểm tra an toàn -->
-            <button
-              id="confirm-btn"
-              class="btn btn-primary"
-              type="submit"
-              th:disabled="${#lists.isEmpty(items)}"
-            >
-              Xác nhận đặt hàng →
-            </button>
-            <p class="text-muted m-0">
-              * Bằng cách xác nhận, bạn đồng ý với điều khoản &amp; chính sách.
-            </p>
-          </form>
         </aside>
       </div>
     </section>
   </div>
 
-  <!-- JS: chọn tile thanh toán -->
+  <!-- JS: chọn tile + đồng bộ address/note + enable/disable + log -->
   <script>
-    (function () {
-      // --- SYNC TILE PAYMENT UI ---
-      const tiles = Array.from(document.querySelectorAll(".pay-tile"));
-      const paymentRadios = Array.from(
-        document.querySelectorAll('input[name="payment"]')
-      );
-      const confirmPayment = document.getElementById("confirm-payment");
-      const confirmAddress = document.getElementById("confirm-address");
-      const confirmNote = document.getElementById("confirm-note");
-      const confirmBtn = document.getElementById("confirm-btn");
+  (function () {
+    const tiles = [...document.querySelectorAll('.pay-tile')];
+    const radios = [...document.querySelectorAll('input[name="payment"]')];
+    const form   = document.getElementById('checkout-form');
+    const noteTA = document.getElementById('note-area');
+    const noteH  = document.getElementById('chosen-note');
+    const addrH  = document.getElementById('chosen-address');
+    const confirmBtn = document.getElementById('confirm-btn');
 
-      function syncTileState() {
-        tiles.forEach((t) => {
-          const inp = t.querySelector('input[type="radio"]');
-          t.classList.toggle("is-selected", !!(inp && inp.checked));
-        });
-      }
+    function dump(tag) {
+      const r = document.querySelector('input[name="payment"]:checked');
+      console.log(`[${tag}] payment=`, r?.value, 'addressId=', addrH?.value, 'note=', noteH?.value);
+    }
 
-      // Khi click tile -> check radio + cập nhật hidden ở form confirm
-      tiles.forEach((t) => {
-        t.style.cursor = "pointer";
-        t.addEventListener("click", () => {
-          const inp = t.querySelector('input[type="radio"]');
-          if (inp) {
-            inp.checked = true;
-            syncTileState();
-            if (confirmPayment) confirmPayment.value = inp.value; // đổ vào form confirm
-          }
-        });
+    function syncTile() {
+      tiles.forEach(t => {
+        const inp = t.querySelector('input[type="radio"]');
+        t.classList.toggle('is-selected', !!(inp && inp.checked));
       });
+    }
 
-      // Khi đổi radio bằng phím/tab cũng cập nhật
-      paymentRadios.forEach((r) => {
-        r.addEventListener("change", () => {
-          syncTileState();
-          if (confirmPayment) confirmPayment.value = r.value;
-        });
+    // Tile click => check + change
+    tiles.forEach(t => {
+      t.addEventListener('click', () => {
+        const inp = t.querySelector('input[type="radio"]');
+        if (!inp) return;
+        if (!inp.checked) {
+          inp.checked = true;
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+        }
       });
+    });
 
-      // --- SYNC ADDRESS chọn ở form trên với form confirm ---
-      const addressRadios = Array.from(
-        document.querySelectorAll('input[name="addressId"]')
-      );
-      addressRadios.forEach((r) => {
-        r.addEventListener("change", () => {
-          if (confirmAddress) confirmAddress.value = r.value;
-        });
-        // nếu cái nào đang checked lúc load -> set luôn
-        if (r.checked && confirmAddress) confirmAddress.value = r.value;
-      });
+    radios.forEach(r => {
+      r.addEventListener('change', () => { syncTile(); toggleConfirm(); dump('radio-change'); });
+    });
 
-      // --- SYNC NOTE từ textarea về hidden confirm (để submit 1 phát) ---
-      const noteTextarea = document.querySelector('textarea[name="note"]');
-      if (noteTextarea && confirmNote) {
-        const pushNote = () => (confirmNote.value = noteTextarea.value || "");
-        noteTextarea.addEventListener("input", pushNote);
-        pushNote();
-      }
+    // Sync note -> hidden (để submit cả 2 nút cùng có note)
+    if (noteTA && noteH) {
+      const push = () => noteH.value = noteTA.value || '';
+      noteTA.addEventListener('input', push, { passive: true });
+      push();
+    }
 
-      // Khởi tạo trạng thái tile và payment hidden nếu đã có radio checked
-      syncTileState();
-      const checkedPayment = document.querySelector(
-        'input[name="payment"]:checked'
-      );
-      if (checkedPayment && confirmPayment)
-        confirmPayment.value = checkedPayment.value;
+    // Sync address từ form trên nếu user đổi (nằm khác form)
+    const addressRadios = [...document.querySelectorAll('input[name="addressId"]')];
+    addressRadios.forEach(r => {
+      r.addEventListener('change', () => { addrH.value = r.value; toggleConfirm(); dump('address-change'); });
+      if (r.checked) addrH.value = r.value;
+    });
 
-      // (tuỳ chọn) Nếu muốn chỉ mở nút khi đủ address + payment:
-      function toggleConfirm() {
-        const hasAddress = !!(confirmAddress && confirmAddress.value);
-        const hasPayment = !!(confirmPayment && confirmPayment.value);
-        // KHÔNG chạm vào th:disabled đã render; chỉ bật/tắt ở client
-        if (confirmBtn)
-          confirmBtn.disabled =
-            confirmBtn.disabled || !(hasAddress && hasPayment) ? true : false;
-      }
-      toggleConfirm();
-      addressRadios.forEach((r) => r.addEventListener("change", toggleConfirm));
-      paymentRadios.forEach((r) => r.addEventListener("change", toggleConfirm));
-    })();
+    function toggleConfirm() {
+      const hasPay = !!document.querySelector('input[name="payment"]:checked');
+      const hasAddr = !!addrH?.value;
+      if (confirmBtn) confirmBtn.disabled = !(hasPay && hasAddr);
+    }
+
+    // Debug payload trước submit (cả 2 nút)
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        dump('before-submit');
+        try {
+          const fd = new FormData(form);
+          console.log('--- FORM PAYLOAD ---');
+          for (const [k,v] of fd.entries()) console.log(k, '=>', v);
+          console.log('---------------------');
+        } catch {}
+      }, { capture: true });
+    }
+
+    // init
+    syncTile();
+    toggleConfirm();
+    dump('init');
+  })();
   </script>
 </html>

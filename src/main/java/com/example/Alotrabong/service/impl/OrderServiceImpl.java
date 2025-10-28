@@ -59,16 +59,16 @@ public class OrderServiceImpl implements OrderService {
 
         // Create order
         Order order = Order.builder()
-                .orderId(UUID.randomUUID().toString())
-                .user(user)
-                .branch(branch)
-                .status(OrderStatus.PENDING)
-                .totalAmount(totalAmount)
-                .shippingAddress(request.getShippingAddress())
-                .notes(request.getNotes())
-                .build();
+            .user(user)
+            .branch(branch)
+            .status(OrderStatus.PENDING)
+            .paymentMethod(PaymentMethod.COD)
+            .totalAmount(totalAmount)
+            .shippingAddress(request.getShippingAddress()) // text fallback ok
+            .notes(request.getNotes())
+            .build();
 
-        order = orderRepository.save(order);
+        order = orderRepository.saveAndFlush(order);
 
         // Create order items
         for (CartItem cartItem : cartItems) {
