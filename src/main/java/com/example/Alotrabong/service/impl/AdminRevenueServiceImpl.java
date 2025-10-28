@@ -71,8 +71,9 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
         
         // Group by date
         Map<String, List<Order>> ordersByDate = validOrders.stream()
+                .filter(order -> order.getUpdatedAt() != null || order.getCreatedAt() != null)
                 .collect(Collectors.groupingBy(order -> {
-                    LocalDateTime orderDate = order.getUpdatedAt(); // Use updated_at when status changed to DELIVERED
+                    LocalDateTime orderDate = order.getUpdatedAt() != null ? order.getUpdatedAt() : order.getCreatedAt();
                     if ("monthly".equals(period)) {
                         return orderDate.format(DateTimeFormatter.ofPattern("yyyy-MM"));
                     } else {
@@ -117,10 +118,21 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
                 .collect(Collectors.toList());
         
         // Get order items for valid orders
-        List<OrderItem> orderItems = orderItemRepository.findByOrderIdIn(validOrderIds);
+        if (validOrderIds.isEmpty()) {
+            return new PageImpl<>(new ArrayList<>(), pageable, 0);
+        }
+        
+        List<OrderItem> orderItems;
+        try {
+            orderItems = orderItemRepository.findByOrderIdIn(validOrderIds);
+        } catch (Exception e) {
+            log.error("Error fetching order items: {}", e.getMessage());
+            return new PageImpl<>(new ArrayList<>(), pageable, 0);
+        }
         
         // Group by item
         Map<String, List<OrderItem>> itemsByItemId = orderItems.stream()
+                .filter(oi -> oi.getItem() != null && oi.getItem().getItemId() != null)
                 .collect(Collectors.groupingBy(item -> item.getItem().getItemId()));
         
         List<RevenueReportDTO> reports = new ArrayList<>();
@@ -132,15 +144,29 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
             Item item = itemRepository.findById(itemId).orElse(null);
             if (item == null) continue;
             
+            // Calculate total quantity and revenue
+            long totalQuantity = itemOrders.stream()
+                    .filter(oi -> oi.getQuantity() != null)
+                    .mapToLong(OrderItem::getQuantity)
+                    .sum();
+            
+            BigDecimal totalRevenue = itemOrders.stream()
+                    .filter(oi -> oi.getUnitPrice() != null && oi.getQuantity() != null)
+                    .map(oi -> {
+                        // Use lineTotal if available, otherwise calculate from unitPrice * quantity
+                        if (oi.getLineTotal() != null) {
+                            return oi.getLineTotal();
+                        } else {
+                            return oi.getUnitPrice().multiply(BigDecimal.valueOf(oi.getQuantity()));
+                        }
+                    })
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
             RevenueReportDTO report = RevenueReportDTO.builder()
                     .itemId(itemId)
                     .itemName(item.getName())
-                    .itemQuantity(itemOrders.stream()
-                            .mapToLong(OrderItem::getQuantity)
-                            .sum())
-                    .itemRevenue(itemOrders.stream()
-                            .map(OrderItem::getLineTotal)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add))
+                    .itemQuantity(totalQuantity)
+                    .itemRevenue(totalRevenue)
                     .build();
             
             reports.add(report);
@@ -165,31 +191,55 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
         
         Map<String, Object> summary = new HashMap<>();
         
-        // Basic metrics
-        summary.put("totalOrders", validOrders.size());
-        summary.put("totalRevenue", validOrders.stream()
+        // Basic metrics - filter null amounts
+        BigDecimal totalRevenue = validOrders.stream()
+                .filter(order -> order.getTotalAmount() != null)
                 .map(Order::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add));
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        summary.put("totalOrders", (long) validOrders.size());
+        summary.put("totalRevenue", totalRevenue);
+        
+        // Count delivered orders (validOrders are already DELIVERED status)
+        summary.put("deliveredOrders", (long) validOrders.size());
         
         // Calculate system share and branch income
         BigDecimal totalSystemShare = BigDecimal.ZERO;
         BigDecimal totalBranchIncome = BigDecimal.ZERO;
         
         for (Order order : validOrders) {
-            BranchCommission commission = getCommissionForOrder(order);
-            BigDecimal baseAmount = order.getTotalAmount(); // Assuming shipping fee is not deducted
-            BigDecimal systemShare = calculateSystemShare(baseAmount, commission);
-            BigDecimal branchIncome = baseAmount.subtract(systemShare);
-            
-            totalSystemShare = totalSystemShare.add(systemShare);
-            totalBranchIncome = totalBranchIncome.add(branchIncome);
+            try {
+                if (order.getTotalAmount() == null) continue;
+                
+                BranchCommission commission = getCommissionForOrder(order);
+                BigDecimal baseAmount = order.getTotalAmount();
+                BigDecimal systemShare = calculateSystemShare(baseAmount, commission);
+                BigDecimal branchIncome = baseAmount.subtract(systemShare);
+                
+                totalSystemShare = totalSystemShare.add(systemShare);
+                totalBranchIncome = totalBranchIncome.add(branchIncome);
+            } catch (Exception e) {
+                log.error("Error calculating commission for order {}: {}", order.getOrderId(), e.getMessage());
+            }
         }
         
         summary.put("systemShare", totalSystemShare);
         summary.put("branchIncome", totalBranchIncome);
-                summary.put("avgOrderValue", validOrders.isEmpty() ? BigDecimal.ZERO :
-                summary.get("totalRevenue").toString().equals("0") ? BigDecimal.ZERO :
-                ((BigDecimal) summary.get("totalRevenue")).divide(BigDecimal.valueOf(validOrders.size()), 2, java.math.RoundingMode.HALF_UP));
+        
+        // Calculate commission rate
+        BigDecimal commissionRate = BigDecimal.ZERO;
+        if (totalRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            commissionRate = totalSystemShare.multiply(BigDecimal.valueOf(100))
+                    .divide(totalRevenue, 2, java.math.RoundingMode.HALF_UP);
+        }
+        summary.put("commissionRate", commissionRate);
+        
+        // Calculate average order value safely
+        BigDecimal avgOrderValue = BigDecimal.ZERO;
+        if (!validOrders.isEmpty() && totalRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            avgOrderValue = totalRevenue.divide(BigDecimal.valueOf(validOrders.size()), 2, java.math.RoundingMode.HALF_UP);
+        }
+        summary.put("avgOrderValue", avgOrderValue);
         
         return summary;
     }
@@ -203,20 +253,20 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
         Map<String, Object> breakdown = new HashMap<>();
         
         long onlineOrders = validOrders.stream()
-                .filter(order -> order.getPaymentMethod() != PaymentMethod.COD)
+                .filter(order -> order.getPaymentMethod() != null && order.getPaymentMethod() != PaymentMethod.COD)
                 .count();
         
         long codOrders = validOrders.stream()
-                .filter(order -> order.getPaymentMethod() == PaymentMethod.COD)
+                .filter(order -> order.getPaymentMethod() == null || order.getPaymentMethod() == PaymentMethod.COD)
                 .count();
         
         BigDecimal onlineRevenue = validOrders.stream()
-                .filter(order -> order.getPaymentMethod() != PaymentMethod.COD)
+                .filter(order -> order.getPaymentMethod() != null && order.getPaymentMethod() != PaymentMethod.COD && order.getTotalAmount() != null)
                 .map(Order::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         BigDecimal codRevenue = validOrders.stream()
-                .filter(order -> order.getPaymentMethod() == PaymentMethod.COD)
+                .filter(order -> (order.getPaymentMethod() == null || order.getPaymentMethod() == PaymentMethod.COD) && order.getTotalAmount() != null)
                 .map(Order::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
@@ -269,9 +319,9 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
                     .collect(Collectors.toList());
         }
         
-        // Filter by payment status (exclude REFUNDED)
+        // Filter by payment status (exclude REFUNDED, handle null)
         orders = orders.stream()
-                .filter(order -> order.getPaymentStatus() != PaymentStatus.REFUNDED)
+                .filter(order -> order.getPaymentStatus() == null || order.getPaymentStatus() != PaymentStatus.REFUNDED)
                 .collect(Collectors.toList());
         
         return orders;
@@ -296,6 +346,7 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
         Branch branch = branchRepository.findById(branchId).orElse(null);
         
         BigDecimal totalRevenue = orders.stream()
+                .filter(order -> order.getTotalAmount() != null)
                 .map(Order::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
@@ -303,13 +354,19 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
         BigDecimal totalBranchIncome = BigDecimal.ZERO;
         
         for (Order order : orders) {
-            BranchCommission commission = getCommissionForOrder(order);
-            BigDecimal baseAmount = order.getTotalAmount();
-            BigDecimal systemShare = calculateSystemShare(baseAmount, commission);
-            BigDecimal branchIncome = baseAmount.subtract(systemShare);
-            
-            totalSystemShare = totalSystemShare.add(systemShare);
-            totalBranchIncome = totalBranchIncome.add(branchIncome);
+            try {
+                if (order.getTotalAmount() == null) continue;
+                
+                BranchCommission commission = getCommissionForOrder(order);
+                BigDecimal baseAmount = order.getTotalAmount();
+                BigDecimal systemShare = calculateSystemShare(baseAmount, commission);
+                BigDecimal branchIncome = baseAmount.subtract(systemShare);
+                
+                totalSystemShare = totalSystemShare.add(systemShare);
+                totalBranchIncome = totalBranchIncome.add(branchIncome);
+            } catch (Exception e) {
+                log.error("Error calculating metrics for order {}: {}", order.getOrderId(), e.getMessage());
+            }
         }
         
         return RevenueReportDTO.builder()
@@ -325,11 +382,30 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
     }
     
     private BranchCommission getCommissionForOrder(Order order) {
-        LocalDateTime orderDate = order.getUpdatedAt();
-        
-        return branchCommissionRepository.findByBranchIdAndEffectiveDate(
-                order.getBranch().getBranchId(), orderDate)
-                .orElse(null);
+        try {
+            LocalDateTime orderDate = order.getUpdatedAt() != null ? order.getUpdatedAt() : order.getCreatedAt();
+            if (orderDate == null) {
+                log.warn("Order {} has no date information", order.getOrderId());
+                return null;
+            }
+            
+            String branchId = order.getBranch().getBranchId();
+            log.debug("Looking for commission for branch {} on date {}", branchId, orderDate);
+            
+            Optional<BranchCommission> commission = branchCommissionRepository.findByBranchIdAndEffectiveDate(branchId, orderDate);
+            
+            if (commission.isPresent()) {
+                log.debug("Found commission for branch {}: type={}, value={}", 
+                    branchId, commission.get().getCommissionType(), commission.get().getCommissionValue());
+                return commission.get();
+            } else {
+                log.warn("No commission found for branch {} on date {}", branchId, orderDate);
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("Error getting commission for order {}: {}", order.getOrderId(), e.getMessage());
+            return null;
+        }
     }
     
     private BigDecimal calculateSystemShare(BigDecimal baseAmount, BranchCommission commission) {
@@ -346,5 +422,58 @@ public class AdminRevenueServiceImpl implements AdminRevenueService {
         }
         
         return BigDecimal.ZERO;
+    }
+    
+    @Override
+    public Map<String, Object> debugCommissionData() {
+        Map<String, Object> debug = new HashMap<>();
+        
+        // Count total commissions
+        long totalCommissions = branchCommissionRepository.count();
+        debug.put("totalCommissions", totalCommissions);
+        
+        // Count active commissions
+        long activeCommissions = branchCommissionRepository.countByIsActiveTrue();
+        debug.put("activeCommissions", activeCommissions);
+        
+        // Get all active commissions
+        List<BranchCommission> commissions = branchCommissionRepository.findByIsActiveTrueOrderByBranch_NameAsc();
+        debug.put("commissionDetails", commissions.stream().map(c -> {
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("commissionId", c.getCommissionId());
+            detail.put("branchId", c.getBranch().getBranchId());
+            detail.put("branchName", c.getBranch().getName());
+            detail.put("commissionType", c.getCommissionType());
+            detail.put("commissionValue", c.getCommissionValue());
+            detail.put("effectiveFrom", c.getEffectiveFrom());
+            detail.put("effectiveTo", c.getEffectiveTo());
+            detail.put("isActive", c.getIsActive());
+            return detail;
+        }).collect(Collectors.toList()));
+        
+        // Test commission lookup for recent orders
+        List<Order> recentOrders = orderRepository.findByStatusAndUpdatedAtBetween(
+            OrderStatus.DELIVERED, 
+            LocalDateTime.now().minusDays(30), 
+            LocalDateTime.now()
+        ).stream().limit(5).collect(Collectors.toList());
+        
+        debug.put("recentOrdersCommissionTest", recentOrders.stream().map(order -> {
+            Map<String, Object> test = new HashMap<>();
+            test.put("orderId", order.getOrderId());
+            test.put("branchId", order.getBranch().getBranchId());
+            test.put("orderDate", order.getUpdatedAt());
+            
+            BranchCommission commission = getCommissionForOrder(order);
+            test.put("foundCommission", commission != null);
+            if (commission != null) {
+                test.put("commissionType", commission.getCommissionType());
+                test.put("commissionValue", commission.getCommissionValue());
+                test.put("calculatedShare", calculateSystemShare(order.getTotalAmount(), commission));
+            }
+            return test;
+        }).collect(Collectors.toList()));
+        
+        return debug;
     }
 }

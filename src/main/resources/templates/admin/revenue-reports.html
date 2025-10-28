@@ -505,6 +505,10 @@
                     formatCurrency(data.branchIncome || 0);
                 document.getElementById('avgOrderValue').textContent = 
                     formatCurrency(data.avgOrderValue || 0);
+                document.getElementById('deliveredOrders').textContent = 
+                    data.deliveredOrders || 0;
+                document.getElementById('commissionRate').textContent = 
+                    (data.commissionRate || 0) + '%';
             })
             .catch(error => {
                 console.error('Error loading revenue summary:', error);

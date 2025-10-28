@@ -218,6 +218,24 @@ public class BranchManagerController {
         return ResponseEntity.ok(orders);
     }
 
+    @GetMapping("/api/orders/stats")
+    @ResponseBody
+    public ResponseEntity<Map<String, Long>> getOrderStats(Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        Map<String, Long> stats = branchManagerService.getOrderStats(branchId);
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/api/orders/{orderId}")
+    @ResponseBody
+    public ResponseEntity<OrderDTO> getOrderById(
+            @PathVariable String orderId,
+            Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        OrderDTO order = branchManagerService.getOrderById(orderId, branchId);
+        return ResponseEntity.ok(order);
+    }
+
     @PutMapping("/api/orders/{orderId}/status")
     @ResponseBody
     public ResponseEntity<OrderDTO> updateOrderStatus(

@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -158,6 +160,40 @@ public class BranchManagerServiceImpl implements BranchManagerService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Map<String, Long> getOrderStats(String branchId) {
+        log.info("Getting order stats for branch: {}", branchId);
+        
+        Map<String, Long> stats = new HashMap<>();
+        
+        // Tổng đơn hàng
+        Long totalOrders = orderRepository.countByBranch_BranchId(branchId);
+        stats.put("totalOrders", totalOrders);
+        
+        // Đơn hàng chờ xử lý
+        Long pendingOrders = orderRepository.countByBranch_BranchIdAndStatus(branchId, OrderStatus.PENDING);
+        stats.put("pendingOrders", pendingOrders);
+        
+        // Đơn hàng đang xử lý (CONFIRMED, PREPARING, READY, DELIVERING)
+        Long processingOrders = 
+            orderRepository.countByBranch_BranchIdAndStatus(branchId, OrderStatus.CONFIRMED) +
+            orderRepository.countByBranch_BranchIdAndStatus(branchId, OrderStatus.PREPARING) +
+            orderRepository.countByBranch_BranchIdAndStatus(branchId, OrderStatus.READY) +
+            orderRepository.countByBranch_BranchIdAndStatus(branchId, OrderStatus.DELIVERING);
+        stats.put("processingOrders", processingOrders);
+        
+        // Đơn hàng hoàn thành
+        Long completedOrders = orderRepository.countByBranch_BranchIdAndStatus(branchId, OrderStatus.DELIVERED);
+        stats.put("completedOrders", completedOrders);
+        
+        // Đơn hàng đã hủy
+        Long cancelledOrders = orderRepository.countByBranch_BranchIdAndStatus(branchId, OrderStatus.CANCELLED);
+        stats.put("cancelledOrders", cancelledOrders);
+        
+        return stats;
+    }
+
+    @Override
     public OrderDTO updateOrderStatus(String orderId, String status, String branchId) {
         log.info("Updating order status: {} to {}", orderId, status);
         
@@ -197,8 +233,17 @@ public class BranchManagerServiceImpl implements BranchManagerService {
 
         shipmentRepository.save(shipment);
 
-        // Cập nhật trạng thái đơn hàng
-        order.setStatus(OrderStatus.CONFIRMED);
+        // Chỉ cập nhật trạng thái nếu đơn hàng chưa được xác nhận
+        // Không quay ngược trạng thái nếu đã ở trạng thái cao hơn
+        if (order.getStatus() == OrderStatus.PENDING) {
+            order.setStatus(OrderStatus.CONFIRMED);
+        }
+        // Nếu đơn hàng đã READY thì có thể chuyển sang DELIVERING
+        else if (order.getStatus() == OrderStatus.READY) {
+            order.setStatus(OrderStatus.DELIVERING);
+        }
+        // Các trạng thái khác giữ nguyên
+        
         order.setUpdatedAt(LocalDateTime.now());
         order = orderRepository.save(order);
 
@@ -606,13 +651,53 @@ public class BranchManagerServiceImpl implements BranchManagerService {
     }
 
     private OrderDTO convertToOrderDTO(Order order) {
+        // Get order items
+        List<OrderItemDTO> orderItems = orderItemRepository.findByOrder(order).stream()
+                .map(this::convertOrderItemToDTO)
+                .collect(Collectors.toList());
+        
+        // Get shipper info if assigned
+        String shipperName = null;
+        String shipperPhone = null;
+        try {
+            Shipment shipment = shipmentRepository.findByOrder(order).stream().findFirst().orElse(null);
+            if (shipment != null && shipment.getShipper() != null) {
+                shipperName = shipment.getShipper().getUser().getFullName();
+                shipperPhone = shipment.getShipper().getUser().getPhone();
+            }
+        } catch (Exception e) {
+            log.debug("No shipper assigned to order: {}", order.getOrderId());
+        }
+        
         return OrderDTO.builder()
                 .orderId(order.getOrderId())
                 .userId(order.getUser().getUserId())
                 .branchId(order.getBranch().getBranchId())
                 .status(order.getStatus().toString())
                 .totalAmount(order.getTotalAmount())
+                .grandTotal(order.getTotalAmount())
+                .deliveryAddress(order.getShippingAddress())
+                .deliveryPhone(order.getUser().getPhone())
+                .paymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().toString() : null)
+                .customerName(order.getUser().getFullName())
+                .customerPhone(order.getUser().getPhone())
+                .shipperName(shipperName)
+                .shipperPhone(shipperPhone)
+                .orderItems(orderItems)
+                .items(orderItems) // Alias for frontend
                 .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .build();
+    }
+
+    private OrderItemDTO convertOrderItemToDTO(OrderItem orderItem) {
+        return OrderItemDTO.builder()
+                .orderItemId(orderItem.getOrderItemId())
+                .itemId(orderItem.getItem().getItemId())
+                .itemName(orderItem.getItem().getName())
+                .quantity(orderItem.getQuantity())
+                .unitPrice(orderItem.getUnitPrice())
+                .totalPrice(orderItem.getUnitPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
                 .build();
     }
 

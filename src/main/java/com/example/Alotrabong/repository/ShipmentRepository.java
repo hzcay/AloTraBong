@@ -1,5 +1,6 @@
 package com.example.Alotrabong.repository;
 
+import com.example.Alotrabong.entity.Order;
 import com.example.Alotrabong.entity.Shipment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +16,8 @@ public interface ShipmentRepository extends JpaRepository<Shipment, String> {
     List<Shipment> findByShipper_Branch_BranchId(String branchId);
     
     Optional<Shipment> findByShipmentIdAndShipper_Branch_BranchId(String shipmentId, String branchId);
+    
+    List<Shipment> findByOrder(Order order);
     
     List<Shipment> findByShipper_Branch_BranchIdAndStatus(String branchId, Integer status);
     

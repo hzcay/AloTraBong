@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface BranchManagerService {
 
@@ -39,6 +40,11 @@ public interface BranchManagerService {
      * Lấy chi tiết đơn hàng
      */
     OrderDTO getOrderById(String orderId, String branchId);
+
+    /**
+     * Lấy thống kê đơn hàng
+     */
+    Map<String, Long> getOrderStats(String branchId);
 
     /**
      * Cập nhật trạng thái đơn hàng

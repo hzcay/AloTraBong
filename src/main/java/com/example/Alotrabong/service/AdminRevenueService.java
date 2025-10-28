@@ -27,4 +27,7 @@ public interface AdminRevenueService {
     
     // Cancellation statistics
     Map<String, Object> getCancellationStats(LocalDate fromDate, LocalDate toDate, String branchId);
+    
+    // Debug commission data
+    Map<String, Object> debugCommissionData();
 }

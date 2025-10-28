@@ -31,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
     private final BranchRepository branchRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final AddressRepository addressRepository;
     // private final PaymentRepository paymentRepository; // TODO: Implement payment logic
 
     @Override
@@ -57,6 +58,31 @@ public class OrderServiceImpl implements OrderService {
                 .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Handle address - try to parse as ID first, fallback to text
+        Address addressSnapshot = null;
+        String shippingAddressText = request.getShippingAddress();
+        
+        if (request.getShippingAddress() != null && !request.getShippingAddress().trim().isEmpty()) {
+            try {
+                // Try to parse as address ID
+                Integer addressId = Integer.parseInt(request.getShippingAddress());
+                addressSnapshot = addressRepository.findById(addressId).orElse(null);
+                if (addressSnapshot != null) {
+                    // Build full address text from Address entity
+                    shippingAddressText = String.format("%s, %s, %s - %s (%s)", 
+                        addressSnapshot.getAddressLine(),
+                        addressSnapshot.getDistrict(),
+                        addressSnapshot.getCity(),
+                        addressSnapshot.getReceiverName(),
+                        addressSnapshot.getPhone()
+                    );
+                }
+            } catch (Exception e) {
+                // If parsing as ID fails, treat as plain text address
+                log.debug("Address not found as ID, treating as text: {}", request.getShippingAddress());
+            }
+        }
+
         // Create order
         Order order = Order.builder()
             .user(user)
@@ -64,7 +90,8 @@ public class OrderServiceImpl implements OrderService {
             .status(OrderStatus.PENDING)
             .paymentMethod(PaymentMethod.COD)
             .totalAmount(totalAmount)
-            .shippingAddress(request.getShippingAddress()) // text fallback ok
+            .addressSnapshot(addressSnapshot) // Set the Address entity
+            .shippingAddress(shippingAddressText) // Set the text representation
             .notes(request.getNotes())
             .build();
 

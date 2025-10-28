@@ -123,4 +123,11 @@ public class AdminRevenueController {
         Map<String, Object> stats = adminRevenueService.getCancellationStats(from, to, branchId);
         return ResponseEntity.ok(stats);
     }
+    
+    @GetMapping("/debug/commission-check")
+    public ResponseEntity<Map<String, Object>> debugCommissionCheck() {
+        log.info("Debug: Checking commission data");
+        Map<String, Object> debug = adminRevenueService.debugCommissionData();
+        return ResponseEntity.ok(debug);
+    }
 }

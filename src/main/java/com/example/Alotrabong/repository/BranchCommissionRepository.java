@@ -65,8 +65,8 @@ public interface BranchCommissionRepository extends JpaRepository<BranchCommissi
     
     // Tìm commission theo branch và thời gian hiệu lực (cho revenue reporting)
     @Query("SELECT bc FROM BranchCommission bc WHERE bc.branch.branchId = :branchId " +
-           "AND bc.effectiveFrom <= :dateTime " +
-           "AND (bc.effectiveTo IS NULL OR bc.effectiveTo >= :dateTime) " +
+           "AND bc.effectiveFrom <= CAST(:dateTime AS date) " +
+           "AND (bc.effectiveTo IS NULL OR bc.effectiveTo >= CAST(:dateTime AS date)) " +
            "AND bc.isActive = true " +
            "ORDER BY bc.effectiveFrom DESC")
     Optional<BranchCommission> findByBranchIdAndEffectiveDate(@Param("branchId") String branchId, 
