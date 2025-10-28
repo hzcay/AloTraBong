@@ -101,68 +101,8 @@
 </head>
 <body>
 <div class="admin-wrapper">
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h4><i class="bi bi-speedometer2"></i> AloTraBong Admin</h4>
-            <p>Management System</p>
-        </div>
-        <nav class="sidebar-menu">
-            <div class="menu-section">
-                <div class="menu-title">Main</div>
-                <a class="nav-link" href="/admin/dashboard">
-                    <i class="bi bi-house-door"></i>
-                    <span>Dashboard</span>
-                </a>
-            </div>
-            <div class="menu-section">
-                <div class="menu-title">Management</div>
-                <a class="nav-link" href="/admin/users">
-                    <i class="bi bi-people"></i>
-                    <span>User Management</span>
-                </a>
-                <a class="nav-link" href="/admin/branches">
-                    <i class="bi bi-building"></i>
-                    <span>Branches</span>
-                </a>
-                <a class="nav-link" href="/admin/menu">
-                    <i class="bi bi-list-ul"></i>
-                    <span>Menu & Categories</span>
-                </a>
-            </div>
-            <div class="menu-section">
-                <div class="menu-title">Business</div>
-                <a class="nav-link" href="/admin/promotions">
-                    <i class="bi bi-tag"></i>
-                    <span>Promotions</span>
-                </a>
-                <a class="nav-link" href="/admin/shipping">
-                    <i class="bi bi-truck"></i>
-                    <span>Shipping Rates</span>
-                </a>
-                <a class="nav-link" href="/admin/orders">
-                    <i class="bi bi-cart-check"></i>
-                    <span>Orders</span>
-                </a>
-            </div>
-            <div class="menu-section">
-                <div class="menu-title">Analytics</div>
-                <a class="nav-link active" href="/admin/reports">
-                    <i class="bi bi-bar-chart"></i>
-                    <span>Reports</span>
-                </a>
-                <a class="nav-link" href="/admin/settings">
-                    <i class="bi bi-gear"></i>
-                    <span>Settings</span>
-                </a>
-            </div>
-        </nav>
-        <div class="sidebar-footer">
-            <a class="nav-link" href="/logout">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Logout</span>
-            </a>
-        </div>
-    </div>
+    <!-- Include Sidebar -->
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar('reports')}"></div>
 
     <div class="main-content-wrapper">
         <div class="main-content">

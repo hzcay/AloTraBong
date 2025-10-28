@@ -23,12 +23,6 @@ public class AdminController {
         return "admin/users";
     }
 
-    @GetMapping("/roles")
-    public String roleManagement(Model model) {
-        model.addAttribute("title", "Role Management");
-        return "admin/roles";
-    }
-
     @GetMapping("/menu")
     public String menuManagement(Model model) {
         model.addAttribute("title", "Menu Management");
@@ -41,10 +35,10 @@ public class AdminController {
         return "admin/branches";
     }
 
-    @GetMapping("/orders")
-    public String orderManagement(Model model) {
-        model.addAttribute("title", "Order Management");
-        return "admin/orders";
+    @GetMapping("/branch-commissions")
+    public String branchCommissions(Model model) {
+        model.addAttribute("title", "Branch Commissions Management");
+        return "admin/branch-commissions";
     }
 
     @GetMapping("/reports")
