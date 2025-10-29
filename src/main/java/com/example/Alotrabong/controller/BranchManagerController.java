@@ -15,6 +15,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.example.Alotrabong.service.BranchAssignmentService;
+import com.example.Alotrabong.repository.UserRepository;
+import com.example.Alotrabong.entity.User;
 import com.example.Alotrabong.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpSession;
 
@@ -35,6 +37,7 @@ public class BranchManagerController {
 
     private final BranchManagerService branchManagerService;
     private final BranchAssignmentService branchAssignmentService;
+    private final UserRepository userRepository;
     // Global model attrs for all views under this controller
     @ModelAttribute("currentBranch")
     public BranchDTO injectCurrentBranch(Authentication authentication, HttpSession session) {
@@ -188,6 +191,29 @@ public class BranchManagerController {
         model.addAttribute("title", "Cài đặt Chi nhánh");
         
         return "branch-manager/settings";
+    }
+
+    @GetMapping("/chat")
+    public String chat(Model model, Authentication authentication, HttpSession session) {
+        String branchId = (String) session.getAttribute("branchId");
+        if (branchId == null) {
+            branchId = getBranchIdFromAuth(authentication);
+            if (branchId != null) session.setAttribute("branchId", branchId);
+        }
+        log.info("Branch Manager chat for branch: {}", branchId);
+
+        model.addAttribute("branchId", branchId);
+        model.addAttribute("title", "Chat Chi nhánh");
+        try {
+            if (authentication != null && authentication.getName() != null) {
+                User me = userRepository.findByEmail(authentication.getName()).orElse(null);
+                if (me != null) {
+                    model.addAttribute("currentUserId", me.getUserId());
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return "branch-manager/chat";
     }
 
     @GetMapping("/no-branch-assigned")

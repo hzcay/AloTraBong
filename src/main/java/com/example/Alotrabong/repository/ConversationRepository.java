@@ -8,7 +8,10 @@ import java.util.List;
 
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, String> {
-    List<Conversation> findByUser_UserIdAndStatus(String userId, Byte status);
 
-    List<Conversation> findByBranch_BranchIdAndStatus(String branchId, Byte status);
+    List<Conversation> findByUser_UserIdOrderByCreatedAtDesc(String userId);
+
+    List<Conversation> findByBranch_BranchIdAndStatusOrderByCreatedAtDesc(String branchId, Byte status);
 }
+
+

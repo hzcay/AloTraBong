@@ -1284,9 +1284,25 @@ public class UserController {
 
     @GetMapping("/chat/room/{roomId}")
     public String chatRoom(@PathVariable String roomId, Authentication auth, Model model) {
-
-        // tên user cho header
+        // Lấy thông tin user hiện tại
+        User currentUser = userRepository.findByEmail(auth.getName())
+                .orElse(null);
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+        
+        // Tên user cho header
         model.addAttribute("userName", resolveDisplayName(auth));
+        // User ID để phân biệt tin nhắn
+        model.addAttribute("currentUserId", currentUser.getUserId());
+        // Branch ID từ roomId (có thể là branchId)
+        model.addAttribute("branchId", roomId);
+        
+        // Lấy thông tin branch
+        Branch branch = resolveBranch(roomId);
+        if (branch != null) {
+            model.addAttribute("branchName", branch.getName());
+        }
 
         return "user/chat/room";
     }
