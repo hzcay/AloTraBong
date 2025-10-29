@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 
 @Controller
@@ -158,19 +159,19 @@ public class BranchManagerController {
         return "branch-manager/promotions";
     }
 
-    @GetMapping("/reports")
-    public String reports(Model model, Authentication authentication, HttpSession session) {
+    @GetMapping("/revenue")
+    public String revenue(Model model, Authentication authentication, HttpSession session) {
         String branchId = (String) session.getAttribute("branchId");
         if (branchId == null) {
             branchId = getBranchIdFromAuth(authentication);
             if (branchId != null) session.setAttribute("branchId", branchId);
         }
-        log.info("Branch Manager reports for branch: {}", branchId);
+        log.info("Branch Manager revenue for branch: {}", branchId);
         
         model.addAttribute("branchId", branchId);
-        model.addAttribute("title", "Báo cáo Doanh thu");
+        model.addAttribute("title", "Thống kê Doanh thu");
         
-        return "branch-manager/reports";
+        return "branch-manager/revenue";
     }
 
     @GetMapping("/settings")
@@ -407,17 +408,63 @@ public class BranchManagerController {
         return ResponseEntity.ok(promotion);
     }
 
-    @GetMapping("/api/reports/revenue")
+    @GetMapping("/api/revenue/summary")
     @ResponseBody
-    public ResponseEntity<BranchRevenueReportDTO> getRevenueReport(
-            @RequestParam String startDate,
-            @RequestParam String endDate,
+    public ResponseEntity<Map<String, Object>> getRevenueSummary(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String paymentMethod,
             Authentication authentication) {
         String branchId = getBranchIdFromAuth(authentication);
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
-        BranchRevenueReportDTO report = branchManagerService.getRevenueReport(branchId, start, end);
-        return ResponseEntity.ok(report);
+        
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusMonths(1);
+        LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+        
+        Map<String, Object> summary = branchManagerService.getRevenueSummary(branchId, start, end, paymentMethod);
+        return ResponseEntity.ok(summary);
+    }
+
+    @GetMapping("/api/revenue/top-items")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getTopSellingItems(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(defaultValue = "10") int limit,
+            Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusMonths(1);
+        LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+        
+        List<Map<String, Object>> topItems = branchManagerService.getTopSellingItems(branchId, start, end, limit);
+        return ResponseEntity.ok(topItems);
+    }
+
+    @GetMapping("/api/revenue/daily")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getDailyRevenue(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusMonths(1);
+        LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+        
+        List<Map<String, Object>> dailyRevenue = branchManagerService.getDailyRevenue(branchId, start, end);
+        return ResponseEntity.ok(dailyRevenue);
+    }
+
+    @GetMapping("/api/debug/orders")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> debugOrders(Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        
+        Map<String, Object> debug = new HashMap<>();
+        debug.put("branchId", branchId);
+        debug.put("totalOrders", branchManagerService.getOrderStats(branchId));
+        
+        return ResponseEntity.ok(debug);
     }
 
     @PutMapping("/api/branch")

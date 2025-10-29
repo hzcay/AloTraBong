@@ -8,6 +8,7 @@ import com.example.Alotrabong.service.BranchManagerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,10 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +43,7 @@ public class BranchManagerServiceImpl implements BranchManagerService {
     private final ShippingRateRepository shippingRateRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final BranchCommissionRepository branchCommissionRepository;
 
     // ==================== DASHBOARD ====================
 
@@ -58,9 +62,9 @@ public class BranchManagerServiceImpl implements BranchManagerService {
         Long cancelledOrders = orderRepository.countByBranch_BranchIdAndStatus(branchId, OrderStatus.CANCELLED);
 
         // Thống kê doanh thu
-        BigDecimal todayRevenue = orderRepository.getTodayRevenue(branchId);
-        BigDecimal monthlyRevenue = orderRepository.getMonthlyRevenue(branchId);
-        BigDecimal avgOrderValue = orderRepository.getAvgOrderValue(branchId);
+        BigDecimal todayRevenue = orderRepository.getTodayRevenue(branchId, OrderStatus.DELIVERED);
+        BigDecimal monthlyRevenue = orderRepository.getMonthlyRevenue(branchId, OrderStatus.DELIVERED);
+        BigDecimal avgOrderValue = orderRepository.getAvgOrderValue(branchId, OrderStatus.DELIVERED);
 
         // Thống kê shipper
         Long totalShippers = (long) shipperRepository.findByBranch_BranchId(branchId).size();
@@ -618,63 +622,138 @@ public class BranchManagerServiceImpl implements BranchManagerService {
 
     @Override
     @Transactional(readOnly = true)
-    public BranchRevenueReportDTO getRevenueReport(String branchId, LocalDate startDate, LocalDate endDate) {
-        log.info("Getting revenue report for branch: {} from {} to {}", branchId, startDate, endDate);
+    public Map<String, Object> getRevenueSummary(String branchId, LocalDate startDate, LocalDate endDate, String paymentMethod) {
+        log.info("Getting revenue summary for branch: {} from {} to {}", branchId, startDate, endDate);
+        
+        // Debug: Check total orders for this branch
+        Long totalOrdersDebug = orderRepository.countByBranch_BranchId(branchId);
+        log.info("DEBUG: Total orders in branch {}: {}", branchId, totalOrdersDebug);
         
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
 
-        // Thống kê đơn hàng
+        Map<String, Object> summary = new HashMap<>();
+        
+        // Thống kê đơn hàng theo trạng thái
         Long totalOrders = orderRepository.countByBranchAndDateRange(branchId, startDate, endDate);
         Long completedOrders = orderRepository.countByBranchAndStatusAndDateRange(branchId, OrderStatus.DELIVERED, startDate, endDate);
         Long cancelledOrders = orderRepository.countByBranchAndStatusAndDateRange(branchId, OrderStatus.CANCELLED, startDate, endDate);
+        
+        log.info("DEBUG: Date range {} to {} - Total: {}, Completed: {}, Cancelled: {}", 
+            startDate, endDate, totalOrders, completedOrders, cancelledOrders);
+        Long refundedOrders = 0L; // TODO: Implement refund logic if needed
 
         // Thống kê doanh thu
-        BigDecimal totalRevenue = orderRepository.getRevenueByBranchAndDateRange(branchId, startDate, endDate);
-        BigDecimal completedRevenue = orderRepository.getRevenueByBranchAndStatusAndDateRange(branchId, OrderStatus.DELIVERED, startDate, endDate);
-        BigDecimal avgOrderValue = totalOrders > 0 ? totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO;
-
-        // Top sản phẩm bán chạy
-        List<TopSellingItemDTO> topSellingItems = getTopSellingItems(branchId, startDate, endDate);
-
-        // Doanh thu theo ngày
-        List<DailyRevenueDTO> dailyRevenue = getDailyRevenue(branchId, startDate, endDate);
-
-        // Tỷ lệ hoàn thành
+        BigDecimal totalRevenue = orderRepository.getRevenueByBranchAndStatusAndDateRange(branchId, OrderStatus.DELIVERED, startDate, endDate);
+        if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
+        
+        log.info("DEBUG: Total revenue for branch {} from {} to {}: {}", branchId, startDate, endDate, totalRevenue);
+        
+        // Tính chiết khấu chi nhánh
+        BigDecimal branchCommissionRate = getBranchCommissionRate(branchId);
+        BigDecimal systemShare = totalRevenue.multiply(branchCommissionRate).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal branchShare = totalRevenue.subtract(systemShare);
+        
+        // Tỷ lệ
         BigDecimal completionRate = totalOrders > 0 ? 
-                BigDecimal.valueOf(completedOrders).divide(BigDecimal.valueOf(totalOrders), 4, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : 
+                BigDecimal.valueOf(completedOrders * 100.0 / totalOrders).setScale(2, java.math.RoundingMode.HALF_UP) : 
+                BigDecimal.ZERO;
+        BigDecimal cancellationRate = totalOrders > 0 ? 
+                BigDecimal.valueOf(cancelledOrders * 100.0 / totalOrders).setScale(2, java.math.RoundingMode.HALF_UP) : 
+                BigDecimal.ZERO;
+        
+        BigDecimal avgOrderValue = completedOrders > 0 ? 
+                totalRevenue.divide(BigDecimal.valueOf(completedOrders), 2, java.math.RoundingMode.HALF_UP) : 
                 BigDecimal.ZERO;
 
-        return BranchRevenueReportDTO.builder()
-                .branchId(branchId)
-                .branchName(branch.getName())
-                .startDate(startDate)
-                .endDate(endDate)
-                .totalOrders(totalOrders)
-                .completedOrders(completedOrders)
-                .cancelledOrders(cancelledOrders)
-                .totalRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO)
-                .completedRevenue(completedRevenue != null ? completedRevenue : BigDecimal.ZERO)
-                .avgOrderValue(avgOrderValue)
-                .topSellingItems(topSellingItems)
-                .dailyRevenue(dailyRevenue)
-                .completionRate(completionRate)
-                .cancellationRate(BigDecimal.valueOf(100).subtract(completionRate))
-                .build();
+        summary.put("branchId", branchId);
+        summary.put("branchName", branch.getName());
+        summary.put("startDate", startDate);
+        summary.put("endDate", endDate);
+        summary.put("totalOrders", totalOrders);
+        summary.put("completedOrders", completedOrders);
+        summary.put("cancelledOrders", cancelledOrders);
+        summary.put("refundedOrders", refundedOrders);
+        summary.put("totalRevenue", totalRevenue);
+        summary.put("systemShare", systemShare);
+        summary.put("branchShare", branchShare);
+        summary.put("commissionRate", branchCommissionRate);
+        summary.put("completionRate", completionRate);
+        summary.put("cancellationRate", cancellationRate);
+        summary.put("avgOrderValue", avgOrderValue);
+        
+        return summary;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DailyRevenueDTO> getDailyRevenue(String branchId, LocalDate startDate, LocalDate endDate) {
-        // TODO: Implement daily revenue calculation
-        return List.of();
+    public List<Map<String, Object>> getDailyRevenue(String branchId, LocalDate startDate, LocalDate endDate) {
+        log.info("Getting daily revenue for branch: {} from {} to {}", branchId, startDate, endDate);
+        
+        List<Map<String, Object>> dailyRevenue = new ArrayList<>();
+        LocalDate currentDate = startDate;
+        
+        while (!currentDate.isAfter(endDate)) {
+            LocalDate nextDate = currentDate.plusDays(1);
+            
+            BigDecimal dayRevenue = orderRepository.getRevenueByBranchAndStatusAndDateRange(
+                branchId, OrderStatus.DELIVERED, currentDate, nextDate);
+            if (dayRevenue == null) dayRevenue = BigDecimal.ZERO;
+            
+            Long dayOrders = orderRepository.countByBranchAndStatusAndDateRange(
+                branchId, OrderStatus.DELIVERED, currentDate, nextDate);
+            
+            Map<String, Object> dayData = new HashMap<>();
+            dayData.put("date", currentDate);
+            dayData.put("revenue", dayRevenue);
+            dayData.put("orders", dayOrders);
+            
+            dailyRevenue.add(dayData);
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        return dailyRevenue;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<TopSellingItemDTO> getTopSellingItems(String branchId, LocalDate startDate, LocalDate endDate) {
-        // TODO: Implement top selling items calculation
-        return List.of();
+    public List<Map<String, Object>> getTopSellingItems(String branchId, LocalDate startDate, LocalDate endDate, int limit) {
+        log.info("Getting top selling items for branch: {} from {} to {}", branchId, startDate, endDate);
+        
+        // Query để lấy top selling items
+        List<Object[]> results = orderItemRepository.findTopSellingItemsByBranchAndDateRange(
+            branchId, OrderStatus.DELIVERED, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay(), PageRequest.of(0, limit));
+        
+        List<Map<String, Object>> topItems = new ArrayList<>();
+        
+        for (Object[] result : results) {
+            String itemId = (String) result[0];
+            String itemName = (String) result[1];
+            Long totalQuantity = ((Number) result[2]).longValue();
+            BigDecimal totalRevenue = (BigDecimal) result[3];
+            
+            Map<String, Object> item = new HashMap<>();
+            item.put("itemId", itemId);
+            item.put("itemName", itemName);
+            item.put("totalQuantity", totalQuantity);
+            item.put("totalRevenue", totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
+            
+            topItems.add(item);
+        }
+        
+        return topItems;
+    }
+    
+    private BigDecimal getBranchCommissionRate(String branchId) {
+        // Lấy tỷ lệ chiết khấu của chi nhánh từ BranchCommission
+        try {
+            return branchCommissionRepository.findByBranchIdAndEffectiveDate(branchId, LocalDateTime.now())
+                    .map(commission -> commission.getCommissionValue())
+                    .orElse(BigDecimal.valueOf(10)); // Default 10% nếu không tìm thấy
+        } catch (Exception e) {
+            log.warn("Error getting commission rate for branch {}: {}", branchId, e.getMessage());
+            return BigDecimal.valueOf(10);
+        }
     }
 
     // ==================== SHIPPING RATES ====================

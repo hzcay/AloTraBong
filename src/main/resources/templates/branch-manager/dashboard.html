@@ -158,7 +158,7 @@
 <body>
 <div class="branch-wrapper">
     <!-- Sidebar -->
-    <th:block th:replace="fragments/branch-sidebar :: branchSidebar('dashboard')"></th:block>
+    <th:block th:replace="~{fragments/branch-sidebar :: branchSidebar('dashboard')}"></th:block>
     
     <!-- Main Content -->
     <div class="main-content-wrapper">
@@ -208,27 +208,7 @@
                 </div>
             </div>
             
-            <!-- Revenue Row -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="stats-card success">
-                        <h3 class="stats-number text-success" th:text="${#numbers.formatDecimal(dashboard.todayRevenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</h3>
-                        <p class="stats-label">Doanh thu hôm nay</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stats-card">
-                        <h3 class="stats-number text-primary" th:text="${#numbers.formatDecimal(dashboard.monthlyRevenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</h3>
-                        <p class="stats-label">Doanh thu tháng</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stats-card">
-                        <h3 class="stats-number text-info" th:text="${#numbers.formatDecimal(dashboard.avgOrderValue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</h3>
-                        <p class="stats-label">Giá trị đơn TB</p>
-                    </div>
-                </div>
-            </div>
+            <!-- Revenue summary cards removed as requested -->
             
             <!-- Charts Row -->
             <div class="row mb-4">
@@ -248,7 +228,7 @@
             
             <!-- Recent Orders and Active Promotions -->
             <div class="row">
-                <div class="col-md-8">
+                <div class="col-12">
                     <div class="recent-orders">
                         <h5><i class="bi bi-clock-history"></i> Đơn hàng gần đây</h5>
                         <div th:each="order : ${dashboard.recentOrders}">
@@ -258,23 +238,8 @@
                                     <p th:text="${order.createdAt}">2024-01-15 10:30</p>
                                 </div>
                                 <div class="order-status" 
-                                     th:classappend="${order.status == 'PENDING'} ? 'status-pending' : 
-                                                   ${order.status == 'CONFIRMED'} ? 'status-confirmed' : 
-                                                   ${order.status == 'DELIVERED'} ? 'status-delivered' : 'status-cancelled'"
-                                     th:text="${order.status}">PENDING</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="recent-orders">
-                        <h5><i class="bi bi-tag"></i> Khuyến mãi đang hoạt động</h5>
-                        <div th:each="promotion : ${dashboard.activePromotions}">
-                            <div class="order-item">
-                                <div class="order-info">
-                                    <h6 th:text="${promotion.name}">Khuyến mãi</h6>
-                                    <p th:text="${promotion.description}">Mô tả</p>
-                                </div>
+                                     th:classappend="${order.status == 'PENDING' ? 'status-pending' : (order.status == 'CONFIRMED' ? 'status-confirmed' : (order.status == 'DELIVERED' ? 'status-delivered' : 'status-cancelled'))}"
+                                      th:text="${order.status}">PENDING</div>
                             </div>
                         </div>
                     </div>
@@ -287,55 +252,100 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-    // Revenue Chart
+    // Helpers
+    function formatCurrencyVND(value) {
+        return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+    }
+    function toISODate(date) {
+        const d = new Date(date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // Prepare date range (last 7 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 6);
+
+    // Charts instances
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(revenueCtx, {
-        type: 'line',
-        data: {
-            labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
-            datasets: [{
-                label: 'Doanh thu (₫)',
-                data: [1200000, 1900000, 3000000, 5000000, 2000000, 3000000, 4500000],
-                borderColor: '#ff6b35',
-                backgroundColor: 'rgba(255, 107, 53, 0.1)',
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+    const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
+    let revenueChart;
+    let orderStatusChart;
+
+    // Load Daily Revenue
+    fetch(`/branch-manager/api/revenue/daily?startDate=${toISODate(startDate)}&endDate=${toISODate(endDate)}`)
+        .then(r => r.json())
+        .then(days => {
+            const labels = days.map(d => d.date);
+            const data = days.map(d => d.revenue || 0);
+
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Doanh thu (₫)',
+                        data,
+                        borderColor: '#ff6b35',
+                        backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) { return formatCurrencyVND(value); }
+                            }
                         }
                     }
                 }
-            }
-        }
-    });
-    
-    // Order Status Chart
-    const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
-    new Chart(orderStatusCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Hoàn thành', 'Chờ xử lý', 'Đã hủy'],
-            datasets: [{
-                data: [/*[[${dashboard.completedOrders}]]*/ 15, /*[[${dashboard.pendingOrders}]]*/ 5, /*[[${dashboard.cancelledOrders}]]*/ 2],
-                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+            });
+        })
+        .catch(() => {
+            // fallback empty chart
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Doanh thu (₫)', data: [], borderColor: '#ff6b35', backgroundColor: 'rgba(255,107,53,0.1)', tension: 0.4 }]},
+                options: { responsive: true }
+            });
+        });
+
+    // Load Order Stats
+    fetch('/branch-manager/api/orders/stats')
+        .then(r => r.json())
+        .then(stats => {
+            const completed = stats.completedOrders || 0;
+            const pending = stats.pendingOrders || 0;
+            const cancelled = stats.cancelledOrders || 0;
+
+            orderStatusChart = new Chart(orderStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hoàn thành', 'Chờ xử lý', 'Đã hủy'],
+                    datasets: [{
+                        data: [completed, pending, cancelled],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
                 }
-            }
-        }
-    });
+            });
+        })
+        .catch(() => {
+            orderStatusChart = new Chart(orderStatusCtx, {
+                type: 'doughnut',
+                data: { labels: ['Hoàn thành', 'Chờ xử lý', 'Đã hủy'], datasets: [{ data: [0,0,0], backgroundColor: ['#28a745','#ffc107','#dc3545'] }]},
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        });
 </script>
 </body>
 </html>

@@ -92,29 +92,29 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     Long countByBranch_BranchIdAndStatus(String branchId, OrderStatus status);
     
     // Revenue methods
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(o.createdAt AS date) = CURRENT_DATE AND o.status = 'DELIVERED'")
-    BigDecimal getTodayRevenue(String branchId);
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(o.createdAt AS date) = CURRENT_DATE AND o.status = :status")
+    BigDecimal getTodayRevenue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
     
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND YEAR(o.createdAt) = YEAR(CURRENT_DATE) AND MONTH(o.createdAt) = MONTH(CURRENT_DATE) AND o.status = 'DELIVERED'")
-    BigDecimal getMonthlyRevenue(String branchId);
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND YEAR(o.createdAt) = YEAR(CURRENT_DATE) AND MONTH(o.createdAt) = MONTH(CURRENT_DATE) AND o.status = :status")
+    BigDecimal getMonthlyRevenue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
     
-    @Query("SELECT COALESCE(AVG(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = 'DELIVERED'")
-    BigDecimal getAvgOrderValue(String branchId);
+    @Query("SELECT COALESCE(AVG(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status")
+    BigDecimal getAvgOrderValue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
     
     // Recent orders
     List<Order> findTop5ByBranch_BranchIdOrderByCreatedAtDesc(String branchId);
     
-    // Date range methods
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(o.createdAt AS date) BETWEEN :startDate AND :endDate")
+    // Date range methods - using updatedAt like admin, exclude REFUNDED payments
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
     Long countByBranchAndDateRange(@Param("branchId") String branchId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status AND CAST(o.createdAt AS date) BETWEEN :startDate AND :endDate")
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
     Long countByBranchAndStatusAndDateRange(@Param("branchId") String branchId, @Param("status") OrderStatus status, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(o.createdAt AS date) BETWEEN :startDate AND :endDate AND o.status = 'DELIVERED'")
-    BigDecimal getRevenueByBranchAndDateRange(@Param("branchId") String branchId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND o.status = :status AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
+    BigDecimal getRevenueByBranchAndDateRange(@Param("branchId") String branchId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, @Param("status") OrderStatus status);
     
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status AND CAST(o.createdAt AS date) BETWEEN :startDate AND :endDate")
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
     BigDecimal getRevenueByBranchAndStatusAndDateRange(@Param("branchId") String branchId, @Param("status") OrderStatus status, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
     // Find by ID and branch

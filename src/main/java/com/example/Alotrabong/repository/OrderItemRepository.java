@@ -35,4 +35,23 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, String> {
     
     @Query("SELECT oi FROM OrderItem oi WHERE oi.order.orderId IN :orderIds")
     List<OrderItem> findByOrderIdIn(@Param("orderIds") List<String> orderIds);
+    
+    @Query("""
+            SELECT oi.item.itemId, oi.item.name, SUM(oi.quantity), SUM(oi.quantity * oi.unitPrice)
+            FROM OrderItem oi
+            WHERE oi.order.branch.branchId = :branchId
+              AND oi.order.status = :status
+              AND COALESCE(oi.order.updatedAt, oi.order.createdAt) >= :startDate
+              AND COALESCE(oi.order.updatedAt, oi.order.createdAt) < :endDate
+              AND (oi.order.paymentStatus IS NULL OR oi.order.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)
+            GROUP BY oi.item.itemId, oi.item.name
+            ORDER BY SUM(oi.quantity) DESC
+          """)
+    List<Object[]> findTopSellingItemsByBranchAndDateRange(
+            @Param("branchId") String branchId,
+            @Param("status") OrderStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
 }

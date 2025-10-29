@@ -150,19 +150,19 @@ public interface BranchManagerService {
     // ==================== REVENUE REPORTS ====================
 
     /**
-     * Lấy báo cáo doanh thu chi nhánh
+     * Lấy tổng quan doanh thu chi nhánh với chiết khấu
      */
-    BranchRevenueReportDTO getRevenueReport(String branchId, LocalDate startDate, LocalDate endDate);
+    Map<String, Object> getRevenueSummary(String branchId, LocalDate startDate, LocalDate endDate, String paymentMethod);
 
     /**
-     * Lấy báo cáo doanh thu theo ngày
+     * Lấy doanh thu theo ngày
      */
-    List<DailyRevenueDTO> getDailyRevenue(String branchId, LocalDate startDate, LocalDate endDate);
+    List<Map<String, Object>> getDailyRevenue(String branchId, LocalDate startDate, LocalDate endDate);
 
     /**
      * Lấy top sản phẩm bán chạy
      */
-    List<TopSellingItemDTO> getTopSellingItems(String branchId, LocalDate startDate, LocalDate endDate);
+    List<Map<String, Object>> getTopSellingItems(String branchId, LocalDate startDate, LocalDate endDate, int limit);
 
     // ==================== SHIPPING RATES ====================
 
