@@ -157,7 +157,7 @@
           </div>
         </div>
 
-        <!-- ====== Tổng kết tiền ====== -->
+        <!-- ====== Tổng kết tiền + Thông tin giao hàng / ghi chú ====== -->
         <div class="card pad">
           <h3 style="margin-top:0;margin-bottom:12px;font-size:1rem;font-weight:600">
             Thanh toán
@@ -172,7 +172,7 @@
 
             <div class="center-between" th:if="${order.shippingFee != null}">
               <span>Phí giao hàng</span>
-              <b th:text="${@vnd.format(order.shippingFee)}">0 đ</b>
+              <b th:text="${@vnd.format(order.shippingFee)}">15.000 đ</b>
             </div>
 
             <div class="center-between"
@@ -187,9 +187,7 @@
               <b style="font-size:1.1rem"
                  th:text="${@vnd.format(order.grandTotal)}">0 đ</b>
             </div>
-
           </div>
-
           <div style="margin-top:16px">
             <a class="btn" th:href="@{/user/order/history}">← Quay lại lịch sử</a>
           </div>

@@ -32,9 +32,9 @@ public class CheckoutFlowController {
 
     @PostMapping("/address")
     public String selectAddress(@RequestParam String addressId,
-                                @RequestParam(value = "branchId", required = false, defaultValue = "b1") String branchId,
-                                HttpSession session,
-                                RedirectAttributes ra) {
+            @RequestParam(value = "branchId", required = false, defaultValue = "b1") String branchId,
+            HttpSession session,
+            RedirectAttributes ra) {
         session.setAttribute("selectedAddressId", addressId);
         ra.addFlashAttribute("toastSuccess", "Đã chọn địa chỉ giao hàng.");
         return "redirect:/user/checkout?branchId=" + branchId;
@@ -42,10 +42,10 @@ public class CheckoutFlowController {
 
     @PostMapping("/payment")
     public String selectPayment(@RequestParam String payment,
-                                @RequestParam(required = false) String note,
-                                @RequestParam(value = "branchId", required = false, defaultValue = "b1") String branchId,
-                                HttpSession session,
-                                RedirectAttributes ra) {
+            @RequestParam(required = false) String note,
+            @RequestParam(value = "branchId", required = false, defaultValue = "b1") String branchId,
+            HttpSession session,
+            RedirectAttributes ra) {
         session.setAttribute("selectedPayment", payment);
         session.setAttribute("checkoutNote", note);
         ra.addFlashAttribute("toastSuccess", "Đã chọn phương thức thanh toán.");
@@ -54,9 +54,9 @@ public class CheckoutFlowController {
 
     @PostMapping("/apply-coupon")
     public String applyCoupon(@RequestParam String code,
-                              @RequestParam(value = "branchId", required = false, defaultValue = "b1") String branchId,
-                              HttpSession session,
-                              RedirectAttributes ra) {
+            @RequestParam(value = "branchId", required = false, defaultValue = "b1") String branchId,
+            HttpSession session,
+            RedirectAttributes ra) {
         if ("ALO20".equalsIgnoreCase(code)) {
             session.setAttribute("appliedCouponCode", code);
             session.removeAttribute("couponError");
@@ -70,64 +70,64 @@ public class CheckoutFlowController {
     }
 
     @PostMapping("/confirm")
-public String confirmOrder(@RequestParam String addressId,
-                           @RequestParam String payment,
-                           @RequestParam(required = false) String note,
-                           @RequestParam(value = "branchId", required = false) String branchId,
-                           Authentication auth,
-                           HttpSession session,
-                           RedirectAttributes ra) {
-    if (addressId.isBlank()) {
-        ra.addFlashAttribute("toastError", "Vui lòng chọn địa chỉ giao hàng.");
-        return "redirect:/user/checkout?branchId=" + branchId;
-    }
-    if (payment.isBlank()) {
-        ra.addFlashAttribute("toastError", "Vui lòng chọn phương thức thanh toán.");
-        return "redirect:/user/checkout?branchId=" + branchId;
-    }
-
-    // Map login (email/phone) -> User -> userId (PK)
-    String login = (auth != null && auth.isAuthenticated()) ? auth.getName() : null;
-    if (login == null) {
-        ra.addFlashAttribute("toastError", "Phiên đăng nhập không hợp lệ.");
-        return "redirect:/login";
-    }
-    User user = userRepository.findByLogin(login)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-    String userId = user.getUserId();
-
-    // Tạo order (DTO không cần payment)
-    CreateOrderRequest req = CreateOrderRequest.builder()
-            .branchId(branchId)
-            .shippingAddress(addressId) // nếu đây là id, tầng service map sang text full theo thiết kế của bạn
-            .notes(note)
-            .build();
-
-    OrderDTO dto = orderService.createOrder(userId, req);
-
-    // --- set paymentMethod tối thiểu để không-null ---
-    PaymentMethod pm = "VNPAY".equalsIgnoreCase(payment) ? PaymentMethod.VNPAY
-                     : "MOMO".equalsIgnoreCase(payment)  ? PaymentMethod.MOMO
-                     : PaymentMethod.COD;
-
-    Order persisted = orderRepository.findById(dto.getOrderId())
-            .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-    persisted.setPaymentMethod(pm);
-    if (persisted.getPaymentStatus() == null) {
-        persisted.setPaymentStatus(PaymentStatus.UNPAID);
-    }
-    orderRepository.save(persisted);
-
-    // VNPAY → build URL và redirect thẳng
-    if (pm == PaymentMethod.VNPAY) {
-        try {
-            String url = vnpayService.createPaymentUrl(persisted);
-            return "redirect:" + url;
-        } catch (Exception e) {
-            ra.addFlashAttribute("toastError", "Không tạo được link thanh toán VNPAY.");
+    public String confirmOrder(@RequestParam String addressId,
+            @RequestParam String payment,
+            @RequestParam(required = false) String note,
+            @RequestParam(value = "branchId", required = false) String branchId,
+            Authentication auth,
+            HttpSession session,
+            RedirectAttributes ra) {
+        if (addressId.isBlank()) {
+            ra.addFlashAttribute("toastError", "Vui lòng chọn địa chỉ giao hàng.");
             return "redirect:/user/checkout?branchId=" + branchId;
         }
-    }
+        if (payment.isBlank()) {
+            ra.addFlashAttribute("toastError", "Vui lòng chọn phương thức thanh toán.");
+            return "redirect:/user/checkout?branchId=" + branchId;
+        }
+
+        // Map login (email/phone) -> User -> userId (PK)
+        String login = (auth != null && auth.isAuthenticated()) ? auth.getName() : null;
+        if (login == null) {
+            ra.addFlashAttribute("toastError", "Phiên đăng nhập không hợp lệ.");
+            return "redirect:/login";
+        }
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String userId = user.getUserId();
+
+        // Tạo order (DTO không cần payment)
+        CreateOrderRequest req = CreateOrderRequest.builder()
+                .branchId(branchId)
+                .shippingAddress(addressId) // nếu đây là id, tầng service map sang text full theo thiết kế của bạn
+                .notes(note)
+                .build();
+
+        OrderDTO dto = orderService.createOrder(userId, req);
+
+        // --- set paymentMethod tối thiểu để không-null ---
+        PaymentMethod pm = "VNPAY".equalsIgnoreCase(payment) ? PaymentMethod.VNPAY
+                : "MOMO".equalsIgnoreCase(payment) ? PaymentMethod.MOMO
+                        : PaymentMethod.COD;
+
+        Order persisted = orderRepository.findById(dto.getOrderId())
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        persisted.setPaymentMethod(pm);
+        if (persisted.getPaymentStatus() == null) {
+            persisted.setPaymentStatus(PaymentStatus.UNPAID);
+        }
+        orderRepository.save(persisted);
+
+        // VNPAY → build URL và redirect thẳng
+        if (pm == PaymentMethod.VNPAY) {
+            try {
+                String url = vnpayService.createPaymentUrl(persisted);
+                return "redirect:" + url;
+            } catch (Exception e) {
+                ra.addFlashAttribute("toastError", "Không tạo được link thanh toán VNPAY.");
+                return "redirect:/user/checkout?branchId=" + branchId;
+            }
+        }
 
         // COD/MOMO → quay lịch sử đơn (tuỳ bạn xử lý thêm)
         clearCheckoutSession(session);
@@ -141,5 +141,5 @@ public String confirmOrder(@RequestParam String addressId,
         session.removeAttribute("checkoutNote");
         session.removeAttribute("appliedCouponCode");
         session.removeAttribute("couponError");
-    }   
+    }
 }
