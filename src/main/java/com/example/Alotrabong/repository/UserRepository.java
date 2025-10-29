@@ -41,4 +41,11 @@ public interface UserRepository extends JpaRepository<User, String> {
     List<User> findAllManagers();
 
     long countByIsActive(Boolean isActive);
+
+    Optional<User> findByEmailIgnoreCase(String email);
+    boolean existsByEmailIgnoreCase(String email);
+
+    // Khi cập nhật: check trùng nhưng loại trừ chính user đang sửa
+    boolean existsByEmailIgnoreCaseAndUserIdNot(String email, String userId);
+    boolean existsByPhoneAndUserIdNot(String phone, String userId);
 }

@@ -4,6 +4,8 @@ import com.example.Alotrabong.dto.LoginRequest;
 import com.example.Alotrabong.dto.LoginResponse;
 import com.example.Alotrabong.dto.RegisterRequest;
 import com.example.Alotrabong.dto.UserDTO;
+import com.example.Alotrabong.dto.UserProfileFormDTO;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -37,4 +39,12 @@ public interface UserService extends UserDetailsService {
     UserDTO activateUser(String userId);
     
     UserDTO deactivateUser(String userId);
+
+    UserDTO getProfile(String userId);
+
+    UserDTO updateProfile(String userId, UserProfileFormDTO form);
+
+    boolean existsEmailForAnotherUser(String email, String excludeUserId);
+
+    boolean existsPhoneForAnotherUser(String phone, String excludeUserId);
 }

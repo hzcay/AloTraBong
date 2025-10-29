@@ -1,227 +1,247 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
-<body>
-<header th:fragment="siteHeader" class="site-header gradient-hero">
-  <div class="container inner">
-    <!-- Brand -->
-    <div class="brand">
-      <div class="mark"></div>
-      <strong class="name">AloTraBong</strong>
-    </div>
+  <body>
+    <header th:fragment="siteHeader" class="site-header gradient-hero">
+      <div class="container inner">
+        <!-- Brand -->
+        <div class="brand">
+          <div class="mark"></div>
+          <strong class="name">AloTraBong</strong>
+        </div>
 
-    <!-- Nav -->
-    <nav class="nav">
-      <a th:href="@{/user/home}">Trang chủ</a>
-      <a th:href="@{/user/product/list}">Menu</a>
-      <a th:href="@{/user/coupon/list}">Ưu đãi</a>
-      <a th:href="@{/user/branches}">Chi nhánh</a>
-      <a href="#contact" class="btn btn-primary cta">Liên hệ</a>
-    </nav>
+        <!-- Nav -->
+        <nav class="nav">
+          <a th:href="@{/user/home}">Trang chủ</a>
+          <a th:href="@{/user/product/list}">Menu</a>
+          <a th:href="@{/user/coupon/list}">Ưu đãi</a>
+          <a th:href="@{/user/branches}">Chi nhánh</a>
+          <a href="#contact" class="btn btn-primary cta">Liên hệ</a>
+        </nav>
 
-    <!-- Tools -->
-    <div class="header-tools">
-      <a th:href="@{/user/cart}" class="cart-badge">
-        🛒 <b th:text="${cartCount} ?: 0">0</b>
-      </a>
-      <a th:href="@{/user/order/history}">Đơn hàng</a>
-      <a th:href="@{/user/addresses}">Địa chỉ</a>
-      <a th:href="@{/user/favorite/list}">Yêu thích</a>
-
-      <!-- ACCOUNT -->
-      <div class="account-box"
-           th:classappend="${userName} != null ? ' is-auth' : ' is-guest'">
-
-        <!-- Nếu đã đăng nhập -->
-        <button class="account-trigger"
-                type="button"
-                id="accountTrigger"
-                th:if="${userName != null}">
-          <span class="account-avatar"
-                th:text="${#strings.substring((userName?:'U'),0,1)}">U</span>
-        </button>
-
-        <!-- Nếu chưa đăng nhập -->
-        <a th:href="@{/auth/login}"
-           class="account-login-link"
-           th:if="${userName == null}">
-          Đăng nhập
-        </a>
-
-        <!-- Dropdown (chỉ render nếu login) -->
-        <div class="account-dropdown"
-             id="accountDropdown"
-             hidden
-             th:if="${userName != null}">
-          <a th:href="@{/user/profile}" class="dropdown-item">
-            Thông tin cá nhân
+        <!-- Tools -->
+        <div class="header-tools">
+          <a th:href="@{/user/cart}" class="cart-badge">
+            🛒 <b th:text="${cartCount} ?: 0">0</b>
           </a>
+          <a th:href="@{/user/order/history}">Đơn hàng</a>
+          <a th:href="@{/user/addresses}">Địa chỉ</a>
+          <a th:href="@{/user/favorite/list}">Yêu thích</a>
 
-          <hr class="dropdown-sep"/>
-
-          <form th:action="@{/logout}" method="post">
-            <input type="hidden"
-                   th:name="${_csrf?.parameterName}"
-                   th:value="${_csrf?.token}"/>
-            <button type="submit" class="dropdown-item logout">
-              Đăng xuất
+          <!-- ACCOUNT -->
+          <div
+            class="account-box"
+            th:classappend="${userName} != null ? ' is-auth' : ' is-guest'"
+          >
+            <!-- Nếu đã đăng nhập -->
+            <button
+              class="account-trigger"
+              type="button"
+              id="accountTrigger"
+              th:if="${userName != null}"
+            >
+              <span
+                class="account-avatar"
+                th:text="${#strings.substring((userName?:'U'),0,1)}"
+              >U</span>
             </button>
-          </form>
+
+            <!-- Nếu chưa đăng nhập -->
+            <a
+              th:href="@{/auth/login}"
+              th:if="${userName == null}"
+              class="login-btn"
+            >
+              Đăng nhập
+            </a>
+
+            <!-- Dropdown (chỉ render nếu login) -->
+            <div
+              class="account-dropdown"
+              id="accountDropdown"
+              hidden
+              th:if="${userName != null}"
+            >
+              <a th:href="@{/user/profile}" class="dropdown-item">
+                Thông tin cá nhân
+              </a>
+
+              <hr class="dropdown-sep" />
+
+              <form th:action="@{/logout}" method="post">
+                <input
+                  type="hidden"
+                  th:name="${_csrf?.parameterName}"
+                  th:value="${_csrf?.token}"
+                />
+                <button type="submit" class="dropdown-item logout">
+                  Đăng xuất
+                </button>
+              </form>
+            </div>
+          </div>
+          <!-- /account-box -->
         </div>
       </div>
-      <!-- /account-box -->
-    </div>
-  </div>
 
-  <!-- style cơ bản, không màu mè -->
-  <style>
-    .account-box {
-      position: relative;
-      display: flex;
-      align-items: center;
-      font-size: 14px;
-    }
-
-    /* nút mở dropdown */
-    .account-trigger {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      background: transparent;
-      border: 0;
-      padding: 4px 6px;
-      font: inherit;
-      color: inherit;
-    }
-
-    .account-avatar {
-      width: 28px;
-      height: 28px;
-      min-width: 28px;
-      border-radius: 50%;
-      background: #222;
-      color: #fff;
-      font-size: 13px;
-      font-weight: 600;
-      line-height: 28px;
-      text-align: center;
-      text-transform: uppercase;
-    }
-
-    .account-username {
-      max-width: 120px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 13px;
-      line-height: 1.2;
-    }
-
-    /* link đăng nhập khi chưa login */
-    .account-login-link {
-      font-size: 13px;
-      color: #2563eb;
-      text-decoration: none;
-    }
-    .account-login-link:hover {
-      text-decoration: underline;
-    }
-
-    /* hộp dropdown */
-    .account-dropdown {
-      position: absolute;
-      top: calc(100% + 6px);
-      right: 0;
-      min-width: 180px;
-      background: #fff;
-      border: 1px solid #d1d5db; /* xám nhạt */
-      border-radius: 6px;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
-      padding: 6px 0;
-      font-size: 14px;
-      line-height: 1.4;
-      z-index: 1000;
-    }
-
-    .dropdown-item {
-      display: block;
-      width: 100%;
-      text-align: left;
-      background: none;
-      border: 0;
-      font: inherit;
-      cursor: pointer;
-      text-decoration: none;
-
-      padding: 8px 12px;
-      color: #111;
-    }
-
-    .dropdown-item:hover {
-      background: #f3f4f6; /* xám nhẹ */
-    }
-
-    .dropdown-sep {
-      border: 0;
-      border-top: 1px solid #e5e7eb;
-      margin: 6px 0;
-    }
-
-    .dropdown-item.logout {
-      color: #dc2626; /* đỏ nhạt cảnh báo */
-      font-weight: 500;
-      width: 100%;
-      text-align: left;
-    }
-    .dropdown-item.logout:hover {
-      background: #fee2e2;
-    }
-  </style>
-
-  <!-- JS toggle dropdown -->
-  <script>
-    (function () {
-      const trigger = document.getElementById("accountTrigger");
-      const dropdown = document.getElementById("accountDropdown");
-
-      // nếu chưa login thì thymeleaf không render trigger/dropdown => không làm gì
-      if (!trigger || !dropdown) return;
-
-      function closeDropdown() {
-        if (!dropdown.hasAttribute("hidden")) {
-          dropdown.setAttribute("hidden", "");
+      <!-- style cơ bản, không màu mè -->
+      <style>
+        .account-box {
+          position: relative;
+          display: flex;
+          align-items: center;
+          font-size: 14px;
         }
-      }
 
-      function toggleDropdown() {
-        if (dropdown.hasAttribute("hidden")) {
-          dropdown.removeAttribute("hidden");
-        } else {
-          dropdown.setAttribute("hidden", "");
+        /* nút mở dropdown */
+        .account-trigger {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          background: transparent;
+          border: 0;
+          padding: 4px 6px;
+          font: inherit;
+          color: inherit;
         }
-      }
 
-      // click avatar -> toggle
-      trigger.addEventListener("click", function (e) {
-        e.stopPropagation();
-        toggleDropdown();
-      });
-
-      // click ra ngoài -> đóng
-      document.addEventListener("click", function (e) {
-        if (!e.target.closest(".account-box")) {
-          closeDropdown();
+        .account-avatar {
+          width: 28px;
+          height: 28px;
+          min-width: 28px;
+          border-radius: 50%;
+          background: #222;
+          color: #fff;
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 28px;
+          text-align: center;
+          text-transform: uppercase;
         }
-      });
 
-      // nhấn Esc -> đóng
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-          closeDropdown();
+        .account-username {
+          max-width: 120px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-size: 13px;
+          line-height: 1.2;
         }
-      });
-    })();
-  </script>
-</header>
-</body>
+
+        /* nút Đăng nhập khi chưa login */
+        .login-btn {
+          display: inline-block;
+          padding: 6px 12px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #fff;
+          background-color: #1f2937; /* xám đậm */
+          border: 1px solid #4b5563; /* viền xám */
+          border-radius: 6px;
+          text-decoration: none;
+          line-height: 1;
+          transition: background-color 0.15s, border-color 0.15s;
+        }
+        .login-btn:hover {
+          background-color: #374151; /* hover sáng nhẹ */
+          border-color: #6b7280;
+        }
+
+        /* hộp dropdown */
+        .account-dropdown {
+          position: absolute;
+          top: calc(100% + 6px);
+          right: 0;
+          min-width: 180px;
+          background: #fff;
+          border: 1px solid #d1d5db; /* xám nhạt */
+          border-radius: 6px;
+          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+          padding: 6px 0;
+          font-size: 14px;
+          line-height: 1.4;
+          z-index: 1000;
+        }
+
+        .dropdown-item {
+          display: block;
+          width: 100%;
+          text-align: left;
+          background: none;
+          border: 0;
+          font: inherit;
+          cursor: pointer;
+          text-decoration: none;
+
+          padding: 8px 12px;
+          color: #111;
+        }
+
+        .dropdown-item:hover {
+          background: #f3f4f6; /* xám nhẹ */
+        }
+
+        .dropdown-sep {
+          border: 0;
+          border-top: 1px solid #e5e7eb;
+          margin: 6px 0;
+        }
+
+        .dropdown-item.logout {
+          color: #dc2626; /* đỏ nhạt cảnh báo */
+          font-weight: 500;
+          width: 100%;
+          text-align: left;
+        }
+        .dropdown-item.logout:hover {
+          background: #fee2e2;
+        }
+      </style>
+
+      <!-- JS toggle dropdown -->
+      <script>
+        (function () {
+          const trigger = document.getElementById("accountTrigger");
+          const dropdown = document.getElementById("accountDropdown");
+
+          // nếu chưa login thì thymeleaf không render trigger/dropdown => không làm gì
+          if (!trigger || !dropdown) return;
+
+          function closeDropdown() {
+            if (!dropdown.hasAttribute("hidden")) {
+              dropdown.setAttribute("hidden", "");
+            }
+          }
+
+          function toggleDropdown() {
+            if (dropdown.hasAttribute("hidden")) {
+              dropdown.removeAttribute("hidden");
+            } else {
+              dropdown.setAttribute("hidden", "");
+            }
+          }
+
+          // click avatar -> toggle
+          trigger.addEventListener("click", function (e) {
+            e.stopPropagation();
+            toggleDropdown();
+          });
+
+          // click ra ngoài -> đóng
+          document.addEventListener("click", function (e) {
+            if (!e.target.closest(".account-box")) {
+              closeDropdown();
+            }
+          });
+
+          // nhấn Esc -> đóng
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+              closeDropdown();
+            }
+          });
+        })();
+      </script>
+    </header>
+  </body>
 </html>
