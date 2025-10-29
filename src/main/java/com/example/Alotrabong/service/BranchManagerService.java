@@ -101,6 +101,21 @@ public interface BranchManagerService {
     ShipperDTO updateShipperStatus(String shipperId, Boolean isActive, String branchId);
 
     /**
+     * Tạo shipper mới cho chi nhánh
+     */
+    ShipperDTO createShipper(String branchId, CreateShipperRequest request);
+
+    /**
+     * Lấy thống kê giao hàng của shipper
+     */
+    ShipperStatsDTO getShipperStats(String shipperId, String branchId);
+
+    /**
+     * Lấy lịch sử giao hàng của shipper
+     */
+    List<ShipmentDTO> getShipperDeliveryHistory(String shipperId, String branchId);
+
+    /**
      * Lấy danh sách shipment của chi nhánh
      */
     List<ShipmentDTO> getShipments(String branchId);

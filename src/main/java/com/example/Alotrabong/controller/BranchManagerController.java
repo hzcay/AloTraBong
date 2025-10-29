@@ -325,6 +325,58 @@ public class BranchManagerController {
         return ResponseEntity.ok(shippers);
     }
 
+    @PostMapping("/api/shippers")
+    @ResponseBody
+    public ResponseEntity<ShipperDTO> createShipper(
+            @RequestBody CreateShipperRequest request,
+            Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        ShipperDTO shipper = branchManagerService.createShipper(branchId, request);
+        return ResponseEntity.ok(shipper);
+    }
+
+    @GetMapping("/api/shippers/{shipperId}")
+    @ResponseBody
+    public ResponseEntity<ShipperDTO> getShipperById(
+            @PathVariable String shipperId,
+            Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        ShipperDTO shipper = branchManagerService.getShipperById(shipperId, branchId);
+        return ResponseEntity.ok(shipper);
+    }
+
+    @GetMapping("/api/shippers/{shipperId}/stats")
+    @ResponseBody
+    public ResponseEntity<ShipperStatsDTO> getShipperStats(
+            @PathVariable String shipperId,
+            Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        ShipperStatsDTO stats = branchManagerService.getShipperStats(shipperId, branchId);
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/api/shippers/{shipperId}/shipments")
+    @ResponseBody
+    public ResponseEntity<List<ShipmentDTO>> getShipperDeliveryHistory(
+            @PathVariable String shipperId,
+            Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        List<ShipmentDTO> shipments = branchManagerService.getShipperDeliveryHistory(shipperId, branchId);
+        return ResponseEntity.ok(shipments);
+    }
+
+    @PutMapping("/api/shippers/{shipperId}/status")
+    @ResponseBody
+    public ResponseEntity<ShipperDTO> updateShipperStatus(
+            @PathVariable String shipperId,
+            @RequestBody Map<String, Boolean> request,
+            Authentication authentication) {
+        String branchId = getBranchIdFromAuth(authentication);
+        Boolean isActive = request.get("isActive");
+        ShipperDTO shipper = branchManagerService.updateShipperStatus(shipperId, isActive, branchId);
+        return ResponseEntity.ok(shipper);
+    }
+
     @PostMapping("/api/orders/{orderId}/assign-shipper")
     @ResponseBody
     public ResponseEntity<OrderDTO> assignShipper(

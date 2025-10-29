@@ -273,19 +273,19 @@ public class AdminShippingServiceImpl implements AdminShippingService {
         return ShipperDTO.builder()
                 .shipperId(shipper.getShipperId())
                 .userId(user.getUserId())
-                .userName(user.getFullName())
-                .userEmail(user.getEmail())
-                .userPhone(user.getPhone())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
                 .branchId(branch.getBranchId())
                 .branchName(branch.getName())
                 .vehiclePlate(shipper.getVehiclePlate())
                 .isActive(shipper.getIsActive())
                 .createdAt(shipper.getCreatedAt())
                 .updatedAt(shipper.getUpdatedAt())
-                .totalShipments(0) // TODO: Implement shipment counting
-                .completedShipments(0) // TODO: Implement shipment counting
-                .activeShipments(0) // TODO: Implement shipment counting
-                .averageRating(0.0) // TODO: Implement rating calculation
+                .totalDeliveries(0) // TODO: Implement shipment counting
+                .currentDeliveries(0) // TODO: Implement shipment counting
+                .successfulDeliveries(0) // TODO: Implement shipment counting
+                .successRate(0.0) // TODO: Implement rating calculation
                 .build();
     }
 }

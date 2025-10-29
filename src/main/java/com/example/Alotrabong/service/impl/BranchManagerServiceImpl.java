@@ -36,7 +36,10 @@ public class BranchManagerServiceImpl implements BranchManagerService {
     private final ShipmentRepository shipmentRepository;
     private final ShipmentEventRepository shipmentEventRepository;
     private final PromotionRepository promotionRepository;
+    private final UserRepository userRepository;
     private final ShippingRateRepository shippingRateRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
 
     // ==================== DASHBOARD ====================
 
@@ -202,7 +205,33 @@ public class BranchManagerServiceImpl implements BranchManagerService {
             throw new ResourceNotFoundException("Order not found");
         }
 
+        OrderStatus oldStatus = order.getStatus();
         OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+        
+        // Trừ tồn kho khi đơn hàng chuyển sang READY (đồ ăn sẵn sàng)
+        if (orderStatus == OrderStatus.READY && oldStatus != OrderStatus.READY) {
+            List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+            for (OrderItem orderItem : orderItems) {
+                Inventory inventory = inventoryRepository
+                        .findByBranch_BranchIdAndItem_ItemId(branchId, orderItem.getItem().getItemId())
+                        .orElse(null);
+                
+                if (inventory != null) {
+                    // Kiểm tra tồn kho trước khi trừ
+                    if (inventory.getQuantity() < orderItem.getQuantity()) {
+                        throw new RuntimeException("Insufficient inventory for item: " + orderItem.getItem().getName() + 
+                            ". Available: " + inventory.getQuantity() + ", Required: " + orderItem.getQuantity());
+                    }
+                    
+                    inventory.setQuantity(inventory.getQuantity() - orderItem.getQuantity());
+                    inventoryRepository.save(inventory);
+                    
+                    log.info("Deducted {} units of item {} from branch inventory (Order READY). Remaining: {}", 
+                        orderItem.getQuantity(), orderItem.getItem().getName(), inventory.getQuantity());
+                }
+            }
+        }
+        
         order.setStatus(orderStatus);
         order.setUpdatedAt(LocalDateTime.now());
 
@@ -372,6 +401,120 @@ public class BranchManagerServiceImpl implements BranchManagerService {
     }
 
     @Override
+    public ShipperDTO createShipper(String branchId, CreateShipperRequest request) {
+        log.info("Creating shipper for branch: {} with email: {}", branchId, request.getUserEmail());
+        
+        // Find branch
+        Branch branch = branchRepository.findById(branchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
+        
+        // Find user by email
+        User user = userRepository.findByEmail(request.getUserEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getUserEmail()));
+        
+        // Check if user is already a shipper
+        if (shipperRepository.findByUser(user).isPresent()) {
+            throw new RuntimeException("User is already a shipper");
+        }
+        
+        // Check if user already has SHIPPER role for this branch
+        Role shipperRole = roleRepository.findByRoleCode(RoleCode.SHIPPER)
+                .orElseThrow(() -> new RuntimeException("SHIPPER role not found in database"));
+        
+        boolean hasShipperRoleForBranch = userRoleRepository.findByUser(user)
+                .stream()
+                .anyMatch(ur -> ur.getRole().getRoleCode() == RoleCode.SHIPPER && 
+                               ur.getBranch() != null && 
+                               ur.getBranch().getBranchId().equals(branchId));
+        
+        // Create shipper
+        Shipper shipper = Shipper.builder()
+                .user(user)
+                .branch(branch)
+                .vehiclePlate(request.getVehiclePlate())
+                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                .build();
+        
+        shipper = shipperRepository.save(shipper);
+        
+        // Create UserRole if not exists for this branch
+        if (!hasShipperRoleForBranch) {
+            UserRole userRole = UserRole.builder()
+                    .user(user)
+                    .role(shipperRole)
+                    .branch(branch) // Assign to specific branch
+                    .build();
+            userRoleRepository.save(userRole);
+            log.info("Created SHIPPER role for user: {}", user.getEmail());
+        }
+        
+        log.info("Shipper created successfully: {}", shipper.getShipperId());
+        
+        return convertToShipperDTO(shipper);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ShipperStatsDTO getShipperStats(String shipperId, String branchId) {
+        log.info("Getting stats for shipper: {} in branch: {}", shipperId, branchId);
+        
+        Shipper shipper = shipperRepository.findByShipperIdAndBranch_BranchId(shipperId, branchId);
+        if (shipper == null) {
+            throw new ResourceNotFoundException("Shipper not found");
+        }
+        
+        // Get all shipments for this shipper
+        List<Shipment> shipments = shipmentRepository.findByShipper(shipper);
+        
+        long totalDeliveries = shipments.size();
+        long successfulDeliveries = shipments.stream()
+                .filter(s -> s.getStatus() == 2) // Status 2 = Delivered
+                .count();
+        long currentDeliveries = shipments.stream()
+                .filter(s -> s.getStatus() == 1) // Status 1 = Delivering
+                .count();
+        long cancelledDeliveries = shipments.stream()
+                .filter(s -> s.getStatus() == 3) // Status 3 = Cancelled
+                .count();
+        
+        BigDecimal successRate = totalDeliveries > 0 ? 
+                BigDecimal.valueOf(successfulDeliveries * 100.0 / totalDeliveries).setScale(2, java.math.RoundingMode.HALF_UP) : 
+                BigDecimal.ZERO;
+        
+        BigDecimal totalDistance = shipments.stream()
+                .filter(s -> s.getDistanceKm() != null)
+                .map(Shipment::getDistanceKm)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        return ShipperStatsDTO.builder()
+                .shipperId(shipperId)
+                .totalDeliveries(totalDeliveries)
+                .successfulDeliveries(successfulDeliveries)
+                .currentDeliveries(currentDeliveries)
+                .cancelledDeliveries(cancelledDeliveries)
+                .successRate(successRate)
+                .totalDistance(totalDistance)
+                .averageDeliveryTime(BigDecimal.ZERO) // TODO: Calculate average delivery time
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ShipmentDTO> getShipperDeliveryHistory(String shipperId, String branchId) {
+        log.info("Getting delivery history for shipper: {} in branch: {}", shipperId, branchId);
+        
+        Shipper shipper = shipperRepository.findByShipperIdAndBranch_BranchId(shipperId, branchId);
+        if (shipper == null) {
+            throw new ResourceNotFoundException("Shipper not found");
+        }
+        
+        return shipmentRepository.findByShipperOrderByCreatedAtDesc(shipper)
+                .stream()
+                .map(this::convertToShipmentDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<ShipmentDTO> getShipments(String branchId) {
         log.info("Getting shipments for branch: {}", branchId);
@@ -489,7 +632,7 @@ public class BranchManagerServiceImpl implements BranchManagerService {
         // Thống kê doanh thu
         BigDecimal totalRevenue = orderRepository.getRevenueByBranchAndDateRange(branchId, startDate, endDate);
         BigDecimal completedRevenue = orderRepository.getRevenueByBranchAndStatusAndDateRange(branchId, OrderStatus.DELIVERED, startDate, endDate);
-        BigDecimal avgOrderValue = totalOrders > 0 ? totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO;
+        BigDecimal avgOrderValue = totalOrders > 0 ? totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
         // Top sản phẩm bán chạy
         List<TopSellingItemDTO> topSellingItems = getTopSellingItems(branchId, startDate, endDate);
@@ -723,12 +866,29 @@ public class BranchManagerServiceImpl implements BranchManagerService {
     }
 
     private ShipperDTO convertToShipperDTO(Shipper shipper) {
+        // Get delivery stats
+        List<Shipment> shipments = shipmentRepository.findByShipper(shipper);
+        int totalDeliveries = shipments.size();
+        int currentDeliveries = (int) shipments.stream().filter(s -> s.getStatus() == 1).count();
+        int successfulDeliveries = (int) shipments.stream().filter(s -> s.getStatus() == 2).count();
+        double successRate = totalDeliveries > 0 ? (successfulDeliveries * 100.0 / totalDeliveries) : 0.0;
+
         return ShipperDTO.builder()
                 .shipperId(shipper.getShipperId())
                 .userId(shipper.getUser().getUserId())
+                .fullName(shipper.getUser().getFullName())
+                .email(shipper.getUser().getEmail())
+                .phone(shipper.getUser().getPhone())
                 .branchId(shipper.getBranch().getBranchId())
+                .branchName(shipper.getBranch().getName())
                 .vehiclePlate(shipper.getVehiclePlate())
                 .isActive(shipper.getIsActive())
+                .totalDeliveries(totalDeliveries)
+                .currentDeliveries(currentDeliveries)
+                .successfulDeliveries(successfulDeliveries)
+                .successRate(successRate)
+                .createdAt(shipper.getCreatedAt())
+                .updatedAt(shipper.getUpdatedAt())
                 .build();
     }
 

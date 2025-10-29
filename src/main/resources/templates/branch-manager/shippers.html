@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Quản lý Shipper</title>
+    
+    <!-- CSRF Meta Tags -->
+    <meta name="csrf-token" th:content="${_csrf.token}"/>
+    <meta name="csrf-header" th:content="${_csrf.headerName}"/>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Include common branch styles -->
+    <div th:replace="~{fragments/branch-styles :: branchStyles}"></div>
+
+    <style>
+
+        .page-header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .page-header h1 {
+            color: var(--dark-color);
+            margin: 0;
+            font-weight: 700;
+            font-size: 2.2em;
+        }
+
+        .page-header p {
+            color: #6c757d;
+            margin: 10px 0 0 0;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            color: white;
+        }
+
+        .stat-icon.total { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-icon.active { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-icon.busy { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-icon.inactive { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin: 0;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 1em;
+            font-weight: 500;
+        }
+
+        .filters-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--dark-color);
+            min-width: 120px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 10px 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info strong {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 3px;
+        }
+
+        .user-info small {
+            color: #6c757d;
+            font-size: 0.85em;
+        }
+
+        .vehicle-plate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .status-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge.active {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-badge.inactive {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+
+        .delivery-count {
+            font-weight: 700;
+            color: var(--info-color);
+            font-size: 1.1em;
+        }
+
+        .total-deliveries {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1.1em;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
+            transform: translateY(-2px);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            border: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            border: none;
+        }
+
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 0.85em;
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px 25px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .close {
+            color: white;
+            opacity: 0.8;
+            font-size: 1.5em;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        }
+
+        .modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 300px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .notification.success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        .notification.error { background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%); }
+        .notification.info { background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%); }
+        .notification.warning { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); color: #333; }
+
+        .notification button {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        /* Modal styles */
+        .info-section {
+            margin-bottom: 25px;
+        }
+
+        .info-section h5 {
+            color: var(--dark-color);
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-item label {
+            font-weight: 600;
+            color: #666;
+            margin: 0;
+            min-width: 120px;
+        }
+
+        .info-item span {
+            color: var(--dark-color);
+            font-weight: 500;
+        }
+
+        .stats-grid-small {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stat-item .stat-number {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .stat-item .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .table-responsive {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .modal-xl {
+            max-width: 90%;
+        }
+
+        /* Order assignment styles */
+        .orders-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .order-item {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .order-item:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .order-id {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .order-id strong {
+            color: var(--dark-color);
+            font-size: 1.1em;
+        }
+
+        .order-amount {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .order-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .customer-info,
+        .delivery-address,
+        .order-time {
+            display: flex;
+            align-items: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .customer-info i,
+        .delivery-address i,
+        .order-time i {
+            margin-right: 8px;
+            width: 16px;
+            color: var(--primary-color);
+        }
+
+        .delivery-address {
+            font-weight: 500;
+        }
+
+        /* Add Shipper Modal Styles */
+        .add-shipper-intro {
+            text-align: center;
+            padding: 20px 0 30px 0;
+            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 30px;
+        }
+
+        .intro-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 2.5em;
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+
+        .add-shipper-intro h5 {
+            color: var(--dark-color);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .add-shipper-form {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .section-title {
+            color: var(--dark-color);
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-label i {
+            color: var(--primary-color);
+            width: 16px;
+        }
+
+        .required {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .form-help {
+            margin-top: 8px;
+            font-size: 0.85em;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-help i {
+            color: var(--info-color);
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            color: #6c757d;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .btn-close:hover {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            transform: rotate(90deg);
+        }
+
+        .btn-create {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            padding: 12px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-create:hover {
+            background: linear-gradient(135deg, #ff5a2d 0%, #f58a16 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .modal-lg {
+            max-width: 600px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid-small {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-xl {
+                max-width: 95%;
+            }
+
+            .modal-lg {
+                max-width: 95%;
+            }
+
+            .order-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .customer-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .form-section {
+                padding: 15px;
+            }
+
+            .add-shipper-form {
+                max-height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="branch-wrapper">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/branch-sidebar :: branchSidebar('shippers')}"></div>
+
+        <!-- Main Content -->
+        <div class="main-content-wrapper">
+            <div class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1><i class="fas fa-motorcycle"></i> Quản lý Shipper</h1>
+                <p>Quản lý nhân viên giao hàng của chi nhánh</p>
+                <div class="mt-3">
+                    <button class="btn btn-primary" onclick="showAddShipperModal()">
+                        <i class="fas fa-plus"></i> Thêm Shipper Mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon total">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <h3 class="stat-number" id="totalShippers">0</h3>
+                    <p class="stat-label">Tổng Shipper</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon active">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                    <h3 class="stat-number" id="activeShippers">0</h3>
+                    <p class="stat-label">Đang Hoạt động</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon busy">
+                            <i class="fas fa-shipping-fast"></i>
+                        </div>
+                    </div>
+                    <h3 class="stat-number" id="busyShippers">0</h3>
+                    <p class="stat-label">Đang Giao hàng</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon inactive">
+                            <i class="fas fa-user-times"></i>
+                        </div>
+                    </div>
+                    <h3 class="stat-number" id="inactiveShippers">0</h3>
+                    <p class="stat-label">Không Hoạt động</p>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-section">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="filter-group">
+                            <label for="statusFilter">Trạng thái:</label>
+                            <select id="statusFilter" class="form-control" onchange="filterShippers()">
+                                <option value="">Tất cả</option>
+                                <option value="true">Hoạt động</option>
+                                <option value="false">Không hoạt động</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="filter-group">
+                            <label for="deliveryFilter">Giao hàng:</label>
+                            <select id="deliveryFilter" class="form-control" onchange="filterShippers()">
+                                <option value="">Tất cả</option>
+                                <option value="busy">Đang giao hàng</option>
+                                <option value="free">Rảnh rỗi</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="filter-group">
+                            <label for="searchInput">Tìm kiếm:</label>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Tên, SĐT, Biển số..." onkeyup="filterShippers()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shippers Table -->
+            <div class="table-container">
+                <table class="data-table" id="shippersTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Tên Shipper</th>
+                            <th><i class="fas fa-phone"></i> Số điện thoại</th>
+                            <th><i class="fas fa-car"></i> Biển số xe</th>
+                            <th><i class="fas fa-toggle-on"></i> Trạng thái</th>
+                            <th><i class="fas fa-shipping-fast"></i> Đang giao</th>
+                            <th><i class="fas fa-chart-line"></i> Tổng đơn</th>
+                            <th><i class="fas fa-cogs"></i> Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shippersTableBody">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Loading -->
+            <div id="loadingShippers" class="loading-container" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Đang tải danh sách shipper...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Shipper Modal -->
+    <div id="addShipperModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <i class="fas fa-user-plus me-2"></i> 
+                        Thêm Shipper Mới
+                    </h3>
+                    <button type="button" class="btn-close" onclick="closeAddShipperModal()" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="add-shipper-intro">
+                        <div class="intro-icon">
+                            <i class="fas fa-motorcycle"></i>
+                        </div>
+                        <h5>Thêm nhân viên giao hàng mới</h5>
+                        <p class="text-muted">Nhập thông tin để tạo tài khoản shipper cho chi nhánh của bạn</p>
+                    </div>
+                    
+                    <form id="addShipperForm" class="add-shipper-form">
+                        <div class="form-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-user-circle"></i>
+                                Thông tin tài khoản
+                            </h6>
+                            <div class="form-group">
+                                <label for="userEmail" class="form-label">
+                                    <i class="fas fa-envelope"></i>
+                                    Email người dùng
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="email" 
+                                       id="userEmail" 
+                                       name="userEmail" 
+                                       class="form-control" 
+                                       placeholder="Nhập email đã đăng ký trong hệ thống"
+                                       required>
+                                <div class="form-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    Email này phải đã được đăng ký trong hệ thống
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-motorcycle"></i>
+                                Thông tin phương tiện
+                            </h6>
+                            <div class="form-group">
+                                <label for="vehiclePlate" class="form-label">
+                                    <i class="fas fa-car"></i>
+                                    Biển số xe
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="text" 
+                                       id="vehiclePlate" 
+                                       name="vehiclePlate" 
+                                       class="form-control" 
+                                       placeholder="VD: 29A-12345"
+                                       required>
+                                <div class="form-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    Nhập biển số xe giao hàng
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-cog"></i>
+                                Cài đặt
+                            </h6>
+                            <div class="form-group">
+                                <label for="isActive" class="form-label">
+                                    <i class="fas fa-toggle-on"></i>
+                                    Trạng thái hoạt động
+                                </label>
+                                <select id="isActive" name="isActive" class="form-control">
+                                    <option value="true">🟢 Hoạt động - Có thể nhận đơn hàng</option>
+                                    <option value="false">🔴 Không hoạt động - Tạm dừng nhận đơn</option>
+                                </select>
+                                <div class="form-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    Bạn có thể thay đổi trạng thái này sau
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="closeAddShipperModal()">
+                        <i class="fas fa-times"></i> Hủy bỏ
+                    </button>
+                    <button type="button" class="btn btn-primary btn-create" onclick="addShipper()">
+                        <i class="fas fa-plus"></i> Tạo Shipper
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Order Modal -->
+    <div id="assignOrderModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-clipboard-list"></i> Gán đơn hàng cho Shipper</h3>
+                    <button type="button" class="close" onclick="closeAssignOrderModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="assignOrderContent">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p>Đang tải danh sách đơn hàng...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeAssignOrderModal()">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let shippersData = [];
+        let currentShipperId = null;
+
+        // CSRF Token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="csrf-header"]').getAttribute('content');
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadShippers();
+            loadShipperStats();
+        });
+
+        // Load shippers
+        async function loadShippers() {
+            try {
+                document.getElementById('loadingShippers').style.display = 'block';
+                
+                const response = await fetch('/branch-manager/api/shippers', {
+                    headers: {
+                        [csrfHeader]: csrfToken
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                shippersData = await response.json();
+                displayShippers(shippersData);
+                updateShipperStats();
+                
+            } catch (error) {
+                console.error('Error loading shippers:', error);
+                showNotification('Lỗi khi tải danh sách shipper', 'error');
+            } finally {
+                document.getElementById('loadingShippers').style.display = 'none';
+            }
+        }
+
+        // Display shippers in table
+        function displayShippers(shippers) {
+            const tbody = document.getElementById('shippersTableBody');
+            tbody.innerHTML = '';
+
+            if (shippers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><i class="fas fa-inbox"></i> Không có shipper nào</td></tr>';
+                return;
+            }
+
+            shippers.forEach(shipper => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="user-info">
+                            <strong>${shipper.fullName || 'N/A'}</strong>
+                            <small>${shipper.email || 'N/A'}</small>
+                        </div>
+                    </td>
+                    <td><i class="fas fa-phone text-muted"></i> ${shipper.phone || 'N/A'}</td>
+                    <td>
+                        <span class="vehicle-plate">${shipper.vehiclePlate || 'N/A'}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${shipper.isActive ? 'active' : 'inactive'}">
+                            <i class="fas ${shipper.isActive ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                            ${shipper.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="delivery-count">${shipper.currentDeliveries || 0}</span>
+                    </td>
+                    <td>
+                        <span class="total-deliveries">${shipper.totalDeliveries || 0}</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-info" onclick="viewShipperDetail('${shipper.shipperId}')" title="Xem chi tiết">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm ${shipper.isActive ? 'btn-warning' : 'btn-success'}" 
+                                    onclick="toggleShipperStatus('${shipper.shipperId}', ${!shipper.isActive})" 
+                                    title="${shipper.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}">
+                                <i class="fas ${shipper.isActive ? 'fa-pause' : 'fa-play'}"></i>
+                            </button>
+                            ${shipper.isActive && shipper.currentDeliveries === 0 ? `
+                                <button class="btn btn-sm btn-primary" 
+                                        onclick="showAssignOrderModal('${shipper.shipperId}')" 
+                                        title="Gán đơn hàng">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update shipper stats
+        function updateShipperStats() {
+            const total = shippersData.length;
+            const active = shippersData.filter(s => s.isActive).length;
+            const busy = shippersData.filter(s => s.currentDeliveries > 0).length;
+            const inactive = total - active;
+
+            document.getElementById('totalShippers').textContent = total;
+            document.getElementById('activeShippers').textContent = active;
+            document.getElementById('busyShippers').textContent = busy;
+            document.getElementById('inactiveShippers').textContent = inactive;
+        }
+
+        // Load shipper stats
+        async function loadShipperStats() {
+            // Stats are calculated from shippers data
+        }
+
+        // Filter shippers
+        function filterShippers() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const deliveryFilter = document.getElementById('deliveryFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            let filtered = shippersData;
+
+            // Filter by status
+            if (statusFilter !== '') {
+                const isActive = statusFilter === 'true';
+                filtered = filtered.filter(shipper => shipper.isActive === isActive);
+            }
+
+            // Filter by delivery status
+            if (deliveryFilter !== '') {
+                if (deliveryFilter === 'busy') {
+                    filtered = filtered.filter(shipper => shipper.currentDeliveries > 0);
+                } else if (deliveryFilter === 'free') {
+                    filtered = filtered.filter(shipper => shipper.currentDeliveries === 0);
+                }
+            }
+
+            // Filter by search term
+            if (searchTerm) {
+                filtered = filtered.filter(shipper => 
+                    (shipper.fullName && shipper.fullName.toLowerCase().includes(searchTerm)) ||
+                    (shipper.phone && shipper.phone.includes(searchTerm)) ||
+                    (shipper.vehiclePlate && shipper.vehiclePlate.toLowerCase().includes(searchTerm)) ||
+                    (shipper.email && shipper.email.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            displayShippers(filtered);
+        }
+
+        // Show add shipper modal
+        function showAddShipperModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addShipperModal'));
+            modal.show();
+            document.getElementById('addShipperForm').reset();
+        }
+
+        // Close add shipper modal
+        function closeAddShipperModal() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addShipperModal'));
+            modal.hide();
+        }
+
+        // Add new shipper
+        async function addShipper() {
+            try {
+                const formData = new FormData(document.getElementById('addShipperForm'));
+                const shipperData = {
+                    userEmail: formData.get('userEmail'),
+                    vehiclePlate: formData.get('vehiclePlate'),
+                    isActive: formData.get('isActive') === 'true'
+                };
+
+                const response = await fetch('/branch-manager/api/shippers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify(shipperData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+
+                const newShipper = await response.json();
+                showNotification('Thêm shipper thành công!', 'success');
+                closeAddShipperModal();
+                loadShippers(); // Reload the list
+
+            } catch (error) {
+                console.error('Error adding shipper:', error);
+                showNotification('Lỗi khi thêm shipper: ' + error.message, 'error');
+            }
+        }
+
+        // Toggle shipper status
+        async function toggleShipperStatus(shipperId, newStatus) {
+            try {
+                const response = await fetch(`/branch-manager/api/shippers/${shipperId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify({ isActive: newStatus })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const updatedShipper = await response.json();
+                showNotification(`Đã ${newStatus ? 'kích hoạt' : 'vô hiệu hóa'} shipper`, 'success');
+                loadShippers(); // Reload the list
+
+            } catch (error) {
+                console.error('Error updating shipper status:', error);
+                showNotification('Lỗi khi cập nhật trạng thái shipper', 'error');
+            }
+        }
+
+        // View shipper detail
+        async function viewShipperDetail(shipperId) {
+            try {
+                const response = await fetch(`/branch-manager/api/shippers/${shipperId}`, {
+                    headers: {
+                        [csrfHeader]: csrfToken
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const shipper = await response.json();
+                showShipperDetailModal(shipper);
+                
+            } catch (error) {
+                console.error('Error loading shipper detail:', error);
+                showNotification('Lỗi khi tải thông tin shipper', 'error');
+            }
+        }
+
+        // Show shipper detail modal
+        function showShipperDetailModal(shipper) {
+            const modalHtml = `
+                <div id="shipperDetailModal" class="modal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3><i class="fas fa-user-circle"></i> Chi tiết Shipper</h3>
+                                <button type="button" class="close" onclick="closeShipperDetailModal()">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="info-section">
+                                            <h5><i class="fas fa-user"></i> Thông tin cá nhân</h5>
+                                            <div class="info-item">
+                                                <label>Họ tên:</label>
+                                                <span>${shipper.fullName || 'N/A'}</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <label>Email:</label>
+                                                <span>${shipper.email || 'N/A'}</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <label>Số điện thoại:</label>
+                                                <span>${shipper.phone || 'N/A'}</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <label>Biển số xe:</label>
+                                                <span class="vehicle-plate">${shipper.vehiclePlate || 'N/A'}</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <label>Trạng thái:</label>
+                                                <span class="status-badge ${shipper.isActive ? 'active' : 'inactive'}">
+                                                    ${shipper.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-section">
+                                            <h5><i class="fas fa-chart-line"></i> Thống kê giao hàng</h5>
+                                            <div class="stats-grid-small">
+                                                <div class="stat-item">
+                                                    <div class="stat-number">${shipper.totalDeliveries || 0}</div>
+                                                    <div class="stat-label">Tổng đơn</div>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <div class="stat-number">${shipper.currentDeliveries || 0}</div>
+                                                    <div class="stat-label">Đang giao</div>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <div class="stat-number">${shipper.successfulDeliveries || 0}</div>
+                                                    <div class="stat-label">Thành công</div>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <div class="stat-number">${shipper.successRate ? shipper.successRate.toFixed(1) : 0}%</div>
+                                                    <div class="stat-label">Tỷ lệ thành công</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="info-section mt-4">
+                                            <h5><i class="fas fa-clock"></i> Thời gian</h5>
+                                            <div class="info-item">
+                                                <label>Ngày tham gia:</label>
+                                                <span>${shipper.createdAt ? new Date(shipper.createdAt).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <label>Cập nhật cuối:</label>
+                                                <span>${shipper.updatedAt ? new Date(shipper.updatedAt).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-info" onclick="viewShipperHistory('${shipper.shipperId}')">
+                                    <i class="fas fa-history"></i> Xem lịch sử giao hàng
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="closeShipperDetailModal()">Đóng</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('shipperDetailModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('shipperDetailModal'));
+            modal.show();
+        }
+
+        // Close shipper detail modal
+        function closeShipperDetailModal() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('shipperDetailModal'));
+            if (modal) {
+                modal.hide();
+                setTimeout(() => {
+                    const modalElement = document.getElementById('shipperDetailModal');
+                    if (modalElement) {
+                        modalElement.remove();
+                    }
+                }, 300);
+            }
+        }
+
+        // View shipper delivery history
+        async function viewShipperHistory(shipperId) {
+            try {
+                const response = await fetch(`/branch-manager/api/shippers/${shipperId}/shipments`, {
+                    headers: {
+                        [csrfHeader]: csrfToken
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const shipments = await response.json();
+                showShipperHistoryModal(shipperId, shipments);
+                
+            } catch (error) {
+                console.error('Error loading shipper history:', error);
+                showNotification('Lỗi khi tải lịch sử giao hàng', 'error');
+            }
+        }
+
+        // Show shipper history modal
+        function showShipperHistoryModal(shipperId, shipments) {
+            const modalHtml = `
+                <div id="shipperHistoryModal" class="modal" tabindex="-1">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3><i class="fas fa-history"></i> Lịch sử giao hàng</h3>
+                                <button type="button" class="close" onclick="closeShipperHistoryModal()">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Mã đơn hàng</th>
+                                                <th>Trạng thái</th>
+                                                <th>Thời gian nhận</th>
+                                                <th>Thời gian giao</th>
+                                                <th>Khoảng cách</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${shipments.length > 0 ? shipments.map(shipment => `
+                                                <tr>
+                                                    <td><strong>${shipment.orderId}</strong></td>
+                                                    <td>
+                                                        <span class="badge ${getShipmentStatusClass(shipment.status)}">
+                                                            ${shipment.statusText || getStatusText(shipment.status)}
+                                                        </span>
+                                                    </td>
+                                                    <td>${shipment.pickupTime ? new Date(shipment.pickupTime).toLocaleString('vi-VN') : 'N/A'}</td>
+                                                    <td>${shipment.deliveredTime ? new Date(shipment.deliveredTime).toLocaleString('vi-VN') : 'N/A'}</td>
+                                                    <td>${shipment.distanceKm ? shipment.distanceKm + ' km' : 'N/A'}</td>
+                                                </tr>
+                                            `).join('') : '<tr><td colspan="5" class="text-center">Chưa có lịch sử giao hàng</td></tr>'}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" onclick="closeShipperHistoryModal()">Đóng</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('shipperHistoryModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('shipperHistoryModal'));
+            modal.show();
+        }
+
+        // Close shipper history modal
+        function closeShipperHistoryModal() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('shipperHistoryModal'));
+            if (modal) {
+                modal.hide();
+                setTimeout(() => {
+                    const modalElement = document.getElementById('shipperHistoryModal');
+                    if (modalElement) {
+                        modalElement.remove();
+                    }
+                }, 300);
+            }
+        }
+
+        // Get shipment status class for styling
+        function getShipmentStatusClass(status) {
+            switch (status) {
+                case 0: return 'bg-warning';
+                case 1: return 'bg-info';
+                case 2: return 'bg-success';
+                case 3: return 'bg-danger';
+                default: return 'bg-secondary';
+            }
+        }
+
+        // Get status text
+        function getStatusText(status) {
+            switch (status) {
+                case 0: return 'Đã phân công';
+                case 1: return 'Đang giao';
+                case 2: return 'Đã giao';
+                case 3: return 'Hủy';
+                default: return 'Không xác định';
+            }
+        }
+
+        // Show assign order modal
+        async function showAssignOrderModal(shipperId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('assignOrderModal'));
+                modal.show();
+                
+                // Load available orders
+                const response = await fetch('/branch-manager/api/orders?status=READY', {
+                    headers: {
+                        [csrfHeader]: csrfToken
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const ordersData = await response.json();
+                const orders = ordersData.content || ordersData;
+                
+                displayAvailableOrders(orders, shipperId);
+                
+            } catch (error) {
+                console.error('Error loading available orders:', error);
+                showNotification('Lỗi khi tải danh sách đơn hàng', 'error');
+            }
+        }
+
+        // Display available orders for assignment
+        function displayAvailableOrders(orders, shipperId) {
+            const content = document.getElementById('assignOrderContent');
+            
+            if (orders.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5>Không có đơn hàng sẵn sàng giao</h5>
+                        <p class="text-muted">Tất cả đơn hàng đã được phân công hoặc chưa sẵn sàng</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const ordersHtml = orders.map(order => `
+                <div class="order-item" onclick="assignOrderToShipper('${order.orderId}', '${shipperId}')">
+                    <div class="order-header">
+                        <div class="order-id">
+                            <strong>#${order.orderId}</strong>
+                            <span class="badge bg-warning">READY</span>
+                        </div>
+                        <div class="order-amount">
+                            ${order.totalAmount ? order.totalAmount.toLocaleString('vi-VN') : 0}₫
+                        </div>
+                    </div>
+                    <div class="order-details">
+                        <div class="customer-info">
+                            <i class="fas fa-user"></i> ${order.customerName || 'N/A'}
+                            <i class="fas fa-phone ml-3"></i> ${order.customerPhone || 'N/A'}
+                        </div>
+                        <div class="delivery-address">
+                            <i class="fas fa-map-marker-alt"></i> ${order.deliveryAddress || 'N/A'}
+                        </div>
+                        <div class="order-time">
+                            <i class="fas fa-clock"></i> ${order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            content.innerHTML = `
+                <div class="orders-list">
+                    <h5><i class="fas fa-list"></i> Chọn đơn hàng để gán:</h5>
+                    ${ordersHtml}
+                </div>
+            `;
+        }
+
+        // Assign order to shipper
+        async function assignOrderToShipper(orderId, shipperId) {
+            try {
+                const response = await fetch(`/branch-manager/api/orders/${orderId}/assign-shipper`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify({ shipperId: shipperId })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const updatedOrder = await response.json();
+                showNotification('Đã gán đơn hàng thành công!', 'success');
+                closeAssignOrderModal();
+                loadShippers(); // Reload shipper list to update current deliveries
+
+            } catch (error) {
+                console.error('Error assigning order:', error);
+                showNotification('Lỗi khi gán đơn hàng: ' + error.message, 'error');
+            }
+        }
+
+        // Close assign order modal
+        function closeAssignOrderModal() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignOrderModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
+
+        // Utility functions
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()">&times;</button>
+            `;
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    </script>
+    </div>
+</body>
+</html>

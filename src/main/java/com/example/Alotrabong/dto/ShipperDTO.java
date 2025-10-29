@@ -11,9 +11,9 @@ import java.time.LocalDateTime;
 public class ShipperDTO {
     private String shipperId;
     private String userId;
-    private String userName;
-    private String userEmail;
-    private String userPhone;
+    private String fullName;
+    private String email;
+    private String phone;
     private String branchId;
     private String branchName;
     private String vehiclePlate;
@@ -22,8 +22,8 @@ public class ShipperDTO {
     private LocalDateTime updatedAt;
     
     // Additional fields for display
-    private Integer totalShipments;
-    private Integer completedShipments;
-    private Integer activeShipments;
-    private Double averageRating;
+    private Integer totalDeliveries;
+    private Integer currentDeliveries;
+    private Integer successfulDeliveries;
+    private Double successRate;
 }

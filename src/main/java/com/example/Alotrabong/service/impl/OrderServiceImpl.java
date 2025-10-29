@@ -32,6 +32,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final AddressRepository addressRepository;
+    private final InventoryRepository inventoryRepository;
     // private final PaymentRepository paymentRepository; // TODO: Implement payment logic
 
     @Override
@@ -51,6 +52,18 @@ public class OrderServiceImpl implements OrderService {
         List<CartItem> cartItems = cartItemRepository.findByCart(cart);
         if (cartItems.isEmpty()) {
             throw new BadRequestException("Cart is empty");
+        }
+
+        // Kiểm tra tồn kho có đủ nguyên liệu không (chưa trừ)
+        for (CartItem cartItem : cartItems) {
+            Inventory inventory = inventoryRepository
+                    .findByBranch_BranchIdAndItem_ItemId(branch.getBranchId(), cartItem.getItem().getItemId())
+                    .orElseThrow(() -> new BadRequestException("Item not available in this branch: " + cartItem.getItem().getName()));
+            
+            if (inventory.getQuantity() < cartItem.getQuantity()) {
+                throw new BadRequestException("Insufficient inventory for item: " + cartItem.getItem().getName() + 
+                    ". Available: " + inventory.getQuantity() + ", Requested: " + cartItem.getQuantity());
+            }
         }
 
         // Calculate total amount

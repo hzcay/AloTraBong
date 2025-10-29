@@ -41,4 +41,7 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
 
     // Prefer RoleCode to avoid string mismatches; ensure branch is assigned (not null)
     Optional<UserRole> findFirstByUser_UserIdAndRole_RoleCodeAndBranchIsNotNull(String userId, RoleCode roleCode);
+    
+    // Find UserRole by user, role and specific branch
+    Optional<UserRole> findByUser_UserIdAndRole_RoleCodeAndBranch_BranchId(String userId, RoleCode roleCode, String branchId);
 }

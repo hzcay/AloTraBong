@@ -1,6 +1,7 @@
 package com.example.Alotrabong.repository;
 
 import com.example.Alotrabong.entity.Shipper;
+import com.example.Alotrabong.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,4 +29,7 @@ public interface ShipperRepository extends JpaRepository<Shipper, String> {
     // Branch Manager specific methods
     List<Shipper> findByBranch_BranchId(String branchId);
     Shipper findByShipperIdAndBranch_BranchId(String shipperId, String branchId);
+    
+    // Find shipper by user
+    Optional<Shipper> findByUser(User user);
 }
