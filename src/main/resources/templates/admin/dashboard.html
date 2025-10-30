@@ -305,9 +305,9 @@
                     <div class="stat-card promotions">
                         <div class="stat-icon"><i class="bi bi-ticket-perforated"></i></div>
                         <h6>Coupons</h6>
-                        <div class="stat-value" id="totalPromotions">-</div>
-                        <div class="stat-change positive" id="activePromotionsChange">
-                            <i class="bi bi-lightning"></i> <span id="activePromotions">-</span> đang hoạt động
+                        <div class="stat-value" id="totalCoupons">-</div>
+                        <div class="stat-change positive" id="activeCouponsChange">
+                            <i class="bi bi-lightning"></i> <span id="activeCoupons">-</span> đang hoạt động
                         </div>
                     </div>
                 </div>
@@ -419,8 +419,8 @@
                 document.getElementById('activeUsers').textContent = data.activeUsers || 0;
                 document.getElementById('totalBranches').textContent = data.totalBranches || 0;
                 document.getElementById('activeBranches').textContent = data.activeBranches || 0;
-                document.getElementById('totalPromotions').textContent = data.totalPromotions || 0;
-                document.getElementById('activePromotions').textContent = data.activePromotions || 0;
+                document.getElementById('totalCoupons').textContent = data.totalCoupons || 0;
+                document.getElementById('activeCoupons').textContent = data.activeCoupons || 0;
                 document.getElementById('totalCommissions').textContent = data.totalCommissions || 0;
                 document.getElementById('activeCommissions').textContent = data.activeCommissions || 0;
                 
@@ -434,8 +434,8 @@
                 document.getElementById('activeUsers').textContent = '0';
                 document.getElementById('totalBranches').textContent = '0';
                 document.getElementById('activeBranches').textContent = '0';
-                document.getElementById('totalPromotions').textContent = '0';
-                document.getElementById('activePromotions').textContent = '0';
+                document.getElementById('totalCoupons').textContent = '0';
+                document.getElementById('activeCoupons').textContent = '0';
                 document.getElementById('totalCommissions').textContent = '0';
                 document.getElementById('activeCommissions').textContent = '0';
                 
@@ -443,7 +443,7 @@
                 updateCharts({
                     totalUsers: 0, activeUsers: 0,
                     totalBranches: 0, activeBranches: 0,
-                    totalPromotions: 0, activePromotions: 0,
+                    totalCoupons: 0, activeCoupons: 0,
                     totalCommissions: 0, activeCommissions: 0
                 });
             });
@@ -468,8 +468,8 @@
         // Update Coupon Stats Chart
         const couponChart = Chart.getChart('couponStatsChart');
         if (couponChart) {
-            const expiredCoupons = (data.totalPromotions || 0) - (data.activePromotions || 0);
-            couponChart.data.datasets[0].data = [data.activePromotions || 0, expiredCoupons];
+            const expiredCoupons = (data.totalCoupons || 0) - (data.activeCoupons || 0);
+            couponChart.data.datasets[0].data = [data.activeCoupons || 0, expiredCoupons];
             couponChart.update();
         }
 

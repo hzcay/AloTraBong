@@ -44,8 +44,8 @@ public class OrderServiceImpl implements OrderService {
 		Branch branch = branchRepository.findById(request.getBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
 
-		// Get cart items
-		Cart cart = cartRepository.findByUserAndBranch(user, branch)
+		// Get cart items (CartService uses findByUser, not findByUserAndBranch)
+		Cart cart = cartRepository.findByUser(user)
 				.orElseThrow(() -> new ResourceNotFoundException("Cart is empty"));
 
 		List<CartItem> cartItems = cartItemRepository.findByCart(cart);

@@ -485,6 +485,19 @@
 
         toggleConfirm();
       });
+
+      // ===== Flash Messages Handler =====
+      (() => {
+        const toastError = /*[[${toastError}]]*/ null;
+        const toastSuccess = /*[[${toastSuccess}]]*/ null;
+        
+        if (toastError) {
+          alert('❌ ' + toastError);
+        }
+        if (toastSuccess) {
+          alert('✅ ' + toastSuccess);
+        }
+      })();
       </script>
   </div>
 </html>

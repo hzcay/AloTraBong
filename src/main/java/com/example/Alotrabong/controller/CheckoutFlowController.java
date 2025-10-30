@@ -7,6 +7,7 @@ import com.example.Alotrabong.repository.*;
 import com.example.Alotrabong.service.*;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -21,6 +22,7 @@ import java.util.*;
 @RequestMapping("/user/checkout")
 @PreAuthorize("hasRole('USER')")
 @RequiredArgsConstructor
+@Slf4j
 public class CheckoutFlowController {
 
     private final OrderService orderService;
@@ -152,7 +154,20 @@ public class CheckoutFlowController {
                 .notes(note)
                 .build();
 
-        OrderDTO dto = orderService.createOrder(userId, req);
+        OrderDTO dto;
+        try {
+            dto = orderService.createOrder(userId, req);
+        } catch (com.example.Alotrabong.exception.BadRequestException e) {
+            // Show error to user
+            ra.addFlashAttribute("toastError", e.getMessage());
+            log.error("Checkout error: {}", e.getMessage());
+            return "redirect:/user/checkout?branchId=" + effectiveBranchId;
+        } catch (Exception e) {
+            // Generic error
+            ra.addFlashAttribute("toastError", "Có lỗi xảy ra khi đặt hàng: " + e.getMessage());
+            log.error("Checkout unexpected error: {}", e.getMessage(), e);
+            return "redirect:/user/checkout?branchId=" + effectiveBranchId;
+        }
 
         // ==== Map payment method
         PaymentMethod pm = switch (payment.toUpperCase()) {

@@ -20,14 +20,14 @@ public class Conversation extends Auditable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user; // khách mở chat
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
     @Column(name = "status")
-    private Byte status; // 0:open,1:closed
+    private Byte status;
 
     @Column(name = "closed_at")
     private LocalDateTime closedAt;

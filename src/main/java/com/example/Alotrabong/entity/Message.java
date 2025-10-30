@@ -19,11 +19,11 @@ public class Message {
     private String messageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "convo_id", columnDefinition = "NVARCHAR(36)")
+    @JoinColumn(name = "convo_id")
     private Conversation conversation;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_user_id", columnDefinition = "NVARCHAR(36)")
+    @JoinColumn(name = "sender_user_id")
     private User sender;
 
     @Column(name = "content", length = 1000, columnDefinition = "NVARCHAR(1000)")

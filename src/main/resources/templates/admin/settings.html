@@ -118,24 +118,130 @@
     <div class="main-content-wrapper">
         <div class="main-content">
             <div class="page-header">
-                <h1><i class="bi bi-gear"></i> System Settings</h1>
+                <h1><i class="bi bi-gear"></i> Settings</h1>
             </div>
-            <div class="card-custom">
-                <h5>General Settings</h5>
-                <hr>
-                <form>
-                    <div class="mb-3">
-                        <label class="form-label">Application Name</label>
-                        <input type="text" class="form-control" value="AloTraBong" disabled>
+
+            <!-- Flash Messages -->
+            <div th:if="${saved}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> <span th:text="${saved}">Profile updated successfully</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}">Error occurred</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${pwdSaved}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> <span th:text="${pwdSaved}">Password changed successfully</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${pwdError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> <span th:text="${pwdError}">Password error</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-4">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#profile-tab">
+                        <i class="bi bi-person-circle"></i> My Profile
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#system-tab">
+                        <i class="bi bi-gear"></i> System Settings
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Profile Tab -->
+                <div id="profile-tab" class="tab-pane fade show active">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-person-circle"></i> Profile Information</h5>
+                        <hr>
+                        <form id="profileForm" action="/admin/settings/profile/update" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" name="fullName" 
+                                               th:value="${profile?.fullName ?: ''}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-control" name="email" 
+                                               th:value="${profile?.email ?: ''}" required readonly>
+                                        <small class="text-muted">Email cannot be changed</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" name="phone" 
+                                               th:value="${profile?.phone ?: ''}" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Update Profile
+                            </button>
+                        </form>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Application Version</label>
-                        <input type="text" class="form-control" value="1.0.0" disabled>
+
+                    <!-- Change Password -->
+                    <div class="card-custom mt-3">
+                        <h5><i class="bi bi-key"></i> Change Password</h5>
+                        <hr>
+                        <form id="passwordForm" action="/admin/settings/profile/change-password" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <div class="mb-3">
+                                <label class="form-label">Current Password</label>
+                                <input type="password" class="form-control" name="currentPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">New Password</label>
+                                <input type="password" class="form-control" name="newPassword" 
+                                       minlength="8" required>
+                                <small class="text-muted">Minimum 8 characters</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" name="confirmPassword" 
+                                       minlength="8" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-key"></i> Change Password
+                            </button>
+                        </form>
                     </div>
-                    <button type="button" class="btn btn-primary">
-                        <i class="bi bi-check-lg"></i> Save Settings
-                    </button>
-                </form>
+                </div>
+
+                <!-- System Settings Tab -->
+                <div id="system-tab" class="tab-pane fade">
+                    <div class="card-custom">
+                        <h5><i class="bi bi-gear"></i> General Settings</h5>
+                        <hr>
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Application Name</label>
+                                <input type="text" class="form-control" value="AloTraBong" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Application Version</label>
+                                <input type="text" class="form-control" value="1.0.0" disabled>
+                            </div>
+                            <button type="button" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Save Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -26,6 +26,7 @@ public class AdminApiController {
     private final AdminBranchService adminBranchService;
     private final AdminCategoryService adminCategoryService;
     private final AdminPromotionService adminPromotionService;
+    private final AdminCouponService adminCouponService;
     private final AdminShippingService adminShippingService;
     private final AdminBranchCommissionService adminBranchCommissionService;
     private final AdminReportService adminReportService;
@@ -456,6 +457,11 @@ public class AdminApiController {
         summary.put("activeUsers", adminUserService.getActiveUsersCount());
         summary.put("totalBranches", adminBranchService.getTotalBranchesCount());
         summary.put("activeBranches", adminBranchService.getActiveBranchesCount());
+        // Coupons (aggregate)
+        summary.put("totalCoupons", adminCouponService.getTotalCouponsCount());
+        summary.put("activeCoupons", adminCouponService.getActiveCouponsCount());
+        summary.put("expiredCoupons", adminCouponService.getExpiredCouponsCount());
+        // Promotions (kept for other screens if needed)
         summary.put("totalPromotions", adminPromotionService.getTotalPromotionsCount());
         summary.put("activePromotions", adminPromotionService.getActivePromotionsCount());
         summary.put("totalCommissions", adminBranchCommissionService.getTotalCommissionsCount());

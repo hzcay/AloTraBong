@@ -14,9 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -237,12 +235,13 @@ public class AdminCouponServiceImpl implements AdminCouponService {
             LocalDateTime now = LocalDateTime.now();
             
             // Check if coupon is active
-            if (!coupon.getIsActive()) {
+            if (coupon.getIsActive() == null || !coupon.getIsActive()) {
                 return false;
             }
             
             // Check if coupon is within valid time range
-            if (now.isBefore(coupon.getStartDate()) || now.isAfter(coupon.getEndDate())) {
+            if ((coupon.getStartDate() != null && now.isBefore(coupon.getStartDate())) ||
+                (coupon.getEndDate() != null && now.isAfter(coupon.getEndDate()))) {
                 return false;
             }
             
@@ -261,6 +260,12 @@ public class AdminCouponServiceImpl implements AdminCouponService {
 
     private CouponDTO convertToDTO(Coupon coupon) {
         LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = coupon.getStartDate();
+        LocalDateTime end = coupon.getEndDate();
+        boolean isExpired = end != null && now.isAfter(end);
+        boolean isActiveNow = Boolean.TRUE.equals(coupon.getIsActive())
+                && (start == null || !now.isBefore(start))
+                && (end == null || !now.isAfter(end));
         
         return CouponDTO.builder()
                 .couponId(coupon.getCouponId())
@@ -270,15 +275,15 @@ public class AdminCouponServiceImpl implements AdminCouponService {
                 .discountValue(coupon.getDiscountValue())
                 .minOrderAmount(coupon.getMinOrderAmount())
                 .maxDiscountAmount(coupon.getMaxDiscountAmount())
-                .startDate(coupon.getStartDate())
-                .endDate(coupon.getEndDate())
+                .startDate(start)
+                .endDate(end)
                 .usageLimit(coupon.getUsageLimit())
                 .isActive(coupon.getIsActive())
                 .createdAt(coupon.getCreatedAt())
                 .updatedAt(coupon.getUpdatedAt())
                 .currentUsageCount(0) // TODO: Implement usage tracking
-                .isExpired(now.isAfter(coupon.getEndDate()))
-                .isActiveNow(coupon.getIsActive() && now.isAfter(coupon.getStartDate()) && now.isBefore(coupon.getEndDate()))
+                .isExpired(isExpired)
+                .isActiveNow(isActiveNow)
                 .build();
     }
 }

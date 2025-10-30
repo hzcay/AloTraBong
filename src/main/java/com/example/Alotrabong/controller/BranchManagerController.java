@@ -3,6 +3,7 @@ package com.example.Alotrabong.controller;
 import com.example.Alotrabong.dto.*;
 import com.example.Alotrabong.dto.AddItemToBranchRequest;
 import com.example.Alotrabong.service.BranchManagerService;
+import com.example.Alotrabong.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -13,12 +14,15 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import com.example.Alotrabong.service.BranchAssignmentService;
 import com.example.Alotrabong.repository.UserRepository;
 import com.example.Alotrabong.entity.User;
 import com.example.Alotrabong.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 import java.math.BigDecimal;
@@ -38,6 +42,7 @@ public class BranchManagerController {
     private final BranchManagerService branchManagerService;
     private final BranchAssignmentService branchAssignmentService;
     private final UserRepository userRepository;
+    private final UserService userService;
     // Global model attrs for all views under this controller
     @ModelAttribute("currentBranch")
     public BranchDTO injectCurrentBranch(Authentication authentication, HttpSession session) {
@@ -190,7 +195,61 @@ public class BranchManagerController {
         model.addAttribute("branch", branchInfo);
         model.addAttribute("title", "Cài đặt Chi nhánh");
         
+        // Load user profile
+        try {
+            if (authentication != null && authentication.getName() != null) {
+                UserDTO profile = userService.getUserByEmail(authentication.getName());
+                model.addAttribute("profile", profile);
+            }
+        } catch (Exception e) {
+            log.error("Error loading profile", e);
+        }
+        
         return "branch-manager/settings";
+    }
+
+    @PostMapping("/settings/profile/update")
+    public String updateProfile(@Valid UserProfileFormDTO form,
+                                BindingResult br,
+                                RedirectAttributes ra,
+                                Authentication authentication) {
+        try {
+            if (authentication != null && authentication.getName() != null) {
+                UserDTO profile = userService.getUserByEmail(authentication.getName());
+                userService.updateProfile(profile.getUserId(), form);
+                ra.addFlashAttribute("saved", "Cập nhật hồ sơ thành công.");
+            }
+        } catch (com.example.Alotrabong.exception.BadRequestException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        } catch (Exception e) {
+            log.error("Update profile error", e);
+            ra.addFlashAttribute("error", "Có lỗi xảy ra khi cập nhật. Thử lại sau.");
+        }
+        return "redirect:/branch-manager/settings";
+    }
+
+    @PostMapping("/settings/profile/change-password")
+    public String changePassword(@Valid ChangePasswordFormDTO pwdForm,
+                                 BindingResult br,
+                                 RedirectAttributes ra,
+                                 Authentication authentication) {
+        try {
+            if (authentication != null && authentication.getName() != null) {
+                UserDTO profile = userService.getUserByEmail(authentication.getName());
+                if (!pwdForm.getNewPassword().equals(pwdForm.getConfirmPassword())) {
+                    ra.addFlashAttribute("pwdError", "Xác nhận mật khẩu không khớp.");
+                    return "redirect:/branch-manager/settings";
+                }
+                userService.changePassword(profile.getUserId(), pwdForm.getCurrentPassword(), pwdForm.getNewPassword());
+                ra.addFlashAttribute("pwdSaved", "Đổi mật khẩu thành công.");
+            }
+        } catch (com.example.Alotrabong.exception.BadRequestException e) {
+            ra.addFlashAttribute("pwdError", e.getMessage());
+        } catch (Exception e) {
+            log.error("Change password error", e);
+            ra.addFlashAttribute("pwdError", "Không thể đổi mật khẩu lúc này. Thử lại sau.");
+        }
+        return "redirect:/branch-manager/settings";
     }
 
     @GetMapping("/chat")
