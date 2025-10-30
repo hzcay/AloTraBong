@@ -26,19 +26,19 @@ import static java.util.stream.Collectors.toList;
 @Transactional
 public class CartServiceImpl implements CartService {
 
-        private static final int MAX_QTY = 99; // chặn spam số lượng
+        private static final int MAX_QTY = 99;
 
         private final CartRepository cartRepository;
         private final CartItemRepository cartItemRepository;
         private final UserRepository userRepository;
         private final BranchRepository branchRepository;
         private final ItemRepository itemRepository;
-
-        // Giá theo chi nhánh + inventory
         private final BranchItemPriceRepository branchItemPriceRepository;
         private final InventoryRepository inventoryRepository;
 
-        // ==================== PUBLIC API ====================
+        // =====================================================
+        // PUBLIC METHODS
+        // =====================================================
 
         @Override
         public CartItemDTO addToCart(String userIdOrLogin, AddToCartRequest request) {
@@ -49,9 +49,9 @@ public class CartServiceImpl implements CartService {
                 wantQty = Math.min(wantQty, MAX_QTY);
 
                 User user = resolveUser(userIdOrLogin);
-                Branch branch = resolveBranch(request.getBranchId()); // id / code / fallback
                 Item item = itemRepository.findById(request.getItemId())
                                 .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
+                Branch branch = resolveBranch(request.getBranchId()); // chỉ để check giá/tồn kho
 
                 if (Boolean.FALSE.equals(item.getIsActive())) {
                         throw new BadRequestException("Item is inactive");
@@ -66,7 +66,7 @@ public class CartServiceImpl implements CartService {
                         throw new BadRequestException("Insufficient inventory");
                 }
 
-                Cart cart = getOrCreateCart(user, branch);
+                Cart cart = getOrCreateCart(user); // ❗️dùng chung giỏ hàng, không phân branch
 
                 CartItem cartItem = cartItemRepository.findByCartAndItem(cart, item)
                                 .orElseGet(() -> cartItemRepository.save(
@@ -97,9 +97,9 @@ public class CartServiceImpl implements CartService {
         @Transactional(readOnly = true)
         public List<CartItemDTO> getCartItems(String userIdOrLogin, String branchIdOrCode) {
                 User user = resolveUser(userIdOrLogin);
-                Branch branch = resolveBranch(branchIdOrCode);
 
-                Optional<Cart> opt = cartRepository.findByUserAndBranch(user, branch);
+                // ❗️dùng chung giỏ hàng, không lọc branch
+                Optional<Cart> opt = cartRepository.findByUser(user);
                 if (opt.isEmpty())
                         return List.of();
 
@@ -125,8 +125,9 @@ public class CartServiceImpl implements CartService {
                 }
 
                 cartItem.setQuantity(Math.min(quantity, MAX_QTY));
+                Branch defaultBranch = branchRepository.findFirstByIsActiveTrueOrderByCreatedAtAsc().orElse(null);
+                PriceAvail pa = resolvePriceAndAvailability(cartItem.getItem(), defaultBranch);
 
-                PriceAvail pa = resolvePriceAndAvailability(cartItem.getItem(), cartItem.getCart().getBranch());
                 BigDecimal base = pa.price != null ? pa.price
                                 : (cartItem.getItem().getPrice() != null ? cartItem.getItem().getPrice()
                                                 : BigDecimal.ZERO);
@@ -140,26 +141,18 @@ public class CartServiceImpl implements CartService {
 
         @Override
         public void removeFromCart(String userIdOrLogin, String cartItemId) {
-                log.info("Removing cart item | user={}, cartItemId={}", userIdOrLogin, cartItemId);
-
                 CartItem cartItem = cartItemRepository.findById(cartItemId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
-
                 ensureOwnership(userIdOrLogin, cartItem.getCart());
                 cartItemRepository.delete(cartItem);
         }
 
         @Override
         public void clearCart(String userIdOrLogin, String branchIdOrCode) {
-                log.info("Clearing cart | user={}, branch={}", userIdOrLogin, branchIdOrCode);
-
                 User user = resolveUser(userIdOrLogin);
-                Branch branch = resolveBranch(branchIdOrCode);
-
-                Optional<Cart> opt = cartRepository.findByUserAndBranch(user, branch);
+                Optional<Cart> opt = cartRepository.findByUser(user);
                 if (opt.isEmpty())
                         return;
-
                 cartItemRepository.deleteByCart(opt.get());
         }
 
@@ -179,9 +172,10 @@ public class CartServiceImpl implements CartService {
                                 .sum();
         }
 
-        // ==================== PRIVATE HELPERS ====================
+        // =====================================================
+        // PRIVATE HELPERS
+        // =====================================================
 
-        // Cho phép userIdOrLogin là UUID (PK) hoặc email/phone
         private User resolveUser(String userIdOrLogin) {
                 if (userIdOrLogin == null || userIdOrLogin.isBlank()) {
                         throw new ResourceNotFoundException("User not found");
@@ -191,94 +185,62 @@ public class CartServiceImpl implements CartService {
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         }
 
-        // Resolve branch theo: ID -> branchCode -> fallback chi nhánh active đầu tiên
         private Branch resolveBranch(String idOrCode) {
-                // 1) Theo ID (branch_id)
                 if (idOrCode != null && !idOrCode.isBlank()) {
-                        Optional<Branch> byId = branchRepository.findById(idOrCode);
-                        if (byId.isPresent())
-                                return byId.get();
-
-                        // 2) Theo code (branch_code)
-                        try {
-                                Optional<Branch> byCode = branchRepository.findByBranchCodeIgnoreCase(idOrCode);
-                                if (byCode.isPresent())
-                                        return byCode.get();
-                        } catch (Throwable ignore) {
-                                // method có thể chưa được thêm ở repo -> bỏ qua
-                        }
+                        return branchRepository.findById(idOrCode)
+                                        .or(() -> branchRepository.findByBranchCodeIgnoreCase(idOrCode))
+                                        .orElseGet(() -> branchRepository.findFirstByIsActiveTrueOrderByCreatedAtAsc()
+                                                        .orElse(null));
                 }
-
-                // 3) Fallback: chi nhánh active đầu tiên (ưu tiên repo method nếu có)
-                try {
-                        return branchRepository.findFirstByIsActiveTrueOrderByCreatedAtAsc()
-                                        .orElseGet(this::fallbackActiveBranchFromMemory);
-                } catch (Throwable ignore) {
-                        return fallbackActiveBranchFromMemory();
-                }
+                return branchRepository.findFirstByIsActiveTrueOrderByCreatedAtAsc().orElse(null);
         }
 
-        private Branch fallbackActiveBranchFromMemory() {
-                return branchRepository.findAll().stream()
-                                .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
-                                .findFirst()
-                                .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
-        }
-
-        private Cart getOrCreateCart(User user, Branch branch) {
-                return cartRepository.findByUserAndBranch(user, branch)
-                                .orElseGet(() -> cartRepository.save(
-                                                Cart.builder().user(user).branch(branch).build()));
+        private Cart getOrCreateCart(User user) {
+                return cartRepository.findByUser(user)
+                                .orElseGet(() -> cartRepository.save(Cart.builder().user(user).build()));
         }
 
         private void ensureOwnership(String userIdOrLogin, Cart cart) {
-                if (cart == null || cart.getUser() == null) {
+                if (cart == null || cart.getUser() == null)
                         throw new BadRequestException("Unauthorized access to cart");
-                }
                 User current = resolveUser(userIdOrLogin);
-                if (!Objects.equals(cart.getUser().getUserId(), current.getUserId())) {
+                if (!Objects.equals(cart.getUser().getUserId(), current.getUserId()))
                         throw new BadRequestException("Unauthorized access to cart");
-                }
         }
 
-        private static BigDecimal nz(BigDecimal v) {
-                return v != null ? v : BigDecimal.ZERO;
-        }
-
-        // Giá theo chi nhánh + available
         private PriceAvail resolvePriceAndAvailability(Item item, Branch branch) {
                 BigDecimal price = item.getPrice();
                 boolean available = Boolean.TRUE.equals(item.getIsActive());
 
-                var bipOpt = branchItemPriceRepository.findByItemAndBranch(item, branch);
-                if (bipOpt.isPresent()) {
-                        BranchItemPrice bip = bipOpt.get();
-                        if (bip.getPrice() != null)
-                                price = bip.getPrice();
-                        if (bip.getIsAvailable() != null)
-                                available = available && bip.getIsAvailable();
+                if (branch != null) {
+                        var bipOpt = branchItemPriceRepository.findByItemAndBranch(item, branch);
+                        if (bipOpt.isPresent()) {
+                                BranchItemPrice bip = bipOpt.get();
+                                if (bip.getPrice() != null)
+                                        price = bip.getPrice();
+                                if (bip.getIsAvailable() != null)
+                                        available = available && bip.getIsAvailable();
+                        }
                 }
                 return new PriceAvail(price, available);
         }
 
-        // Tồn kho đủ không (nếu không có record inventory thì coi như đủ)
         private boolean hasSufficientInventory(String branchId, String itemId, int wantQty) {
                 return inventoryRepository.findByBranch_BranchIdAndItem_ItemId(branchId, itemId)
                                 .map(inv -> inv.getQuantity() != null && inv.getQuantity() >= wantQty)
                                 .orElse(true);
         }
 
-        // Tổng extra từ options trên 1 cartItem
         private BigDecimal calcOptionExtras(CartItem ci) {
                 if (ci.getOptions() == null || ci.getOptions().isEmpty())
                         return BigDecimal.ZERO;
                 return ci.getOptions().stream()
-                                .map(o -> nz(o.getExtraPrice()))
+                                .map(o -> o.getExtraPrice() != null ? o.getExtraPrice() : BigDecimal.ZERO)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
         private CartItemDTO convertToDTO(CartItem ci) {
-                BigDecimal unit = nz(ci.getUnitPrice()).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal unit = ci.getUnitPrice() != null ? ci.getUnitPrice() : BigDecimal.ZERO;
                 int qty = ci.getQuantity() != null ? ci.getQuantity() : 0;
                 BigDecimal total = unit.multiply(BigDecimal.valueOf(qty)).setScale(2, RoundingMode.HALF_UP);
 
@@ -287,12 +249,28 @@ public class CartServiceImpl implements CartService {
                                 .itemId(ci.getItem().getItemId())
                                 .itemName(ci.getItem().getName())
                                 .quantity(qty)
-                                .unitPrice(unit) // đã gồm option extras
+                                .unitPrice(unit)
                                 .totalPrice(total)
                                 .build();
         }
 
-        // tiny record
         private record PriceAvail(BigDecimal price, boolean available) {
         }
+
+        @Override
+        @Transactional(readOnly = true)
+        public int getCartCountForUser(String userId, jakarta.servlet.http.HttpSession session) {
+                User user = resolveUser(userId);
+
+                // Vì dùng chung giỏ hàng nên không cần branch
+                Optional<Cart> opt = cartRepository.findByUser(user);
+                if (opt.isEmpty())
+                        return 0;
+
+                Cart cart = opt.get();
+                return cartItemRepository.findByCart(cart).stream()
+                                .mapToInt(ci -> ci.getQuantity() != null ? ci.getQuantity() : 0)
+                                .sum();
+        }
+
 }

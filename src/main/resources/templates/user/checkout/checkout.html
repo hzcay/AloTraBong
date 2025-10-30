@@ -2,8 +2,8 @@
 <html
   xmlns:th="http://www.thymeleaf.org"
   lang="vi"
-  th:replace="~{fragments/layout :: layout(~{::content}, 'Thanh toán')}"
->
+  th:replace="~{fragments/layout :: layout(~{::content}, 'Thanh toán')}">
+
   <div th:fragment="content">
     <style>
       .pay-method {
@@ -33,6 +33,7 @@
         border-color: var(--primary);
         box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent);
       }
+      .coupon-item:hover { background: color-mix(in oklab, var(--primary) 4%, transparent); }
     </style>
 
     <!-- BREADCRUMB -->
@@ -60,7 +61,8 @@
     <!-- CHECKOUT -->
     <section class="section">
       <div class="container grid" style="grid-template-columns: 1fr 0.55fr; align-items: start; gap: 16px">
-        <!-- LEFT: Address + Payment -->
+
+        <!-- LEFT -->
         <section class="grid" style="gap: 14px">
 
           <!-- 1) ĐỊA CHỈ GIAO HÀNG -->
@@ -71,9 +73,7 @@
             </div>
 
             <form th:action="@{/user/checkout/address}" method="post" class="grid" style="gap: 10px">
-              <!-- CSRF -->
               <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-              <!-- payload -->
               <input type="hidden" name="branchId" th:value="${branchId}" />
 
               <label class="center-between card pad" th:each="ad : ${addresses}">
@@ -82,9 +82,7 @@
                   <div>
                     <b th:text="${ad.fullName}">Nguyễn Văn A</b>
                     <div class="text-muted" th:text="${ad.phone}">0900000000</div>
-                    <div th:text="${ad.line + ', ' + ad.ward + ', ' + ad.district + ', ' + ad.city}">
-                      Số 1, P.X, Q.Y, TP.Z
-                    </div>
+                    <div th:text="${ad.line + ', ' + ad.district + ', ' + ad.city}">Số 1, P.X, Q.Y, TP.Z</div>
                   </div>
                 </div>
                 <span class="badge" th:if="${ad.default}">Mặc định</span>
@@ -99,106 +97,174 @@
                 <a th:href="@{/user/address/manage}" class="btn">Thêm địa chỉ mới</a>
               </div>
             </form>
+
+            <!-- ⚠️ CẢNH BÁO NGOÀI KHU VỰC -->
+            <div th:if="${branchError != null}" 
+                 class="card pad" 
+                 style="margin-top:12px;border:1px solid #f5c2c7;background:#f8d7da;color:#842029">
+              <b th:text="${branchError}">
+                Rất tiếc, khu vực của bạn chưa được hỗ trợ giao hàng.
+              </b>
+            </div>
           </div>
+
+          <!-- 🏪 CHỌN CHI NHÁNH -->
+          <div class="card pad">
+          <h3 class="m-0 mb-2 bold text-upper">Chi nhánh phục vụ</h3>
+          <form th:action="@{/user/checkout}" method="get" class="grid" style="gap: 10px;">
+            <select name="branchIdParam"
+                    class="input"
+                    style="padding:10px;border-radius:8px;border:1px solid var(--line);"
+                    onchange="this.form.submit()">
+              <option th:each="b : ${branches}"
+                      th:value="${b.branchId}"
+                      th:selected="${b.branchId == branchId}"
+                      th:text="${b.name + ' - ' + b.city}">
+                Chi nhánh
+              </option>
+            </select>
+            <noscript>
+              <button type="submit" class="btn btn-primary">Áp dụng</button>
+            </noscript>
+          </form>
+        </div>
 
           <!-- 2) PHƯƠNG THỨC THANH TOÁN -->
           <div class="card pad">
             <div class="center-between mb-2" style="align-items:flex-start">
               <div>
                 <h3 class="m-0 bold text-upper">Phương thức thanh toán</h3>
-
-                <!-- dòng hiển thị phương thức hiện tại -->
                 <div class="text-muted" style="font-size: 0.9rem;">
                   <span id="current-method-label"
-                        th:text="${selectedPayment != null ? selectedPayment : 'Chưa chọn'}">
-                    Chưa chọn
-                  </span>
+                        th:text="${selectedPayment != null ? selectedPayment : 'Chưa chọn'}">Chưa chọn</span>
                 </div>
               </div>
-
-              <!-- nút để bật selector -->
               <button id="toggle-payment-btn" class="btn" type="button" style="white-space:nowrap">
                 Chọn phương thức
               </button>
             </div>
 
-            <!-- FORM CHUNG ĐỂ SUBMIT KHI ĐẶT HÀNG -->
             <form id="checkout-form" class="grid" style="gap: 10px" method="post">
-              <!-- CSRF -->
               <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-
-              <!-- payload chung -->
               <input type="hidden" name="branchId" th:value="${branchId}" />
               <input id="chosen-address" type="hidden" name="addressId" th:value="${selectedAddressId}" />
-              <input id="chosen-note"    type="hidden" name="note"       th:value="${note}" />
+              <input id="chosen-note" type="hidden" name="note" th:value="${note}" />
               <input id="chosen-payment" type="hidden" name="payment"
                      th:value="${selectedPayment != null ? selectedPayment : ''}" />
-
-              <!-- vùng để JS render các lựa chọn COD / VNPAY / MOMO -->
               <div id="payment-list-wrapper"></div>
 
-              <!-- GHI CHÚ -->
               <label class="grid">
                 <span class="text-muted">Ghi chú đơn hàng (tuỳ chọn)</span>
                 <textarea class="textarea" id="note-area" rows="3" th:text="${note}"></textarea>
               </label>
-
-              <div th:if="${paymentError != null}" class="text-muted" style="color: var(--danger); margin-top: 8px">
-                <b th:text="${paymentError}">Vui lòng chọn phương thức thanh toán.</b>
-              </div>
             </form>
           </div>
 
           <!-- 3) MÃ GIẢM GIÁ -->
           <div class="card pad">
             <h3 class="m-0 mb-2 bold text-upper">Mã giảm giá</h3>
-            <form th:action="@{/user/checkout/apply-coupon}" method="post" class="center"
-                  style="gap: 10px; justify-content: flex-start; flex-wrap: wrap">
-              <!-- CSRF -->
+
+            <form th:action="@{/user/checkout/apply-coupon}" method="post"
+                  class="center" style="gap:10px; justify-content:flex-start; flex-wrap:wrap; position:relative">
               <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-              <!-- payload -->
               <input type="hidden" name="branchId" th:value="${branchId}" />
 
-              <input class="input" name="code"
-                     th:value="${appliedCoupon != null ? appliedCoupon.code : ''}"
-                     placeholder="Nhập mã…"
-                     style="max-width: 260px; border-style: dashed" />
+              <div class="coupon-input-group" style="display:flex; gap:8px; align-items:center; position:relative; flex-wrap:wrap;">
+                <!-- Ô nhập mã -->
+                <input id="coupon-code-input"
+                      class="input"
+                      name="code"
+                      th:value="${appliedCoupon != null ? appliedCoupon.code : ''}"
+                      placeholder="Nhập mã…"
+                      style="max-width:260px; border-style:dashed" />
 
-              <button class="btn" type="submit">Áp dụng</button>
+                <!-- NEW: Nút chọn mã (nằm TRƯỚC nút Áp dụng) -->
+                <button id="btn-choose-coupon" type="button" class="btn" style="white-space:nowrap">
+                  Chọn mã ▼
+                </button>
 
-              <div th:if="${appliedCoupon != null}" class="badge">
-                <span th:text="${'Đã áp dụng: ' + appliedCoupon.code}">ALO20</span>
-                <a th:href="@{/user/coupon/list}" class="nav">Xem thêm mã</a>
-              </div>
+                <!-- Nút áp dụng (như cũ) -->
+                <button class="btn" type="submit">Áp dụng</button>
 
-              <div th:if="${couponError != null}" class="text-muted" style="color: var(--danger)">
-                <b th:text="${couponError}">Mã không hợp lệ</b>
+                <!-- Dropdown danh sách mã đủ điều kiện -->
+                <div id="coupon-dropdown"
+                  class="coupon-dd"
+                  style="display:none; position:fixed; z-index:10000;
+                          background:var(--surface); border:1px solid var(--line); border-radius:10px;
+                          box-shadow:0 10px 30px rgba(0,0,0,.18); padding:8px; max-height:360px; overflow:auto; min-width:320px; will-change: top,left;">
+                  <!-- Có mã hợp lệ -->
+                  <div th:if="${eligibleCoupons != null and !#lists.isEmpty(eligibleCoupons)}"
+                        class="grid coupon-list" style="gap:8px;">
+                    <label th:each="cp : ${eligibleCoupons}"
+                          class="coupon-item center-between"
+                          style="border:1px solid var(--line); border-radius:10px; padding:10px; gap:10px; cursor:pointer;"
+                          th:attr="data-code=${cp.code}">
+                      <div>
+                        <div class="center" style="gap:8px; justify-content:flex-start;">
+                          <b th:text="${cp.code}">SALE10</b>
+                          <span class="badge" th:text="${cp.type}">PERCENT</span>
+                        </div>
+                        <div class="text-muted" style="font-size:.9rem;">
+                          <span th:text="${cp.type == 'PERCENT' ? ('Giảm ' + cp.value + '%') : ('Giảm ' + #numbers.formatDecimal(cp.value,1,0) + 'đ')}">
+                            Giảm …
+                          </span>
+                          <span th:if="${cp.minSubtotal != null}">
+                            • ĐH tối thiểu
+                            <b th:text="${#numbers.formatDecimal(cp.minSubtotal,1,0) + 'đ'}">0đ</b>
+                          </span>
+                        </div>
+                        <div class="text-muted" style="font-size:.85rem;">
+                          HSD:
+                          <span th:text="${#temporals.format(cp.endsAt, 'dd/MM/yyyy')}">dd/MM/yyyy</span>
+                        </div>
+                      </div>
+                      <button type="button" class="btn" style="white-space:nowrap">Dùng ngay</button>
+                    </label>
+                  </div>
+
+                  <!-- Không có mã hợp lệ -->
+                  <div th:if="${eligibleCoupons == null or #lists.isEmpty(eligibleCoupons)}"
+                      class="text-muted" style="padding:8px;">
+                    Không có mã phù hợp với đơn hiện tại.
+                    <a th:href="@{/user/coupon/list}" class="nav">Xem tất cả mã →</a>
+                  </div>
+                </div>
+
+                <!-- Tag hiển thị mã đã áp dụng (nếu có) -->
+                <div th:if="${appliedCoupon != null}" class="badge">
+                  <span th:text="${'Đã áp dụng: ' + appliedCoupon.code}">ALO20</span>
+                  <a th:href="@{/user/coupon/list}" class="nav">Xem thêm mã</a>
+                </div>
+
+                <!-- Lỗi mã -->
+                <div th:if="${couponError != null}" class="text-muted" style="color: var(--danger)">
+                  <b th:text="${couponError}">Mã không hợp lệ</b>
+                </div>
               </div>
             </form>
           </div>
         </section>
 
-        <!-- RIGHT: Order summary + NÚT ĐẶT HÀNG -->
+        <!-- RIGHT: Order summary -->
         <aside class="card pad">
           <h3 class="m-0 mb-2 bold text-upper">Tóm tắt đơn</h3>
-
           <div class="grid mb-2" style="gap: 10px">
             <div class="center-between" th:each="it : ${items}">
               <div class="center" style="gap: 8px; justify-content: flex-start">
                 <div class="card" style="width: 48px; height: 48px; overflow: hidden">
                   <img th:src="${it.thumbnailUrl}" alt=""
-                       style="width: 100%; height: 100%; object-fit: cover"
-                       onerror="this.onerror=null;this.src='/img/placeholder.jpg'" />
+                      style="width: 100%; height: 100%; object-fit: cover"
+                      onerror="this.onerror=null;this.src='/img/placeholder.jpg'" />
                 </div>
                 <div>
                   <b th:text="${it.name}">Tên món</b>
                   <div class="text-muted">
                     <span th:text="${it.qty}">1</span> x
-                    <span th:text="${#numbers.formatDecimal(it.unitPrice != null ? it.unitPrice : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</span>
+                    <span th:text="${#numbers.formatDecimal(it.unitPrice,1,0) + 'đ'}">0đ</span>
                   </div>
                 </div>
               </div>
-              <b th:text="${#numbers.formatDecimal(it.subtotal != null ? it.subtotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</b>
+              <b th:text="${#numbers.formatDecimal(it.subtotal,1,0) + 'đ'}">0đ</b>
             </div>
 
             <div th:if="${#lists.isEmpty(items)}" class="text-muted">
@@ -208,70 +274,162 @@
 
           <div class="center-between mb-1">
             <span>Tạm tính</span>
-            <b th:text="${#numbers.formatDecimal(summary != null && summary.subtotal != null ? summary.subtotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</b>
+            <b th:text="${summary != null ? #numbers.formatDecimal(summary.subtotal, 1, 0) + 'đ' : '0đ'}">0đ</b>
           </div>
 
           <div class="center-between mb-1"
-               th:if="${summary != null && summary.discount != null && summary.discount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+              th:if="${summary != null and summary.discount != null and summary.discount > 0}">
             <span>Giảm giá</span>
-            <b th:text="${'- ' + #numbers.formatDecimal(summary.discount, 1, 0) + 'đ'}">-0đ</b>
+            <b th:text="${'- ' + #numbers.formatDecimal(summary.discount,1,0) + 'đ'}">-0đ</b>
           </div>
 
           <div class="center-between mb-1">
             <span>Phí giao</span>
-            <b th:text="${#numbers.formatDecimal(summary != null && summary.shippingFee != null ? summary.shippingFee : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</b>
+            <b th:text="${summary != null ? #numbers.formatDecimal(summary.shippingFee,1,0) + 'đ' : '0đ'}">0đ</b>
           </div>
 
-          <div class="center-between" style="margin: 10px 0; border-top: 1px solid var(--line); padding-top: 10px;">
+          <div class="center-between"
+              style="margin:10px 0;border-top:1px solid var(--line);padding-top:10px;">
             <span class="bold">Tổng thanh toán</span>
-            <b style="font-size: 20px"
-               th:text="${#numbers.formatDecimal(summary != null && summary.grandTotal != null ? summary.grandTotal : T(java.math.BigDecimal).ZERO, 1, 0) + 'đ'}">0đ</b>
+            <b style="font-size:20px"
+              th:text="${summary != null ? #numbers.formatDecimal(summary.grandTotal,1,0) + 'đ' : '0đ'}">0đ</b>
           </div>
 
-          <!-- NÚT XÁC NHẬN ĐẶT HÀNG -->
-          <button
-            id="confirm-btn"
-            class="btn btn-primary"
-            type="submit"
-            form="checkout-form"
-            formaction="/user/checkout/confirm"
-            formmethod="post"
-            th:disabled="${#lists.isEmpty(items)}"
-            style="width:100%; margin-top:12px"
-          >
+          <button id="confirm-btn" class="btn btn-primary"
+                  type="submit" form="checkout-form"
+                  formaction="/user/checkout/confirm"
+                  formmethod="post"
+                  th:disabled="${#lists.isEmpty(items)}"
+                  style="width:100%;margin-top:12px">
             Xác nhận đặt hàng →
           </button>
         </aside>
       </div>
     </section>
 
-    <!-- JS BÂY GIỜ NẰM TRONG FRAGMENT (QUAN TRỌNG) -->
     <script>
-      window.addEventListener('DOMContentLoaded', function() {
-        const form            = document.getElementById('checkout-form');
-        const noteTA          = document.getElementById('note-area');
-        const noteH           = document.getElementById('chosen-note');
-        const addrH           = document.getElementById('chosen-address');
-        const payHidden       = document.getElementById('chosen-payment');
+      /* ===== Coupon chooser: floating portal + auto up/down ===== */
+      (() => {
+        const btn = document.getElementById('btn-choose-coupon');
+        const dd  = document.getElementById('coupon-dropdown');      // container đã render sẵn trong HTML
+        const inp = document.getElementById('coupon-code-input');
 
-        const confirmBtn      = document.getElementById('confirm-btn');
+        if (!btn || !dd || !inp) return;
 
-        const toggleBtn       = document.getElementById('toggle-payment-btn');
-        const payWrapper      = document.getElementById('payment-list-wrapper');
-        const curLabel        = document.getElementById('current-method-label');
+        let isOpen = false;
+        let onDocClick, onReposition;
 
-        function dump(tag) {
-          console.log(
-            '[' + tag + ']',
-            'payment=', payHidden?.value,
-            'addressId=', addrH?.value,
-            'note=', noteH?.value
-          );
+        function openDD() {
+          // Đưa dropdown ra body để tránh overflow/stacking của cha
+          if (dd.parentNode !== document.body) document.body.appendChild(dd);
+          dd.style.display = 'block';
+          btn.setAttribute('aria-expanded', 'true');
+          btn.textContent = 'Chọn mã ▲';
+          isOpen = true;
+          positionDD();
+
+          onDocClick = (e) => {
+            if (e.target === btn || btn.contains(e.target)) return;
+            if (dd.contains(e.target)) return;
+            closeDD();
+          };
+          document.addEventListener('click', onDocClick, true);
+
+          onReposition = () => positionDD();
+          window.addEventListener('resize', onReposition, true);
+          window.addEventListener('scroll', onReposition, true);
         }
 
+        function closeDD() {
+          dd.style.display = 'none';
+          btn.setAttribute('aria-expanded', 'false');
+          btn.textContent = 'Chọn mã ▼';
+          isOpen = false;
+
+          if (onDocClick) document.removeEventListener('click', onDocClick, true);
+          if (onReposition) {
+            window.removeEventListener('resize', onReposition, true);
+            window.removeEventListener('scroll', onReposition, true);
+          }
+        }
+
+        function positionDD() {
+          // Căn theo button và nhóm input
+          const r = btn.getBoundingClientRect();
+          const group = btn.closest('.coupon-input-group') || btn.parentElement;
+          const gr = group ? group.getBoundingClientRect() : r;
+
+          const vw = window.innerWidth, vh = window.innerHeight;
+          const spaceDown = vh - r.bottom - 8;
+          const spaceUp   = r.top - 8;
+
+          // Rộng tối thiểu: theo chiều rộng nhóm input cho đẹp
+          const minW = Math.max(Math.min(gr.width, 520), 320);
+          dd.style.minWidth = minW + 'px';
+
+          // Reset để đo chiều cao thật
+          dd.style.maxHeight = '360px';
+          dd.style.top = '-9999px';
+          dd.style.left = '-9999px';
+
+          requestAnimationFrame(() => {
+            const desiredH = Math.min(360, dd.offsetHeight || 360);
+
+            let top, maxH;
+            if (spaceDown >= 220 || spaceDown >= spaceUp) {   // mở xuống
+              top  = r.bottom + 6;
+              maxH = Math.max(160, Math.min(360, spaceDown - 12));
+            } else {                                          // mở lên
+              maxH = Math.max(160, Math.min(desiredH, spaceUp - 12));
+              top  = Math.max(8, r.top - maxH - 6);
+            }
+            dd.style.maxHeight = maxH + 'px';
+
+            // Căn trái theo nhóm, tránh tràn viewport
+            const left = Math.min(vw - minW - 8, Math.max(8, gr.left));
+            dd.style.top  = top + 'px';
+            dd.style.left = left + 'px';
+          });
+        }
+
+        // Toggle
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isOpen ? closeDD() : openDD();
+        });
+
+        // Click chọn mã → fill input + đóng
+        dd.addEventListener('click', (e) => {
+          const label = e.target.closest('.coupon-item');
+          if (!label) return;
+          const code = label.getAttribute('data-code');
+          if (code) {
+            inp.value = code;
+            closeDD();
+            inp.focus();
+          }
+        });
+
+        // ESC để đóng
+        document.addEventListener('keydown', (e) => {
+          if (isOpen && e.key === 'Escape') closeDD();
+        });
+      })();
+
+      /* ===== Payment chooser (giữ logic cũ) ===== */
+      window.addEventListener('DOMContentLoaded', function() {
+        const noteTA     = document.getElementById('note-area');
+        const noteH      = document.getElementById('chosen-note');
+        const addrH      = document.getElementById('chosen-address');
+        const payHidden  = document.getElementById('chosen-payment');
+        const confirmBtn = document.getElementById('confirm-btn');
+        const toggleBtn  = document.getElementById('toggle-payment-btn');
+        const payWrapper = document.getElementById('payment-list-wrapper');
+        const curLabel   = document.getElementById('current-method-label');
+
         function toggleConfirm() {
-          const hasPay  = !!payHidden?.value;
-          const hasAddr = !!addrH?.value;
+          const hasPay  = !!(payHidden && payHidden.value);
+          const hasAddr = !!(addrH && addrH.value);
           if (confirmBtn) confirmBtn.disabled = !(hasPay && hasAddr);
         }
 
@@ -283,101 +441,50 @@
         function choosePayment(methodCode) {
           if (payHidden) payHidden.value = methodCode || '';
           if (curLabel)  curLabel.textContent = methodCode || 'Chưa chọn';
-
           if (payWrapper) {
             payWrapper.innerHTML = '';
             payWrapper.dataset.open = '0';
           }
-
           toggleConfirm();
-          dump('choosePayment:' + methodCode);
         }
 
         function toggleChooser() {
           if (!payWrapper) return;
-
-          // nếu đang mở -> đóng
           if (payWrapper.dataset.open === '1') {
-            payWrapper.innerHTML = '';
-            payWrapper.dataset.open = '0';
-            return;
+            payWrapper.innerHTML = ''; payWrapper.dataset.open = '0'; return;
           }
-
-          // build UI list
           payWrapper.innerHTML = `
             <div class="pay-method" style="margin-bottom:12px">
               <button type="button" class="pay-tile" data-method="COD">COD</button>
               <button type="button" class="pay-tile" data-method="VNPAY">VNPAY</button>
               <button type="button" class="pay-tile" data-method="MOMO">MOMO</button>
-            </div>
-          `;
+            </div>`;
           payWrapper.dataset.open = '1';
 
-          const curr = payHidden?.value;
-          if (curr) {
-            [...payWrapper.querySelectorAll('.pay-tile')].forEach(tile => {
-              if (tile.getAttribute('data-method') === curr) {
-                tile.classList.add('is-selected');
-              }
-            });
-          }
-
-          // attach click handler cho từng tile sau khi render
-          [...payWrapper.querySelectorAll('.pay-tile')].forEach(tile => {
-            tile.addEventListener('click', () => {
-              const code = tile.getAttribute('data-method');
-              choosePayment(code);
-            });
+          const curr = payHidden && payHidden.value;
+          if (curr) [...payWrapper.querySelectorAll('.pay-tile')].forEach(tile => {
+            if (tile.getAttribute('data-method') === curr)
+              tile.classList.add('is-selected');
           });
-
-          // scroll tới chỗ list
+          [...payWrapper.querySelectorAll('.pay-tile')].forEach(tile => {
+            tile.addEventListener('click', () => choosePayment(tile.getAttribute('data-method')));
+          });
           payWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        // GẮN SỰ KIỆN Ở ĐÂY LUÔN
-        if (toggleBtn) {
-          toggleBtn.addEventListener('click', toggleChooser);
-        }
-
-        // đồng bộ ghi chú -> hidden
-        if (noteTA) {
-          noteTA.addEventListener('input', () => {
-            syncNoteHidden();
-            dump('note-change');
-          }, { passive: true });
-        }
+        if (toggleBtn) toggleBtn.addEventListener('click', toggleChooser);
+        if (noteTA) noteTA.addEventListener('input', syncNoteHidden);
         syncNoteHidden();
 
-        // đồng bộ địa chỉ giao hàng
+        // Radio địa chỉ → sync hidden
         const addrRadios = [...document.querySelectorAll('input[name="addressId"]')];
         addrRadios.forEach(r => {
-          r.addEventListener('change', () => {
-            addrH.value = r.value;
-            toggleConfirm();
-            dump('address-change');
-          });
-          if (r.checked) {
-            addrH.value = r.value;
-          }
+          r.addEventListener('change', () => { addrH.value = r.value; toggleConfirm(); });
+          if (r.checked) addrH.value = r.value;
         });
 
-        // debug trước submit
-        if (form) {
-          form.addEventListener('submit', (e) => {
-            dump('before-submit');
-            try {
-              const fd = new FormData(form);
-              console.log('--- FORM PAYLOAD ---');
-              for (const [k,v] of fd.entries()) console.log(k, '=>', v);
-              console.log('---------------------');
-            } catch {}
-          }, { capture: true });
-        }
-
-        // init
         toggleConfirm();
-        dump('init');
       });
-    </script>
+      </script>
   </div>
 </html>

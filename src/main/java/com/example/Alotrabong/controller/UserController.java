@@ -3,6 +3,7 @@ package com.example.Alotrabong.controller;
 import com.example.Alotrabong.dto.CartItemDTO;
 import com.example.Alotrabong.dto.HomeItemVM;
 import com.example.Alotrabong.dto.ItemDTO;
+import com.example.Alotrabong.dto.OrderDetailVM;
 import com.example.Alotrabong.dto.OrderHistoryVM;
 import com.example.Alotrabong.dto.BranchListDTO;
 import com.example.Alotrabong.dto.AddressDTO;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -63,6 +65,7 @@ public class UserController {
     private final ReviewMediaRepository reviewMediaRepository;
     private final CouponRepository couponRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
 
     // ===========================
     // ====== NAV / HEADER =======
@@ -90,7 +93,7 @@ public class UserController {
             }
         }
 
-        return "/auth/login";
+        return "/auth";
     }
 
     // ===== HOME =====
@@ -421,6 +424,7 @@ public class UserController {
     }
 
     // ===== BRANCH LIST =====
+    // ==== LIST BRANCHES (giữ nguyên) ====
     @GetMapping("/branches")
     public String listBranches(@RequestParam(value = "q", required = false) String q,
             @RequestParam(value = "city", required = false) String city,
@@ -429,31 +433,34 @@ public class UserController {
             HttpSession session,
             Model model) {
 
-        // tên user cho header
         model.addAttribute("userName", resolveDisplayName(auth));
+        String defaultBranchId = ensureDefaultBranchInSession(session);
 
         List<Branch> all = branchRepository.findAll();
 
         List<Branch> filtered = all.stream()
-                .filter(b -> b.getIsActive() != null && b.getIsActive())
-                .filter(b -> q == null || q.isBlank()
-                        || b.getName().toLowerCase().contains(q.toLowerCase())
-                        || (b.getAddress() != null
-                                && b.getAddress().toLowerCase().contains(q.toLowerCase())))
-                .filter(b -> city == null || city.isBlank()
-                        || (b.getCity() != null
-                                && b.getCity().equalsIgnoreCase(city)))
-                .collect(Collectors.toList());
+                .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
+                .filter(b -> {
+                    if (q == null || q.isBlank())
+                        return true;
+                    String name = Optional.ofNullable(b.getName()).orElse("");
+                    String addr = Optional.ofNullable(b.getAddress()).orElse("");
+                    String ql = q.toLowerCase();
+                    return name.toLowerCase().contains(ql) || addr.toLowerCase().contains(ql);
+                })
+                .filter(b -> {
+                    if (city == null || city.isBlank())
+                        return true;
+                    String bc = b.getCity();
+                    return bc != null && bc.equalsIgnoreCase(city);
+                })
+                .toList();
 
         if (status != null && !status.isBlank()) {
             if (status.equalsIgnoreCase("OPEN")) {
-                filtered = filtered.stream()
-                        .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
-                        .collect(Collectors.toList());
+                filtered = filtered.stream().filter(b -> Boolean.TRUE.equals(b.getIsActive())).toList();
             } else if (status.equalsIgnoreCase("CLOSED")) {
-                filtered = filtered.stream()
-                        .filter(b -> !Boolean.TRUE.equals(b.getIsActive()))
-                        .collect(Collectors.toList());
+                filtered = all.stream().filter(b -> !Boolean.TRUE.equals(b.getIsActive())).toList();
             }
         }
 
@@ -461,9 +468,7 @@ public class UserController {
                 .map(Branch::getCity)
                 .filter(c -> c != null && !c.isBlank())
                 .distinct()
-                .collect(Collectors.toList());
-
-        String defaultBranchId = (String) session.getAttribute("DEFAULT_BRANCH_ID");
+                .toList();
 
         List<BranchListDTO> vms = filtered.stream()
                 .map(b -> BranchListDTO.builder()
@@ -473,10 +478,9 @@ public class UserController {
                         .phone(b.getPhone())
                         .isActive(Boolean.TRUE.equals(b.getIsActive()))
                         .openHours(b.getOpenHours() != null ? b.getOpenHours() : "08:00 - 22:00")
-                        .isDefault(defaultBranchId != null
-                                && defaultBranchId.equals(b.getBranchId()))
+                        .isDefault(defaultBranchId != null && defaultBranchId.equals(b.getBranchId()))
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         List<Map<String, Object>> mapPoints = filtered.stream()
                 .filter(b -> b.getLatitude() != null && b.getLongitude() != null)
@@ -503,26 +507,56 @@ public class UserController {
         return "user/branch/list";
     }
 
+    // ==== LEGACY REDIRECT ====
     @GetMapping("/branch/list")
     public String legacyBranchListRedirect() {
         return "redirect:/user/branches";
     }
 
+    // ==== FORM (non-AJAX) → REDIRECT ====
     @PostMapping("/branch/{id}/set-default")
-    public String setDefaultBranch(@PathVariable("id") String id,
+    public String setDefaultBranchForm(@PathVariable("id") String id,
             HttpSession session,
-            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+            RedirectAttributes ra,
+            jakarta.servlet.http.HttpServletRequest req) {
         session.setAttribute("DEFAULT_BRANCH_ID", id);
         ra.addFlashAttribute("toastSuccess", "Đã chọn chi nhánh mặc định!");
-        return "redirect:/user/branches";
+        String ref = req.getHeader("Referer");
+        return "redirect:" + ((ref != null && !ref.isBlank()) ? ref : "/user/branches");
+    }
+
+    // ==== AJAX (X-Requested-With=XMLHttpRequest) → JSON ====
+    @PostMapping(value = "/branch/{id}/set-default", headers = "X-Requested-With=XMLHttpRequest")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public Map<String, Object> setDefaultBranchAjax(@PathVariable("id") String id,
+            HttpSession session) {
+        session.setAttribute("DEFAULT_BRANCH_ID", id);
+        return java.util.Map.of("ok", true, "defaultBranchId", id);
+    }
+
+    /**
+     * Đảm bảo có DEFAULT_BRANCH_ID trong session. Nếu chưa có -> set ID chi nhánh
+     * active đầu tiên.
+     */
+    private String ensureDefaultBranchInSession(HttpSession session) {
+        String cur = (String) session.getAttribute("DEFAULT_BRANCH_ID");
+        if (cur != null && !cur.isBlank())
+            return cur;
+
+        String firstActiveId = branchRepository.findAll().stream()
+                .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
+                .map(Branch::getBranchId)
+                .findFirst()
+                .orElse(null);
+
+        if (firstActiveId != null) {
+            session.setAttribute("DEFAULT_BRANCH_ID", firstActiveId);
+            return firstActiveId;
+        }
+        return null;
     }
 
     /* ===== ADDRESS CRUD ===== */
-
-    /**
-     * GET /user/addresses
-     * - Hiển thị danh sách địa chỉ + form tạo mới (formMode = "create")
-     */
     @GetMapping("/addresses")
     public String addressesPage(Model model, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) {
@@ -723,36 +757,86 @@ public class UserController {
 
     // ===== CART =====
     @PostMapping("/cart")
-    public String addToCartFromForm(
+    public Object addToCartFromForm(
             @RequestParam(value = "itemId", required = false) String itemId,
             @RequestParam(value = "productId", required = false) String productId,
             @RequestParam(value = "branchId", required = false) String branchId,
             @RequestParam(value = "quantity", required = false) Integer quantity,
             Authentication auth,
+            jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpSession session,
             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
 
+        // 1) Bắt login
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            // Nếu là AJAX → trả JSON báo cần login
+            if (isAjax(request)) {
+                return java.util.Map.of("ok", false, "needLogin", true, "message", "Bạn cần đăng nhập");
+            }
+            ra.addFlashAttribute("toastError", "Bạn cần đăng nhập để thêm vào giỏ.");
+            return "redirect:/auth";
+        }
+
+        // 2) Validate input
         String resolvedItemId = (itemId != null && !itemId.isBlank()) ? itemId : productId;
         if (resolvedItemId == null || resolvedItemId.isBlank()) {
+            if (isAjax(request)) {
+                return java.util.Map.of("ok", false, "message", "Thiếu mã sản phẩm.");
+            }
             ra.addFlashAttribute("toastError", "Thiếu mã sản phẩm.");
             return "redirect:/user/cart";
         }
 
-        String userId = (auth != null && auth.isAuthenticated()) ? auth.getName() : null;
-
+        // 3) Build request + add
+        String userIdOrLogin = auth.getName(); // email hoặc userId đều ok với resolveUser(...)
         var req = new com.example.Alotrabong.dto.AddToCartRequest();
         req.setItemId(resolvedItemId);
         req.setBranchId(branchId);
         req.setQuantity(quantity);
 
         try {
-            cartService.addToCart(userId, req);
-            ra.addFlashAttribute("toastSuccess", "Đã thêm vào giỏ!");
+            cartService.addToCart(userIdOrLogin, req);
         } catch (RuntimeException ex) {
+            if (isAjax(request)) {
+                return java.util.Map.of("ok", false, "message", ex.getMessage());
+            }
             ra.addFlashAttribute("toastError", ex.getMessage());
+            return redirectBack(request, branchId);
         }
 
-        String b = (branchId != null && !branchId.isBlank()) ? "?branchId=" + branchId : "";
-        return "redirect:/user/cart" + b;
+        // 4) Lấy cartCount ngay sau khi add để update header tức thì (cho AJAX)
+        int cartCount = cartService.getCartItemCount(userIdOrLogin, branchId);
+
+        // 5) AJAX → trả JSON (frontend cập nhật .cart-badge b)
+        if (isAjax(request)) {
+            return java.util.Map.of(
+                    "ok", true,
+                    "message", "Đã thêm vào giỏ!",
+                    "cartCount", cartCount);
+        }
+
+        // 6) Form thường → flash + redirect về Referer (ưu tiên) hoặc trang giỏ
+        ra.addFlashAttribute("toastSuccess", "Đã thêm vào giỏ!");
+        return redirectBack(request, branchId);
+    }
+
+    // ==== helpers ====
+    private boolean isAjax(jakarta.servlet.http.HttpServletRequest req) {
+        String hx = req.getHeader("HX-Request"); // htmx
+        String xr = req.getHeader("X-Requested-With"); // ajax cổ điển
+        String acc = req.getHeader("Accept"); // fetch JSON
+        return "true".equalsIgnoreCase(hx)
+                || "XMLHttpRequest".equalsIgnoreCase(xr)
+                || (acc != null && acc.contains("application/json"));
+    }
+
+    private String redirectBack(jakarta.servlet.http.HttpServletRequest req, String branchId) {
+        String referer = req.getHeader("Referer");
+        if (referer != null && !referer.isBlank()) {
+            return "redirect:" + referer;
+        }
+        String q = (branchId != null && !branchId.isBlank()) ? "?branchId=" + branchId : "";
+        return "redirect:/user/cart" + q;
     }
 
     @GetMapping("/cart")
@@ -816,106 +900,6 @@ public class UserController {
         model.addAttribute("appliedCoupon", null);
         model.addAttribute("couponError", null);
         return "user/cart/cart";
-    }
-
-    // ===== CHECKOUT (GET ONLY – POST nằm ở CheckoutFlowController) =====
-    @GetMapping("/checkout")
-    public String checkout(
-            @RequestParam(required = false, defaultValue = "") String branchIdParam,
-            Authentication auth,
-            HttpSession session,
-            Model model) {
-
-        // tên user cho header
-        model.addAttribute("userName", resolveDisplayName(auth));
-
-        // user hiện tại
-        String userIdOrLogin = (auth != null && auth.isAuthenticated())
-                ? auth.getName()
-                : null;
-
-        // resolve branch từ DB
-        Branch branch = resolveBranch(branchIdParam);
-        String resolvedBranchId = (branch != null ? branch.getBranchId() : null);
-
-        // lấy giỏ hàng theo branch thật
-        var dtos = cartService.getCartItems(
-                userIdOrLogin != null ? userIdOrLogin : "user-id-placeholder",
-                resolvedBranchId);
-
-        var items = new ArrayList<Map<String, Object>>();
-        for (var d : dtos) {
-            var it = new HashMap<String, Object>();
-
-            String thumb = itemMediaRepository
-                    .findByItem_ItemIdOrderBySortOrderAsc(d.getItemId())
-                    .stream()
-                    .findFirst()
-                    .map(ItemMedia::getMediaUrl)
-                    .orElse("/img/products/" + d.getItemId() + ".jpg");
-
-            it.put("itemId", d.getItemId());
-            it.put("name", d.getItemName());
-            it.put("thumbnailUrl", thumb);
-            it.put("unitPrice", d.getUnitPrice());
-            it.put("qty", d.getQuantity());
-            it.put("subtotal", d.getTotalPrice());
-            items.add(it);
-        }
-
-        // tính tiền
-        BigDecimal subtotal = dtos.stream()
-                .map(CartItemDTO::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        String appliedCode = (String) session.getAttribute("appliedCouponCode");
-        BigDecimal discount = (appliedCode != null
-                && "ALO20".equalsIgnoreCase(appliedCode))
-                        ? new BigDecimal("20000")
-                        : BigDecimal.ZERO;
-
-        BigDecimal shipping = new BigDecimal("15000");
-        BigDecimal grand = subtotal.add(shipping).subtract(discount);
-
-        var summary = new HashMap<String, BigDecimal>();
-        summary.put("subtotal", subtotal);
-        summary.put("discount", discount);
-        summary.put("shippingFee", shipping);
-        summary.put("grandTotal", grand);
-
-        // địa chỉ từ DB
-        List<AddressDTO> addressList = (userIdOrLogin != null)
-                ? addressService.getAddressesForUser(userIdOrLogin)
-                : List.of();
-
-        // chọn sẵn địa chỉ
-        String selectedAddressId = (String) session.getAttribute("selectedAddressId");
-        if ((selectedAddressId == null || selectedAddressId.isBlank()) && userIdOrLogin != null) {
-            AddressDTO def = addressService.getDefaultAddressForUser(userIdOrLogin);
-            if (def != null) {
-                selectedAddressId = String.valueOf(def.getId());
-            }
-        }
-
-        // lấy state khác từ session
-        String selectedPayment = (String) session.getAttribute("selectedPayment");
-        String note = (String) session.getAttribute("checkoutNote");
-        String couponError = (String) session.getAttribute("couponError");
-
-        // bơm vào model
-        model.addAttribute("items", items);
-        model.addAttribute("summary", summary);
-        model.addAttribute("branchId", resolvedBranchId);
-
-        model.addAttribute("addresses", addressList);
-        model.addAttribute("selectedAddressId", selectedAddressId);
-        model.addAttribute("selectedPayment", selectedPayment);
-        model.addAttribute("note", note);
-        model.addAttribute("appliedCoupon",
-                appliedCode != null ? Map.of("code", appliedCode) : null);
-        model.addAttribute("couponError", couponError);
-
-        return "user/checkout/checkout";
     }
 
     // ===== ORDER HISTORY =====
@@ -987,7 +971,6 @@ public class UserController {
             return "redirect:/login";
         }
 
-        // tên user cho header
         model.addAttribute("userName", resolveDisplayName(auth));
 
         final String login = auth.getName();
@@ -999,11 +982,38 @@ public class UserController {
             return "user/order/detail";
         }
 
-        var detail = orderHistoryService.getOrderDetailForUser(user, code);
-
+        OrderDetailVM detail = orderHistoryService.getOrderDetailForUser(user, code);
         if (detail == null) {
             model.addAttribute("error", "Không tìm thấy đơn hàng hoặc bạn không có quyền xem.");
             return "user/order/detail";
+        }
+
+        // --- KHÔNG DÙNG LAMBDA: lấy order ra rồi patch ngoài ---
+        var orderOpt = orderRepository.findById(code);
+        if (orderOpt.isPresent()) {
+            var order = orderOpt.get();
+
+            BigDecimal ship = order.getShippingFee() == null ? BigDecimal.ZERO : order.getShippingFee();
+            BigDecimal dc = order.getDiscount() == null ? BigDecimal.ZERO : order.getDiscount();
+            BigDecimal grand = (detail.grandTotal() != null)
+                    ? detail.grandTotal()
+                    : detail.subtotal().add(ship).subtract(dc);
+
+            // record bất biến -> tạo instance mới
+            detail = new OrderDetailVM(
+                    detail.code(),
+                    detail.status(),
+                    detail.createdAt(),
+                    detail.branchName(),
+                    detail.deliveryAddress(),
+                    detail.customerNote(),
+                    detail.paymentMethod(),
+                    detail.items(),
+                    detail.subtotal(),
+                    ship,
+                    dc,
+                    grand,
+                    detail.cancellable());
         }
 
         model.addAttribute("order", detail);

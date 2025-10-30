@@ -47,4 +47,6 @@ public interface UserService extends UserDetailsService {
     boolean existsEmailForAnotherUser(String email, String excludeUserId);
 
     boolean existsPhoneForAnotherUser(String phone, String excludeUserId);
+
+    void changePassword(String userId, String currentPassword, String newPassword);
 }

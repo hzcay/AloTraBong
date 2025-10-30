@@ -50,7 +50,8 @@ public class UserServiceImpl implements UserService {
 
     // ========= Helper =========
     private static String normalize(String s) {
-        if (s == null) return null;
+        if (s == null)
+            return null;
         return s.trim().replaceAll("\\s+", " ");
     }
 
@@ -121,7 +122,8 @@ public class UserServiceImpl implements UserService {
             userOtpRepository.deleteByUserAndPurpose(user, OtpPurpose.SIGNUP);
             var userOtp = otpService.createOtp(user, OtpPurpose.SIGNUP);
             otpService.sendOtpEmail(user.getEmail(), userOtp.getOtpCode(), OtpPurpose.SIGNUP);
-            throw new BadRequestException("Account not activated. A new verification code has been sent to your email.");
+            throw new BadRequestException(
+                    "Account not activated. A new verification code has been sent to your email.");
         }
 
         String token = jwtTokenProvider.generateTokenFromUsername(user.getEmail());
@@ -321,14 +323,15 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String fullName = normalize(form.getFullName());
-        String email    = normalize(form.getEmail());
-        String address  = normalize(form.getAddress());
-        String phone    = normalize(form.getPhone());
+        String email = normalize(form.getEmail());
+        String phone = normalize(form.getPhone());
 
-        if (email == null || email.isBlank())      throw new BadRequestException("Email is required");
-        if (fullName == null || fullName.isBlank())throw new BadRequestException("Full name is required");
-        if (address == null || address.isBlank())  throw new BadRequestException("Address is required");
-        if (phone == null || phone.isBlank())      throw new BadRequestException("Phone is required");
+        if (email == null || email.isBlank())
+            throw new BadRequestException("Email is required");
+        if (fullName == null || fullName.isBlank())
+            throw new BadRequestException("Full name is required");
+        if (phone == null || phone.isBlank())
+            throw new BadRequestException("Phone is required");
 
         // Check trùng với user khác
         if (!email.equalsIgnoreCase(user.getEmail())
@@ -342,13 +345,30 @@ public class UserServiceImpl implements UserService {
 
         user.setFullName(fullName);
         user.setEmail(email);
-        user.setAddress(address);
         user.setPhone(phone);
-
         user = userRepository.save(user);
         log.info("Profile updated for userId={} (email={})", userId, email);
 
         return convertToDTO(user);
+    }
+
+    @Override
+    public void changePassword(String userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadRequestException("Mật khẩu hiện tại không đúng.");
+        }
+
+        // tùy chính sách, có thể enforce thêm regex/độ dài
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new BadRequestException("Mật khẩu mới phải tối thiểu 8 ký tự.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        log.info("Password changed for userId={}", userId);
     }
 
     @Override
