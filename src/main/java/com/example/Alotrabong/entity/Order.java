@@ -16,7 +16,7 @@ import java.util.*;
 public class Order extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "order_id", length = 36)
+    @Column(name = "order_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String orderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,20 +32,20 @@ public class Order extends Auditable {
     private Address addressSnapshot;
 
     @Builder.Default
-    @Column(name = "discount", precision = 18, scale = 2, nullable = false)
+    @Column(name = "discount", precision = 18, scale = 2, nullable = true)
     private BigDecimal discount = BigDecimal.ZERO;
 
     @Builder.Default
-    @Column(name = "shipping_fee", precision = 18, scale = 2, nullable = false)
+    @Column(name = "shipping_fee", precision = 18, scale = 2, nullable = true)
     private BigDecimal shippingFee = BigDecimal.ZERO;
 
     @Column(name = "total_amount", precision = 12, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(name = "shipping_address", length = 500)
+    @Column(name = "shipping_address", length = 500, columnDefinition = "NVARCHAR(500)")
     private String shippingAddress;
 
-    @Column(name = "notes", length = 1000)
+    @Column(name = "notes", length = 1000, columnDefinition = "NVARCHAR(1000)")
     private String notes;
 
     @Enumerated(EnumType.STRING)

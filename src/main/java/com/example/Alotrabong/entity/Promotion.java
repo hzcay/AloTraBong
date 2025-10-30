@@ -31,7 +31,7 @@ public class Promotion extends Auditable {
     @Column(name = "discount_value", precision = 12, scale = 2)
     private BigDecimal discountValue;
 
-    @Column(name = "branch_id", length = 36)
+    @Column(name = "branch_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String branchId;
 
     @Column(name = "start_date")

@@ -16,10 +16,10 @@ import java.time.LocalDateTime;
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "payment_id", length = 36)
+    @Column(name = "payment_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String paymentId;
 
-    @Column(name = "order_id", length = 36)
+    @Column(name = "order_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String orderId;
 
     @Enumerated(EnumType.STRING)
@@ -29,7 +29,7 @@ public class Payment {
     @Column(name = "amount", precision = 12, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "txn_code", length = 80)
+    @Column(name = "txn_code", length = 80, columnDefinition = "NVARCHAR(80)")
     private String txnCode;
 
     @Enumerated(EnumType.STRING)

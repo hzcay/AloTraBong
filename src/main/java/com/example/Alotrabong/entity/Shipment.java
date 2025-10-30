@@ -16,15 +16,15 @@ import java.time.LocalDateTime;
 public class Shipment extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "shipment_id", length = 36)
+    @Column(name = "shipment_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String shipmentId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id", columnDefinition = "NVARCHAR(36)")
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shipper_id")
+    @JoinColumn(name = "shipper_id", columnDefinition = "NVARCHAR(36)")
     private Shipper shipper;
 
     @Column(name = "pickup_time")

@@ -22,7 +22,7 @@ public class UserOtp extends Auditable {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "otp_code", length = 10)
+    @Column(name = "otp_code", length = 10, columnDefinition = "NVARCHAR(10)")
     private String otpCode;
 
     @Enumerated(EnumType.STRING)

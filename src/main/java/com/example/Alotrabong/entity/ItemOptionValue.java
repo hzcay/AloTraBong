@@ -22,7 +22,7 @@ public class ItemOptionValue {
     @JoinColumn(name = "option_id")
     private ItemOption option;
 
-    @Column(name = "value_name", length = 80)
+    @Column(name = "value_name", length = 80, columnDefinition = "NVARCHAR(80)")
     private String valueName;
 
     @Column(name = "extra_price", precision = 12, scale = 2)

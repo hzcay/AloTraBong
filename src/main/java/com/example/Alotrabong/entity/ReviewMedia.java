@@ -20,6 +20,6 @@ public class ReviewMedia {
     @JoinColumn(name = "review_id")
     private Review review;
 
-    @Column(name = "media_url", length = 300)
+    @Column(name = "media_url", length = 300, columnDefinition = "NVARCHAR(300)")
     private String mediaUrl;
 }

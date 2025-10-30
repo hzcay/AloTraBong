@@ -46,7 +46,7 @@ public class BranchCommission {
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
-    @Column(name = "note", length = 255)
+    @Column(name = "note", length = 255, columnDefinition = "NVARCHAR(255)")
     private String note;
 
     @Column(name = "is_active", nullable = false)

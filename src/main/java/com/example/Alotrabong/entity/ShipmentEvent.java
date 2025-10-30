@@ -19,13 +19,13 @@ public class ShipmentEvent {
     private Long eventId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shipment_id")
+    @JoinColumn(name = "shipment_id", columnDefinition = "NVARCHAR(36)")
     private Shipment shipment;
 
     @Column(name = "status", columnDefinition = "TINYINT")
     private Integer status; // Mốc trạng thái
 
-    @Column(name = "note", length = 200)
+    @Column(name = "note", length = 200, columnDefinition = "NVARCHAR(200)")
     private String note;
 
     @Column(name = "event_time")

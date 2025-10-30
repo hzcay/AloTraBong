@@ -13,16 +13,16 @@ import lombok.*;
 public class Notification extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "notification_id", length = 36)
+    @Column(name = "notification_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String notificationId;
 
-    @Column(name = "user_id", length = 36)
+    @Column(name = "user_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String userId;
 
-    @Column(name = "title", length = 120)
+    @Column(name = "title", length = 120, columnDefinition = "NVARCHAR(120)")
     private String title;
 
-    @Column(name = "body", length = 300)
+    @Column(name = "body", length = 300, columnDefinition = "NVARCHAR(300)")
     private String body;
 
     @Enumerated(EnumType.STRING)

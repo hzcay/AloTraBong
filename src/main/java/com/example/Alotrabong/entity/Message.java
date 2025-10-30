@@ -15,21 +15,21 @@ import java.time.LocalDateTime;
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "message_id", length = 36)
+    @Column(name = "message_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String messageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "convo_id")
+    @JoinColumn(name = "convo_id", columnDefinition = "NVARCHAR(36)")
     private Conversation conversation;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_user_id")
+    @JoinColumn(name = "sender_user_id", columnDefinition = "NVARCHAR(36)")
     private User sender;
 
-    @Column(name = "content", length = 1000)
+    @Column(name = "content", length = 1000, columnDefinition = "NVARCHAR(1000)")
     private String content;
 
-    @Column(name = "media_url", length = 300)
+    @Column(name = "media_url", length = 300, columnDefinition = "NVARCHAR(300)")
     private String mediaUrl;
 
     @Column(name = "sent_at")

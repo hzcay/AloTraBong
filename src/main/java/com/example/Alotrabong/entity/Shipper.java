@@ -13,7 +13,7 @@ import lombok.*;
 public class Shipper extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "shipper_id", length = 36)
+    @Column(name = "shipper_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String shipperId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -24,7 +24,7 @@ public class Shipper extends Auditable {
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
-    @Column(name = "vehicle_plate", length = 20)
+    @Column(name = "vehicle_plate", length = 20, columnDefinition = "NVARCHAR(20)")
     private String vehiclePlate;
 
     @Column(name = "is_active")

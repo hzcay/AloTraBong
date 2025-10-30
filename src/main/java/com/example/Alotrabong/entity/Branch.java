@@ -25,16 +25,16 @@ public class Branch extends Auditable {
     @Column(name = "branch_name", length = 120)
     private String name;
 
-    @Column(name = "address_line", length = 255)
+    @Column(name = "address_line", length = 255, columnDefinition = "NVARCHAR(255)")
     private String address;
 
-    @Column(name = "phone", length = 20)
+    @Column(name = "phone", length = 20, columnDefinition = "NVARCHAR(20)")
     private String phone;
 
-    @Column(name = "district", length = 100)
+    @Column(name = "district", length = 100, columnDefinition = "NVARCHAR(100)")
     private String district;
 
-    @Column(name = "city", length = 100)
+    @Column(name = "city", length = 100, columnDefinition = "NVARCHAR(100)")
     private String city;
 
     @Column(name = "latitude", precision = 9, scale = 6)
@@ -46,6 +46,6 @@ public class Branch extends Auditable {
     @Column(name = "is_active")
     private Boolean isActive;
 
-    @Column(name = "open_hours", length = 120)
+    @Column(name = "open_hours", length = 120, columnDefinition = "NVARCHAR(120)")
     private String openHours;
 }

@@ -22,13 +22,13 @@ public class AuditLog {
     @JoinColumn(name = "actor_user_id")
     private User actor;
 
-    @Column(name = "action", length = 80)
+    @Column(name = "action", length = 80, columnDefinition = "NVARCHAR(80)")
     private String action;
 
-    @Column(name = "entity", length = 80)
+    @Column(name = "entity", length = 80, columnDefinition = "NVARCHAR(80)")
     private String entity;
 
-    @Column(name = "entity_id", length = 80)
+    @Column(name = "entity_id", length = 80, columnDefinition = "NVARCHAR(80)")
     private String entityId;
 
     @Column(name = "meta_json", columnDefinition = "nvarchar(max)")

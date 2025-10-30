@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "order_item_id", length = 36)
+    @Column(name = "order_item_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String orderItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,7 +26,7 @@ public class OrderItem {
     @JoinColumn(name = "item_id")
     private Item item;
 
-    @Column(name = "item_name", length = 160)
+    @Column(name = "item_name", length = 160, columnDefinition = "NVARCHAR(160)")
     private String itemName; // snapshot
 
     @Column(name = "quantity")
@@ -35,7 +35,7 @@ public class OrderItem {
     @Column(name = "unit_price", precision = 12, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(name = "options_text", length = 400)
+    @Column(name = "options_text", length = 400, columnDefinition = "NVARCHAR(400)")
     private String optionsText; // snapshot
 
     @Column(name = "line_total", precision = 12, scale = 2)

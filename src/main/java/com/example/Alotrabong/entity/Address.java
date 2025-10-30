@@ -22,19 +22,19 @@ public class Address extends Auditable {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "receiver_name", length = 120)
+    @Column(name = "receiver_name", length = 120, columnDefinition = "NVARCHAR(120)")
     private String receiverName;
 
-    @Column(name = "phone", length = 20)
+    @Column(name = "phone", length = 20, columnDefinition = "NVARCHAR(20)")
     private String phone;
 
-    @Column(name = "address_line", length = 255)
+    @Column(name = "address_line", length = 255, columnDefinition = "NVARCHAR(255)")
     private String addressLine;
 
-    @Column(name = "district", length = 100)
+    @Column(name = "district", length = 100, columnDefinition = "NVARCHAR(100)")
     private String district;
 
-    @Column(name = "city", length = 100)
+    @Column(name = "city", length = 100, columnDefinition = "NVARCHAR(100)")
     private String city;
 
     @Column(name = "latitude", precision = 9, scale = 6)

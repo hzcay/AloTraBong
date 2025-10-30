@@ -19,22 +19,22 @@ import java.util.*;
 public class User extends Auditable {
         @Id
         @GeneratedValue(strategy = GenerationType.UUID)
-        @Column(name = "user_id", length = 36)
+        @Column(name = "user_id", length = 36, columnDefinition = "NVARCHAR(36)")
         private String userId;
 
-        @Column(name = "full_name", length = 120)
+        @Column(name = "full_name", length = 120, columnDefinition = "NVARCHAR(120)")
         private String fullName;
 
-        @Column(name = "email", length = 190, unique = true)
+        @Column(name = "email", length = 190, unique = true, columnDefinition = "NVARCHAR(190)")
         private String email;
 
-        @Column(name = "phone", length = 20, unique = true)
+        @Column(name = "phone", length = 20, unique = true, columnDefinition = "NVARCHAR(20)")
         private String phone;
 
-        @Column(name = "password_hash", length = 255)
+        @Column(name = "password_hash", length = 255, columnDefinition = "NVARCHAR(255)")
         private String password;
 
-        @Column(name = "address", length = 500)
+        @Column(name = "address", length = 500, columnDefinition = "NVARCHAR(500)")
         private String address;
 
         // 0: khóa, 1: hoạt động

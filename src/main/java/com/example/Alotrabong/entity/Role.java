@@ -20,6 +20,6 @@ public class Role {
     @Column(name = "role_code", length = 40, nullable = false)
     private RoleCode roleCode;
 
-    @Column(name = "role_name", length = 80)
+    @Column(name = "role_name", length = 80, columnDefinition = "NVARCHAR(80)")
     private String roleName;
 }

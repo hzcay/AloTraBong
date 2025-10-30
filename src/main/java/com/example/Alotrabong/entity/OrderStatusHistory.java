@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class OrderStatusHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "history_id", length = 36)
+    @Column(name = "history_id", length = 36, columnDefinition = "NVARCHAR(36)")
     private String historyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,7 +26,7 @@ public class OrderStatusHistory {
     @Column(name = "status")
     private OrderStatus status;
 
-    @Column(name = "notes", length = 500)
+    @Column(name = "notes", length = 500, columnDefinition = "NVARCHAR(500)")
     private String notes;
 
     @Column(name = "created_at")
