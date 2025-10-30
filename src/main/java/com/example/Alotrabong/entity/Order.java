@@ -31,6 +31,14 @@ public class Order extends Auditable {
     @JoinColumn(name = "address_id")
     private Address addressSnapshot;
 
+    @Builder.Default
+    @Column(name = "discount", precision = 18, scale = 2, nullable = false)
+    private BigDecimal discount = BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(name = "shipping_fee", precision = 18, scale = 2, nullable = false)
+    private BigDecimal shippingFee = BigDecimal.ZERO;
+
     @Column(name = "total_amount", precision = 12, scale = 2)
     private BigDecimal totalAmount;
 

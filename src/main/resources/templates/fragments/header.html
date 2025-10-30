@@ -23,9 +23,6 @@
           <a th:href="@{/user/cart}" class="cart-badge">
             🛒 <b th:text="${cartCount} ?: 0">0</b>
           </a>
-          <a th:href="@{/user/order/history}">Đơn hàng</a>
-          <a th:href="@{/user/addresses}">Địa chỉ</a>
-          <a th:href="@{/user/favorite/list}">Yêu thích</a>
 
           <!-- ACCOUNT -->
           <div
@@ -38,19 +35,19 @@
               type="button"
               id="accountTrigger"
               th:if="${userName != null}"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="accountDropdown"
             >
               <span
                 class="account-avatar"
                 th:text="${#strings.substring((userName?:'U'),0,1)}"
-              >U</span>
+                >U</span
+              >
             </button>
 
             <!-- Nếu chưa đăng nhập -->
-            <a
-              th:href="@{/auth/login}"
-              th:if="${userName == null}"
-              class="login-btn"
-            >
+            <a th:href="@{/auth}" th:if="${userName == null}" class="login-btn">
               Đăng nhập
             </a>
 
@@ -60,9 +57,37 @@
               id="accountDropdown"
               hidden
               th:if="${userName != null}"
+              role="menu"
             >
-              <a th:href="@{/user/profile}" class="dropdown-item">
+              <a
+                th:href="@{/user/profile}"
+                class="dropdown-item"
+                role="menuitem"
+              >
                 Thông tin cá nhân
+              </a>
+
+              <!-- Các mục đã move vào dropdown -->
+              <a
+                th:href="@{/user/order/history}"
+                class="dropdown-item"
+                role="menuitem"
+              >
+                Đơn hàng
+              </a>
+              <a
+                th:href="@{/user/addresses}"
+                class="dropdown-item"
+                role="menuitem"
+              >
+                Địa chỉ
+              </a>
+              <a
+                th:href="@{/user/favorite/list}"
+                class="dropdown-item"
+                role="menuitem"
+              >
+                Yêu thích
               </a>
 
               <hr class="dropdown-sep" />
@@ -73,7 +98,11 @@
                   th:name="${_csrf?.parameterName}"
                   th:value="${_csrf?.token}"
                 />
-                <button type="submit" class="dropdown-item logout">
+                <button
+                  type="submit"
+                  class="dropdown-item logout"
+                  role="menuitem"
+                >
                   Đăng xuất
                 </button>
               </form>
@@ -90,6 +119,7 @@
           display: flex;
           align-items: center;
           font-size: 14px;
+          gap: 8px;
         }
 
         /* nút mở dropdown */
@@ -152,7 +182,7 @@
           position: absolute;
           top: calc(100% + 6px);
           right: 0;
-          min-width: 180px;
+          min-width: 200px;
           background: #fff;
           border: 1px solid #d1d5db; /* xám nhạt */
           border-radius: 6px;
@@ -203,43 +233,63 @@
         (function () {
           const trigger = document.getElementById("accountTrigger");
           const dropdown = document.getElementById("accountDropdown");
+          const accountBox = document.querySelector(".account-box");
 
-          // nếu chưa login thì thymeleaf không render trigger/dropdown => không làm gì
-          if (!trigger || !dropdown) return;
+          if (!trigger || !dropdown || !accountBox) return;
 
           function closeDropdown() {
             if (!dropdown.hasAttribute("hidden")) {
               dropdown.setAttribute("hidden", "");
+              trigger.setAttribute("aria-expanded", "false");
             }
           }
-
-          function toggleDropdown() {
+          function openDropdown() {
             if (dropdown.hasAttribute("hidden")) {
               dropdown.removeAttribute("hidden");
-            } else {
-              dropdown.setAttribute("hidden", "");
+              trigger.setAttribute("aria-expanded", "true");
             }
           }
+          function toggleDropdown() {
+            dropdown.hasAttribute("hidden") ? openDropdown() : closeDropdown();
+          }
 
-          // click avatar -> toggle
+          // Click avatar -> chỉ toggle (không điều hướng)
           trigger.addEventListener("click", function (e) {
+            e.preventDefault();
             e.stopPropagation();
             toggleDropdown();
           });
 
-          // click ra ngoài -> đóng
-          document.addEventListener("click", function (e) {
-            if (!e.target.closest(".account-box")) {
-              closeDropdown();
-            }
+          // Click bên trong dropdown -> không bubble ra ngoài
+          dropdown.addEventListener("click", function (e) {
+            e.stopPropagation();
           });
 
-          // nhấn Esc -> đóng
-          document.addEventListener("keydown", function (e) {
-            if (e.key === "Escape") {
-              closeDropdown();
-            }
+          // Click ra ngoài -> chỉ đóng dropdown
+          document.addEventListener("click", function (e) {
+            if (!e.target.closest(".account-box")) closeDropdown();
           });
+
+          // ESC -> đóng
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") closeDropdown();
+          });
+
+          // Nếu bạn có SPA router (Turbo/htmx/whatever), đừng để nó bắt sự kiện trong account-box
+          accountBox.setAttribute("data-no-spa", "true");
+          document.addEventListener(
+            "click",
+            function (e) {
+              const isSPA = e.target.closest(
+                "[data-turbo], [data-htmx], [data-router]"
+              );
+              if (isSPA && e.target.closest(".account-box")) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            },
+            true
+          );
         })();
       </script>
     </header>

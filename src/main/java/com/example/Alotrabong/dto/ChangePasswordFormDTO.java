@@ -1,23 +1,20 @@
 package com.example.Alotrabong.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Getter @Setter
 @AllArgsConstructor @NoArgsConstructor
-public class UserProfileFormDTO {
+public class ChangePasswordFormDTO {
     @NotBlank
-    @Size(max = 120)
-    private String fullName;
+    private String currentPassword;
 
     @NotBlank
-    @Email
-    @Size(max = 190)
-    private String email;
+    @Size(min = 8, max = 128)
+    private String newPassword;
 
     @NotBlank
-    @Size(max = 20)
-    private String phone;
+    @Size(min = 8, max = 128)
+    private String confirmPassword;
 }

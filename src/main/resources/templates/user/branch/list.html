@@ -15,12 +15,8 @@
         gap: 14px;
         grid-template-columns: repeat(3, minmax(360px, 1fr));
       }
-      @media (max-width: 1200px) {
-        .grid.grid-3 { grid-template-columns: repeat(2, minmax(360px, 1fr)); }
-      }
-      @media (max-width: 780px) {
-        .grid.grid-3 { grid-template-columns: 1fr; }
-      }
+      @media (max-width: 1200px) { .grid.grid-3 { grid-template-columns: repeat(2, minmax(360px, 1fr)); } }
+      @media (max-width: 780px)  { .grid.grid-3 { grid-template-columns: 1fr; } }
 
       /* Card & button spacing */
       .card.pad { padding: 16px 18px; }
@@ -29,6 +25,14 @@
       /* Map styles */
       #branch-map { height: 400px; border-radius: 12px; margin-bottom: 14px; z-index: 1;}
       .leaflet-popup-content { margin: 8px 12px; }
+
+      /* Highlight card khi đổi mặc định */
+      .flash { animation: flashGlow 1.2s ease-out 1; }
+      @keyframes flashGlow {
+        0% { box-shadow: 0 0 0 rgba(34,197,94,0); }
+        30% { box-shadow: 0 0 0 6px rgba(34,197,94,.25); }
+        100% { box-shadow: 0 0 0 rgba(34,197,94,0); }
+      }
     </style>
 
     <section class="section">
@@ -37,8 +41,7 @@
           <h2 class="section-title m-0">Chi nhánh AloTraBong</h2>
 
           <!-- Form lọc -->
-          <form th:action="@{/user/branches}" method="get"
-                class="center" style="gap: 8px; flex-wrap: wrap">
+          <form th:action="@{/user/branches}" method="get" class="center" style="gap: 8px; flex-wrap: wrap">
             <input class="input" type="text" name="q" th:value="${q}" placeholder="Tìm theo tên/địa chỉ..." />
             <select class="select" name="city" th:value="${city}">
               <option value="">Tất cả tỉnh/thành</option>
@@ -77,25 +80,27 @@
             attribution: '&copy; OpenStreetMap'
           }).addTo(map);
 
+          function popupHtml(p) {
+            return `
+              <div style="min-width:220px">
+                <div style="font-weight:700;margin-bottom:4px">
+                  ${p.name} ${p.isActive ? '<span class="tag tag-confirm">Mở cửa</span>' : '<span class="tag tag-cancel">Đóng</span>'}
+                </div>
+                <div style="color:#555">${p.addr ?? ''}</div>
+                <div style="margin:6px 0"><b>${p.openHours ?? '08:00 - 22:00'}</b></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+                  <a class="btn btn-primary" href="/user/product/list?branchId=${p.id}">Xem menu</a>
+                  <a class="btn" target="_blank"
+                     href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">Chỉ đường</a>
+                  <button class="btn set-default-map" data-id="${p.id}">Đặt mặc định</button>
+                </div>
+              </div>`;
+          }
+
           if (points.length > 0) {
-            const group = L.featureGroup(points.map(p => {
-              const popup = `
-                <div style="min-width:220px">
-                  <div style="font-weight:700;margin-bottom:4px">
-                    ${p.name} ${p.isActive ? '<span class="tag tag-confirm">Mở cửa</span>' : '<span class="tag tag-cancel">Đóng</span>'}
-                  </div>
-                  <div style="color:#555">${p.addr ?? ''}</div>
-                  <div style="margin:6px 0"><b>${p.openHours ?? '08:00 - 22:00'}</b></div>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-                    <a class="btn btn-primary" href="/user/product/list?branchId=${p.id}">Xem menu</a>
-                    <a class="btn" target="_blank"
-                       href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">
-                       Chỉ đường
-                    </a>
-                  </div>
-                </div>`;
-              return L.marker([p.lat, p.lng], { title: p.name }).bindPopup(popup);
-            }));
+            const group = L.featureGroup(
+              points.map(p => L.marker([p.lat, p.lng], { title: p.name }).bindPopup(popupHtml(p)))
+            );
             group.addTo(map);
             map.fitBounds(group.getBounds().pad(0.15));
           } else {
@@ -111,7 +116,7 @@
 
         <!-- Grid branches -->
         <div class="grid grid-3" th:if="${!#lists.isEmpty(branches)}">
-          <article class="card pad" th:each="b : ${branches}">
+          <article class="card pad" th:each="b : ${branches}" th:attr="data-branch-id=${b.branchId}">
             <div class="center-between mb-1">
               <h3 class="m-0 bold" th:text="${b.name}">AloTraBong - Quận 1</h3>
               <span th:classappend="${#bools.isTrue(b.isActive)} ? 'tag tag-confirm' : 'tag tag-cancel'"
@@ -140,15 +145,25 @@
             <div class="center" style="gap: 8px; justify-content: flex-start; margin-top: 10px">
               <a th:href="@{'/user/product/list'(branchId=${b.branchId})}" class="btn btn-primary">Xem menu</a>
 
-              <form th:action="@{'/user/branch/' + ${b.branchId} + '/set-default'}" method="post">
+              <!-- Form thật (có CSRF) + JS intercept để AJAX trước, fail thì submit -->
+              <form th:action="@{'/user/branch/' + ${b.branchId} + '/set-default'}"
+                    method="post"
+                    class="set-default-form"
+                    th:attr="data-id=${b.branchId}"
+                    style="display:inline-flex; gap:8px; align-items:center">
                 <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}"/>
-                <button class="btn" type="submit" th:disabled="${#bools.isTrue(b.isDefault)}">Đặt làm mặc định</button>
+                <button class="btn set-default-btn"
+                        type="submit"
+                        th:disabled="${#bools.isTrue(b.isDefault)}"
+                        th:text="${#bools.isTrue(b.isDefault) ? 'Đang là mặc định' : 'Đặt làm mặc định'}">
+                  Đặt làm mặc định
+                </button>
               </form>
 
               <a th:href="@{'/user/chat/room/' + ${b.branchId}}" class="btn">Chat</a>
             </div>
 
-            <div class="badge" th:if="${#bools.isTrue(b.isDefault)}" style="margin-top: 8px">
+            <div class="badge is-default-badge" th:if="${#bools.isTrue(b.isDefault)}" style="margin-top: 8px">
               Chi nhánh mặc định
             </div>
           </article>
@@ -164,5 +179,97 @@
         </div>
       </div>
     </section>
+
+    <!-- JS: AJAX set-default cho card + map (có fallback submit form) -->
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+      // CSRF metas đến từ fragments/header.html
+      const csrfParam  = document.querySelector('meta[name="_csrf_parameter"]')?.content;
+      const csrfToken  = document.querySelector('meta[name="_csrf_token"]')?.content;
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+      async function postSetDefault(id) {
+        const fd = new FormData();
+        if (csrfParam && csrfToken) fd.append(csrfParam, csrfToken);
+
+        const headers = { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' };
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+        const res = await fetch(`/user/branch/${id}/set-default`, {
+          method: 'POST',
+          headers,
+          body: fd,
+          credentials: 'same-origin'
+        });
+
+        let ok = false, defaultBranchId = id;
+        try {
+          const json = await res.json();
+          ok = !!json.ok; defaultBranchId = json.defaultBranchId || id;
+        } catch (_) {
+          ok = res.ok; // server redirect vẫn coi là OK
+        }
+        if (!ok) throw new Error('failed');
+        return defaultBranchId;
+      }
+
+      function refreshUI(defaultId) {
+        document.querySelectorAll('.set-default-btn').forEach(b => {
+          const form = b.closest('.set-default-form');
+          const bid  = form?.getAttribute('data-id');
+          const isDefault = (bid === defaultId);
+          b.disabled = isDefault;
+          b.textContent = isDefault ? 'Đang là mặc định' : 'Đặt làm mặc định';
+        });
+        document.querySelectorAll('.is-default-badge').forEach(x => x.remove());
+
+        const card = document.querySelector(`[data-branch-id="${defaultId}"]`);
+        if (card) {
+          const badge = document.createElement('div');
+          badge.className = 'badge is-default-badge';
+          badge.style.marginTop = '8px';
+          badge.textContent = 'Chi nhánh mặc định';
+          card.appendChild(badge);
+          card.classList.add('flash');
+          setTimeout(() => card.classList.remove('flash'), 1200);
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      // Intercept submit form: thử AJAX trước, nếu fail thì submit thật (fallback)
+      document.addEventListener('submit', async (e) => {
+        const form = e.target.closest('.set-default-form');
+        if (!form) return;
+
+        e.preventDefault();
+        const id  = form.getAttribute('data-id');
+        const btn = form.querySelector('.set-default-btn');
+        btn.disabled = true;
+
+        try {
+          const defId = await postSetDefault(id);
+          refreshUI(defId);
+        } catch (err) {
+          // AJAX toang → submit form để server redirect, vẫn set được
+          form.submit();
+        }
+      });
+
+      // Click trong popup map (không có form nên chỉ AJAX)
+      document.addEventListener('click', async (e) => {
+        const b = e.target.closest('.set-default-map');
+        if (!b) return;
+        const id = b.getAttribute('data-id');
+        b.disabled = true;
+        try {
+          const defId = await postSetDefault(id);
+          refreshUI(defId);
+        } catch (err) {
+          b.disabled = false;
+          alert('Không đặt được chi nhánh từ bản đồ.');
+        }
+      });
+    /*]]>*/
+    </script>
   </div>
 </html>

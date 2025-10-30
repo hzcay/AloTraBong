@@ -170,15 +170,15 @@
               <b th:text="${@vnd.format(order.subtotal)}">0 đ</b>
             </div>
 
+            <div class="center-between"
+                th:if="${order.discount != null and order.discount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+              <span>Giảm giá</span>
+              <b th:text="'-' + ${@vnd.format(order.discount)}">-0 đ</b>
+            </div>
+
             <div class="center-between" th:if="${order.shippingFee != null}">
               <span>Phí giao hàng</span>
               <b th:text="${@vnd.format(order.shippingFee)}">15.000 đ</b>
-            </div>
-
-            <div class="center-between"
-                 th:if="${order.discount != null && order.discount != 0}">
-              <span>Giảm giá</span>
-              <b th:text="'-' + ${@vnd.format(order.discount)}">-0 đ</b>
             </div>
 
             <div class="center-between"

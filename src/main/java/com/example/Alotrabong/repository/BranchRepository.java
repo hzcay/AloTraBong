@@ -15,8 +15,10 @@ public interface BranchRepository extends JpaRepository<Branch, String> {
     Optional<Branch> findByBranchCodeIgnoreCase(String branchCode);
 
     Optional<Branch> findFirstByIsActiveTrueOrderByCreatedAtAsc();
-    
+
+    List<Branch> findByCityAndIsActiveTrue(String city);
+
     List<Branch> findByIsActiveTrue();
-    
+
     long countByIsActiveTrue();
 }
