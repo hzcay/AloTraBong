@@ -62,25 +62,35 @@
     let sub = null;
 
     function connect(){
-      if(stomp) return;
+      if(stomp && stomp.connected) return;
       const sock = new SockJS('/ws');
       stomp = Stomp.over(sock);
       stomp.debug = (s)=>console.log('[STOMP]', s);
       stomp.connect({}, function(){
-        // ready
+        console.log('STOMP connected');
       }, (e)=>console.error('CONNECT error', e));
     }
 
     function subscribe(convoId){
       if(!stomp) connect();
       if(sub) { sub.unsubscribe(); sub = null; }
-      sub = stomp.subscribe('/topic/conversations.'+convoId, function(frame){
-        const msg = JSON.parse(frame.body);
-        // Chỉ hiển thị tin của đối phương; tin của mình đã hiển thị ngay khi gửi
-        if(!msg.senderUserId || msg.senderUserId !== window.currentUserId){
-          appendMessage(msg.senderName||'Khách', msg.content||'', false);
+      // Wait for connection to be established
+      const checkAndSubscribe = () => {
+        if(stomp && stomp.connected) {
+          sub = stomp.subscribe('/topic/conversations.'+convoId, function(frame){
+            const msg = JSON.parse(frame.body);
+            console.log('Received message:', msg);
+            // Chỉ hiển thị tin của đối phương; tin của mình đã hiển thị ngay khi gửi
+            if(!msg.senderUserId || msg.senderUserId !== window.currentUserId){
+              appendMessage(msg.senderName||'Khách', msg.content||'', false);
+            }
+          }, (e)=>console.error('SUB error', e));
+          console.log('Subscribed to /topic/conversations.'+convoId);
+        } else {
+          setTimeout(checkAndSubscribe, 100);
         }
-      }, (e)=>console.error('SUB error', e));
+      };
+      checkAndSubscribe();
     }
 
     function appendMessage(sender, content, mine){
@@ -100,16 +110,18 @@
       fetch('/api/chat/conversations/branch?branchId='+encodeURIComponent(branchId))
         .then(r=>r.json())
         .then(list=>{
+          console.log('Loaded conversations:', list);
           listEl.innerHTML='';
           list.forEach(c=>{
             const item = document.createElement('div');
             item.className='chat-item';
-            item.textContent = 'Khách: ' + (c.user?.fullName || c.user?.email || c.user?.userId);
+            const displayName = c.userFullName || c.userEmail || c.userId || 'Khách không tên';
+            item.textContent = 'Khách: ' + displayName;
             item.onclick = function(){
               document.querySelectorAll('.chat-item').forEach(x=>x.classList.remove('active'));
               item.classList.add('active');
               currentConvo = c.convoId;
-              headerEl.textContent = 'Phòng: ' + currentConvo;
+              headerEl.textContent = 'Phòng: ' + displayName;
               messagesEl.innerHTML='';
               subscribe(currentConvo);
               // load history

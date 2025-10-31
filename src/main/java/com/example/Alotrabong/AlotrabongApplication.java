@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@EnableAsync
+@EnableAsync																
 @EnableJpaAuditing
 public class AlotrabongApplication {
 

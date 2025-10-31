@@ -27,22 +27,7 @@
 
         <!-- Messages -->
         <div id="chat-scroll" style="padding:12px;overflow:auto;display:flex;flex-direction:column;gap:8px;background:#fff">
-          <div th:each="m : ${messages}">
-            <!-- my message -->
-            <div th:if="${m.sender == 'USER'}" style="display:flex;justify-content:flex-end">
-              <div class="card pad" style="max-width:70%;background:#fff8f1;border-color:#fed7aa">
-                <div th:text="${m.text}">...</div>
-                <div class="text-muted" style="font-size:12px" th:text="${#temporals.format(m.at,'HH:mm')}">--:--</div>
-              </div>
-            </div>
-            <!-- branch message -->
-            <div th:if="${m.sender == 'BRANCH'}" style="display:flex;justify-content:flex-start">
-              <div class="card pad" style="max-width:70%">
-                <div th:text="${m.text}">...</div>
-                <div class="text-muted" style="font-size:12px" th:text="${#temporals.format(m.at,'HH:mm')}">--:--</div>
-              </div>
-            </div>
-          </div>
+          <!-- Messages will be loaded dynamically via JavaScript -->
         </div>
 
         <!-- Composer -->
@@ -99,20 +84,28 @@
     }
 
     function connect(){
+      if(stompClient && stompClient.connected) return;
       const socket = new SockJS('/ws');
       stompClient = Stomp.over(socket);
       stompClient.debug = (s)=>console.log('[STOMP]', s);
       stompClient.connect({}, function(){
         console.log('STOMP connected');
-        stompClient.subscribe('/topic/conversations.'+convoId, function(frame){
+      }, (e)=>console.error('CONNECT error', e));
+    }
+    
+    function subscribe(){
+      if(!stompClient || !stompClient.connected || !convoId) return;
+      if(!window.subscription) {
+        window.subscription = stompClient.subscribe('/topic/conversations.'+convoId, function(frame){
           const msg = JSON.parse(frame.body);
+          console.log('Received message:', msg);
           // Chỉ hiển thị tin nhắn từ đối phương, không hiển thị tin nhắn của mình
-          // Tin nhắn của mình đã được hiển thị ngay khi gửi
           if(msg.senderUserId && msg.senderUserId !== window.currentUserId) {
             appendMessage(msg.senderName||'Chi nhánh', msg.content||'', false);
           }
         }, (e)=>console.error('SUB error', e));
-      }, (e)=>console.error('CONNECT error', e));
+        console.log('Subscribed to /topic/conversations.'+convoId);
+      }
     }
 
     // CSRF helpers (avoid optional chaining for compatibility)
@@ -133,6 +126,8 @@
         convoId = d.convoId; 
         console.log('Convo created', convoId);
         connect();
+        // Subscribe after a small delay to ensure STOMP is connected
+        setTimeout(subscribe, 500);
         // Load history
         return fetch(`/api/chat/conversations/${convoId}/messages?page=0&size=30`, { credentials:'same-origin' });
       })

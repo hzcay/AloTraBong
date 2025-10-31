@@ -7,6 +7,7 @@ import com.example.Alotrabong.entity.User;
 import com.example.Alotrabong.entity.RoleCode;
 import com.example.Alotrabong.exception.ResourceNotFoundException;
 import com.example.Alotrabong.dto.ChatMessageDTO;
+import com.example.Alotrabong.dto.ConversationDTO;
 import com.example.Alotrabong.repository.BranchRepository;
 import com.example.Alotrabong.repository.ConversationRepository;
 import com.example.Alotrabong.repository.MessageRepository;
@@ -22,7 +23,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +54,8 @@ public class ChatRestController {
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
 
         // Tìm cuộc trò chuyện mở hiện có
-        List<Conversation> mine = conversationRepository.findByUser_UserIdOrderByCreatedAtDesc(user.getUserId());
-        Conversation convo = mine.stream()
-                .filter(c -> c.getBranch() != null && branchId.equals(c.getBranch().getBranchId()) && (c.getStatus() == null || c.getStatus() == 0))
-                .findFirst()
+        Conversation convo = conversationRepository
+                .findByUser_UserIdAndBranch_BranchIdAndStatus(user.getUserId(), branchId, (byte)0)
                 .orElse(null);
         if (convo == null) {
             convo = Conversation.builder()
@@ -94,9 +92,28 @@ public class ChatRestController {
 
     @GetMapping("/conversations/branch")
     @PreAuthorize("hasRole('BRANCH_MANAGER')")
-    public ResponseEntity<List<Conversation>> getBranchOpenConversations(@RequestParam String branchId) {
+    public ResponseEntity<List<ConversationDTO>> getBranchOpenConversations(@RequestParam String branchId) {
         List<Conversation> list = conversationRepository.findByBranch_BranchIdAndStatusOrderByCreatedAtDesc(branchId, (byte)0);
-        return ResponseEntity.ok(list);
+        log.info("Found {} conversations for branch {}", list.size(), branchId);
+        
+        List<ConversationDTO> dtos = list.stream().map(c -> {
+            User user = c.getUser();
+            Branch branch = c.getBranch();
+            return ConversationDTO.builder()
+                    .convoId(c.getConvoId())
+                    .userId(user != null ? user.getUserId() : null)
+                    .userEmail(user != null ? user.getEmail() : null)
+                    .userFullName(user != null ? user.getFullName() : null)
+                    .branchId(branch != null ? branch.getBranchId() : null)
+                    .branchName(branch != null ? branch.getName() : null)
+                    .status(c.getStatus())
+                    .closedAt(c.getClosedAt())
+                    .createdAt(c.getCreatedAt())
+                    .updatedAt(c.getUpdatedAt())
+                    .build();
+        }).collect(java.util.stream.Collectors.toList());
+        
+        return ResponseEntity.ok(dtos);
     }
 
     @PostMapping("/conversations/{convoId}/messages")

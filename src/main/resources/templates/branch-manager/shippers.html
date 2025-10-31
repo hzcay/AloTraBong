@@ -1242,19 +1242,19 @@
                                             <h5><i class="fas fa-chart-line"></i> Thống kê giao hàng</h5>
                                             <div class="stats-grid-small">
                                                 <div class="stat-item">
-                                                    <div class="stat-number">${shipper.totalDeliveries || 0}</div>
+                                                    <div class="stat-number" id="stat-total-deliveries">${shipper.totalDeliveries || 0}</div>
                                                     <div class="stat-label">Tổng đơn</div>
                                                 </div>
                                                 <div class="stat-item">
-                                                    <div class="stat-number">${shipper.currentDeliveries || 0}</div>
+                                                    <div class="stat-number" id="stat-current-deliveries">${shipper.currentDeliveries || 0}</div>
                                                     <div class="stat-label">Đang giao</div>
                                                 </div>
                                                 <div class="stat-item">
-                                                    <div class="stat-number">${shipper.successfulDeliveries || 0}</div>
+                                                    <div class="stat-number" id="stat-successful-deliveries">${shipper.successfulDeliveries || 0}</div>
                                                     <div class="stat-label">Thành công</div>
                                                 </div>
                                                 <div class="stat-item">
-                                                    <div class="stat-number">${shipper.successRate ? shipper.successRate.toFixed(1) : 0}%</div>
+                                                    <div class="stat-number" id="stat-success-rate">${shipper.successRate ? shipper.successRate.toFixed(1) : 0}%</div>
                                                     <div class="stat-label">Tỷ lệ thành công</div>
                                                 </div>
                                             </div>
@@ -1296,6 +1296,9 @@
             // Show modal
             const modal = new bootstrap.Modal(document.getElementById('shipperDetailModal'));
             modal.show();
+            
+            // Refresh stats from API for most accurate numbers
+            loadShipperStats(shipper.shipperId);
         }
 
         // Close shipper detail modal
@@ -1311,6 +1314,26 @@
                 }, 300);
             }
         }
+        
+        async function loadShipperStats(shipperId) {
+            try {
+                const res = await fetch(`/branch-manager/api/shippers/${shipperId}/stats`, {
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                if (!res.ok) return;
+                const stats = await res.json();
+                const $ = (id) => document.getElementById(id);
+                if ($('stat-total-deliveries')) $('stat-total-deliveries').textContent = stats.totalDeliveries ?? 0;
+                if ($('stat-current-deliveries')) $('stat-current-deliveries').textContent = stats.currentDeliveries ?? 0;
+                if ($('stat-successful-deliveries')) $('stat-successful-deliveries').textContent = stats.successfulDeliveries ?? 0;
+                if ($('stat-success-rate')) {
+                    // Use successRate from API (already calculated correctly)
+                    $('stat-success-rate').textContent = `${(stats.successRate || 0).toFixed(1)}%`;
+                }
+            } catch (e) {
+                console.debug('Could not refresh shipper stats', e);
+            }
+        }
 
         // View shipper delivery history
         async function viewShipperHistory(shipperId) {
@@ -1324,7 +1347,32 @@
                 if (!response.ok) throw new Error('Network response was not ok');
                 
                 const shipments = await response.json();
-                showShipperHistoryModal(shipperId, shipments);
+                
+                // Load order details for each shipment
+                const shipmentsWithOrders = await Promise.all(shipments.map(async (shipment) => {
+                    try {
+                        const orderResponse = await fetch(`/branch-manager/api/orders/${shipment.orderId}`, {
+                            headers: {
+                                [csrfHeader]: csrfToken
+                            }
+                        });
+                        if (orderResponse.ok) {
+                            const orderDetail = await orderResponse.json();
+                            return { 
+                                ...shipment, 
+                                orderItems: orderDetail.orderItems || [],
+                                orderTotal: orderDetail.totalAmount || 0,
+                                customerName: orderDetail.customerName || '',
+                                deliveryAddress: orderDetail.deliveryAddress || ''
+                            };
+                        }
+                    } catch (e) {
+                        console.error('Error loading order details', e);
+                    }
+                    return { ...shipment, orderItems: [], orderTotal: 0 };
+                }));
+                
+                showShipperHistoryModal(shipperId, shipmentsWithOrders);
                 
             } catch (error) {
                 console.error('Error loading shipper history:', error);
@@ -1343,34 +1391,79 @@
                                 <button type="button" class="close" onclick="closeShipperHistoryModal()">&times;</button>
                             </div>
                             <div class="modal-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Mã đơn hàng</th>
-                                                <th>Trạng thái</th>
-                                                <th>Thời gian nhận</th>
-                                                <th>Thời gian giao</th>
-                                                <th>Khoảng cách</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${shipments.length > 0 ? shipments.map(shipment => `
-                                                <tr>
-                                                    <td><strong>${shipment.orderId}</strong></td>
-                                                    <td>
-                                                        <span class="badge ${getShipmentStatusClass(shipment.status)}">
-                                                            ${shipment.statusText || getStatusText(shipment.status)}
-                                                        </span>
-                                                    </td>
-                                                    <td>${shipment.pickupTime ? new Date(shipment.pickupTime).toLocaleString('vi-VN') : 'N/A'}</td>
-                                                    <td>${shipment.deliveredTime ? new Date(shipment.deliveredTime).toLocaleString('vi-VN') : 'N/A'}</td>
-                                                    <td>${shipment.distanceKm ? shipment.distanceKm + ' km' : 'N/A'}</td>
-                                                </tr>
-                                            `).join('') : '<tr><td colspan="5" class="text-center">Chưa có lịch sử giao hàng</td></tr>'}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                ${shipments.length > 0 ? shipments.map((shipment, index) => `
+                                    <div class="card mb-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center" 
+                                             onclick="toggleOrderItems('order-items-${index}')"
+                                             style="cursor: pointer;">
+                                            <div>
+                                                <strong>Đơn hàng: ${shipment.orderId}</strong>
+                                                <span class="badge ${getShipmentStatusClass(shipment.status)} ms-2">
+                                                    ${shipment.statusText || getStatusText(shipment.status)}
+                                                </span>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="text-muted me-2">Tổng:</span>
+                                                <strong>${formatMoney(shipment.orderTotal || 0)}</strong>
+                                                <i class="fas fa-chevron-down ms-2" id="chevron-${index}"></i>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-2">
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Khách hàng</small>
+                                                    <div>${shipment.customerName || '—'}</div>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <small class="text-muted">Địa chỉ giao</small>
+                                                    <div>${shipment.deliveryAddress || '—'}</div>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Thời gian nhận</small>
+                                                    <div>${formatDateTime(shipment.pickupTime, 'Chưa nhận')}</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Thời gian giao</small>
+                                                    <div>${formatDateTime(shipment.deliveredTime, 'Chưa giao')}</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Khoảng cách</small>
+                                                    <div>${shipment.distanceKm ? shipment.distanceKm + ' km' : '—'}</div>
+                                                </div>
+                                            </div>
+                                            <div id="order-items-${index}" style="display: none;">
+                                                ${shipment.orderItems && shipment.orderItems.length > 0 ? `
+                                                    <hr>
+                                                    <h6 class="mb-3">Sản phẩm đã giao</h6>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Tên món</th>
+                                                                    <th>Số lượng</th>
+                                                                    <th>Đơn giá</th>
+                                                                    <th>Thành tiền</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                ${shipment.orderItems.map(item => `
+                                                                    <tr>
+                                                                        <td>${item.itemName}</td>
+                                                                        <td>${item.quantity}</td>
+                                                                        <td>${formatMoney(item.unitPrice)}</td>
+                                                                        <td>${formatMoney(item.totalPrice)}</td>
+                                                                    </tr>
+                                                                `).join('')}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                ` : '<p class="text-muted mb-0">Không có thông tin sản phẩm</p>'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('') : '<p class="text-center text-muted">Chưa có lịch sử giao hàng</p>'}
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" onclick="closeShipperHistoryModal()">Đóng</button>
@@ -1392,6 +1485,34 @@
             // Show modal
             const modal = new bootstrap.Modal(document.getElementById('shipperHistoryModal'));
             modal.show();
+        }
+        
+        // Toggle order items visibility
+        function toggleOrderItems(itemId) {
+            const itemsDiv = document.getElementById(itemId);
+            const index = itemId.split('-')[2];
+            const chevron = document.getElementById(`chevron-${index}`);
+            
+            if (itemsDiv.style.display === 'none') {
+                itemsDiv.style.display = 'block';
+                chevron.classList.remove('fa-chevron-down');
+                chevron.classList.add('fa-chevron-up');
+            } else {
+                itemsDiv.style.display = 'none';
+                chevron.classList.remove('fa-chevron-up');
+                chevron.classList.add('fa-chevron-down');
+            }
+        }
+        
+        function formatDateTime(value, fallback = '—') {
+            try {
+                if (!value) return fallback;
+                const d = new Date(value);
+                if (isNaN(d.getTime())) return fallback;
+                return d.toLocaleString('vi-VN');
+            } catch (_) {
+                return fallback;
+            }
         }
 
         // Close shipper history modal
@@ -1558,6 +1679,13 @@
                     notification.remove();
                 }
             }, 5000);
+        }
+        
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
         }
     </script>
     </div>
