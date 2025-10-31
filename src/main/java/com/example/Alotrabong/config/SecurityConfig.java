@@ -36,7 +36,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**", "/ws/**"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers(
+        "/h2-console/**",
+        "/api/**",
+        "/ws/**",
+        "/shipper/**" // 👈 thêm dòng này
+))
+
                 .cors(Customizer.withDefaults())
                 .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .authorizeHttpRequests(auth -> auth
@@ -54,6 +60,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/docs/**",
+                                "/api/orders/**",
+                                "/api/orders",
+                                "/shipper/shipments/**",
                                 "/test/**",
                                 "/ws/**")
                         .permitAll()
@@ -96,10 +105,9 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/cart/**",
-                                "/api/orders/**",
                                 "/api/users/profile")
                         .hasRole("USER")
-                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER","SHIPPER")
 
                         .anyRequest().authenticated())
                 .formLogin(login -> login

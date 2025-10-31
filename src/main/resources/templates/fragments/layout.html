@@ -39,6 +39,67 @@
           }
         });
       });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        window.handleConfirmReceived = async function (btn) {
+          const orderCode = btn.getAttribute("data-code");
+          const csrfToken =
+            document.querySelector('meta[name="_csrf"]').content;
+          const csrfHeader = document.querySelector(
+            'meta[name="_csrf_header"]'
+          ).content;
+
+          if (!orderCode) {
+            alert("Không xác định được mã đơn hàng!");
+            return;
+          }
+
+          try {
+            const res = await fetch(
+              `/user/order/confirm-received/${orderCode}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  [csrfHeader]: csrfToken,
+                },
+              }
+            );
+
+            if (res.ok) {
+              const modal = document.getElementById("confirmModal");
+              const yesBtn = document.getElementById("yesBtn");
+              const noBtn = document.getElementById("noBtn");
+
+              modal.classList.remove("hidden");
+
+              yesBtn.onclick = () => {
+                modal.classList.add("hidden");
+                const firstItemElem = btn
+                  .closest("article")
+                  ?.querySelector("[data-item-id]");
+                const itemId = firstItemElem?.getAttribute("data-item-id");
+                if (itemId) {
+                  window.location.href = `/user/review/write?itemId=${itemId}&orderCode=${orderCode}`;
+                } else {
+                  window.location.href = `/user/review/write?orderCode=${orderCode}`;
+                }
+              };
+
+              noBtn.onclick = () => {
+                modal.classList.add("hidden");
+                window.location.reload();
+              };
+            } else {
+              const msg = await res.text();
+              alert("Lỗi khi xác nhận đơn: " + msg);
+            }
+          } catch (err) {
+            console.error(err);
+            alert("Không thể kết nối tới server.");
+          }
+        };
+      });
     </script>
   </body>
 </html>

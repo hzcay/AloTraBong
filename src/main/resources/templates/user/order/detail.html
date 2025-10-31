@@ -6,6 +6,27 @@
 
   <section class="section">
     <div class="container" style="max-width:800px;margin:auto">
+      <!-- ===== STYLE CHO STATUS TAG ===== -->
+      <style>
+        .tag {
+          display: inline-block;
+          padding: 4px 10px;
+          border-radius: 8px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          text-transform: none;
+          letter-spacing: 0.3px;
+        }
+        .tag-pending { background: #fef3c7; color: #92400e; }
+        .tag-confirm { background: #dbeafe; color: #1e40af; }
+        .tag-prep    { background: #fde68a; color: #78350f; }
+        .tag-ready   { background: #dcfce7; color: #166534; }
+        .tag-ship    { background: #e0f2fe; color: #075985; }
+        .tag-done    { background: #bbf7d0; color: #14532d; }
+        .tag-cancel  { background: #fee2e2; color: #991b1b; }
+        .tag-refund  { background: #fef9c3; color: #854d0e; }
+        .tag-other   { background: #e5e7eb; color: #374151; }
+      </style>
 
       <!-- TH: lỗi / không tìm thấy đơn / không có quyền -->
       <div th:if="${error != null}"
@@ -58,6 +79,12 @@
               <div th:if="${order.paymentMethod != null}">
                 <b>Thanh toán:</b>
                 <span th:text="${order.paymentMethod}">Tiền mặt</span>
+                <span th:if="${order.paymentStatus != null}"
+                      class="payment-status"
+                      th:classappend="${order.paymentStatus == 'PAID'} ? 'paid' : 'unpaid'"
+                      th:text="'(' + ${order.paymentStatus} + ')'">
+                  (UNPAID)
+                </span>
               </div>
             </div>
 
@@ -72,6 +99,7 @@
                 <div th:case="'READY'"        class="tag tag-ready">Sẵn sàng lấy</div>
                 <div th:case="'DELIVERING'"   class="tag tag-ship">Đang giao</div>
                 <div th:case="'DELIVERED'"    class="tag tag-done">Đã giao</div>
+                <div th:case="'RECEIVED'"    class="tag tag-done">Đã nhận</div>
                 <div th:case="'CANCELLED'"    class="tag tag-cancel">Đã hủy</div>
                 <div th:case="'REFUNDED'"     class="tag tag-refund">Hoàn tiền</div>
                 <div th:case="*"

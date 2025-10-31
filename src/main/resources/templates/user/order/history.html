@@ -1,197 +1,238 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="vi"
-      th:replace="~{fragments/layout :: layout(~{::content}, 'Lịch sử đơn hàng')}">
-<div th:fragment="content">
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  lang="vi"
+  th:replace="~{fragments/layout :: layout(~{::content}, 'Lịch sử đơn hàng')}"
+>
+  <div th:fragment="content">
+    <section class="section">
+      <div class="container">
+        <!-- ====== HEADER BỘ LỌC ====== -->
+        <header class="section-head">
+          <h2 class="section-title m-0">Lịch sử đơn hàng</h2>
 
-  <section class="section">
-    <div class="container">
+          <form
+            th:action="@{/user/order/history}"
+            method="get"
+            class="center"
+            style="gap: 8px; flex-wrap: wrap"
+          >
+            <select class="select" name="status" th:value="${status}">
+              <option value="">Tất cả trạng thái</option>
+              <option value="PENDING" th:selected="${status=='PENDING'}">Chờ xác nhận</option>
+              <option value="CONFIRMED" th:selected="${status=='CONFIRMED'}">Đã xác nhận</option>
+              <option value="PREPARING" th:selected="${status=='PREPARING'}">Đang làm món</option>
+              <option value="READY" th:selected="${status=='READY'}">Sẵn sàng lấy</option>
+              <option value="DELIVERING" th:selected="${status=='DELIVERING'}">Đang giao</option>
+              <option value="DELIVERED" th:selected="${status=='DELIVERED'}">Đã giao</option>
+              <option value="RECEIVED" th:selected="${status=='RECEIVED'}">Đã nhận</option>
+              <option value="CANCELLED" th:selected="${status=='CANCELLED'}">Đã hủy</option>
+              <option value="REFUNDED" th:selected="${status=='REFUNDED'}">Hoàn tiền</option>
+            </select>
 
-      <header class="section-head">
-        <h2 class="section-title m-0">Lịch sử đơn hàng</h2>
+            <input class="input" type="date" name="from" th:value="${from}" />
+            <input class="input" type="date" name="to" th:value="${to}" />
+            <button class="btn" type="submit">Lọc</button>
+            <a class="btn" th:href="@{/user/order/history}">Xóa lọc</a>
+          </form>
+        </header>
 
-        <!-- Bộ lọc trạng thái + thời gian -->
-        <form th:action="@{/user/order/history}"
-              method="get"
-              class="center"
-              style="gap:8px;flex-wrap:wrap">
+        <!-- ====== STATUS TAGS STYLE ====== -->
+        <style>
+          .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0.3px;
+          }
+          .tag-pending {
+            background: #fef3c7;
+            color: #92400e;
+          }
+          .tag-confirm {
+            background: #dbeafe;
+            color: #1e40af;
+          }
+          .tag-prep {
+            background: #fde68a;
+            color: #78350f;
+          }
+          .tag-ready {
+            background: #dcfce7;
+            color: #166534;
+          }
+          .tag-ship {
+            background: #e0f2fe;
+            color: #075985;
+          }
+          .tag-done {
+            background: #bbf7d0;
+            color: #14532d;
+          }
+          .tag-cancel {
+            background: #fee2e2;
+            color: #991b1b;
+          }
+          .tag-refund {
+            background: #fef9c3;
+            color: #854d0e;
+          }
+          .tag-other {
+            background: #e5e7eb;
+            color: #374151;
+          }
 
-          <select class="select" name="status" th:value="${status}">
-            <option value="">Tất cả trạng thái</option>
+          .btn-confirm {
+            transition: background 0.15s ease;
+          }
+          .btn-confirm:hover {
+            background: #15803d !important;
+          }
 
-            <option value="PENDING"     th:selected="${status=='PENDING'}">Chờ xác nhận</option>
-            <option value="CONFIRMED"   th:selected="${status=='CONFIRMED'}">Đã xác nhận</option>
-            <option value="PREPARING"   th:selected="${status=='PREPARING'}">Đang làm món</option>
-            <option value="READY"       th:selected="${status=='READY'}">Sẵn sàng lấy</option>
-            <option value="DELIVERING"  th:selected="${status=='DELIVERING'}">Đang giao</option>
-            <option value="DELIVERED"   th:selected="${status=='DELIVERED'}">Đã giao</option>
-            <option value="CANCELLED"   th:selected="${status=='CANCELLED'}">Đã hủy</option>
-            <option value="REFUNDED"    th:selected="${status=='REFUNDED'}">Hoàn tiền</option>
-          </select>
+          /* Modal popup */
+          .modal {
+            position: fixed !important;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            width: 100vw;
+            height: 100vh;
+          }
+          .hidden {
+            display: none;
+          }
+          .modal-content {
+            animation: zoomIn 0.25s ease;
+          }
+          @keyframes zoomIn {
+            from {
+              transform: scale(0.8);
+              opacity: 0;
+            }
+            to {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+        </style>
 
-          <input class="input" type="date" name="from" th:value="${from}">
-          <input class="input" type="date" name="to" th:value="${to}">
-          <button class="btn" type="submit">Lọc</button>
+        <!-- ====== KHÔNG CÓ ĐƠN ====== -->
+        <div th:if="${#lists.isEmpty(page?.content)}" class="card pad text-muted">
+          Chưa có đơn nào. <a th:href="@{/menu}">Đặt món ngay →</a>
+        </div>
 
-          <!-- reset filter -->
-          <a class="btn" th:href="@{/user/order/history}">Xóa lọc</a>
-        </form>
-      </header>
+        <!-- ====== DANH SÁCH ĐƠN ====== -->
+        <div
+          class="grid"
+          style="gap: 12px"
+          th:if="${!#lists.isEmpty(page?.content)}"
+        >
+          <article class="card pad" th:each="o : ${page.content}">
+            <!-- Header -->
+            <div class="center-between mb-1">
+              <div class="center" style="gap: 12px; justify-content: flex-start">
+                <b>#<span th:text="${o.code}">ALB12345</span></b>
+                <span class="text-muted"
+                      th:text="${#temporals.format(o.createdAt,'dd/MM/yyyy HH:mm')}">
+                  25/10/2025 12:00
+                </span>
+                <span class="text-muted">•</span>
+                <span class="text-muted" th:text="${o.branchName}">Chi nhánh X</span>
+              </div>
 
-      <!-- Thông báo lỗi user (nếu có) -->
-      <div th:if="${error != null}"
-           class="card pad"
-           style="border:1px solid var(--line); background:#fff3cd; color:#664d03;">
-        <b th:text="${error}">Không xác định được người dùng.</b>
-      </div>
-
-      <!-- Trạng thái rỗng: chưa có đơn -->
-      <div th:if="${#lists.isEmpty(page?.content)}"
-           class="card pad text-muted">
-        Chưa có đơn nào.
-        <a th:href="@{/menu}">Đặt món ngay →</a>
-      </div>
-
-      <!-- Danh sách đơn -->
-      <div class="grid"
-           style="gap:12px"
-           th:if="${!#lists.isEmpty(page?.content)}">
-
-        <article class="card pad"
-                 th:each="o : ${page.content}">
-
-          <!-- Header đơn: mã + thời gian + chi nhánh + trạng thái -->
-          <div class="center-between mb-1">
-
-            <div class="center" style="gap:12px;justify-content:flex-start">
-              <b>#<span th:text="${o.code}">ALB12345</span></b>
-
-              <span class="text-muted"
-                    th:text="${#temporals.format(o.createdAt,'dd/MM/yyyy HH:mm')}">
-                25/10/2025 12:00
-              </span>
-
-              <span class="text-muted">•</span>
-
-              <span class="text-muted"
-                    th:text="${o.branchName}">
-                Chi nhánh X
-              </span>
-            </div>
-
-            <!-- badge trạng thái -->
-            <div th:switch="${o.status}">
-              <div th:case="'PENDING'"      class="tag tag-pending">Chờ xác nhận</div>
-              <div th:case="'CONFIRMED'"    class="tag tag-confirm">Đã xác nhận</div>
-              <div th:case="'PREPARING'"    class="tag tag-prep">Đang làm món</div>
-              <div th:case="'READY'"        class="tag tag-ready">Sẵn sàng lấy</div>
-              <div th:case="'DELIVERING'"   class="tag tag-ship">Đang giao</div>
-              <div th:case="'DELIVERED'"    class="tag tag-done">Đã giao</div>
-              <div th:case="'CANCELLED'"    class="tag tag-cancel">Đã hủy</div>
-              <div th:case="'REFUNDED'"     class="tag tag-refund">Hoàn tiền</div>
-
-              <!-- fallback nếu sau này thêm enum mới -->
-              <div th:case="*"
-                   class="tag tag-other"
-                   th:text="${o.status}">
-                KHÁC
+              <div th:switch="${o.status}">
+                <div th:case="'PENDING'" class="tag tag-pending">Chờ xác nhận</div>
+                <div th:case="'CONFIRMED'" class="tag tag-confirm">Đã xác nhận</div>
+                <div th:case="'PREPARING'" class="tag tag-prep">Đang làm món</div>
+                <div th:case="'READY'" class="tag tag-ready">Sẵn sàng lấy</div>
+                <div th:case="'DELIVERING'" class="tag tag-ship">Đang giao</div>
+                <div th:case="'DELIVERED'" class="tag tag-done">Đã giao</div>
+                <div th:case="'RECEIVED'" class="tag tag-done">Đã nhận</div>
+                <div th:case="'CANCELLED'" class="tag tag-cancel">Đã hủy</div>
+                <div th:case="'REFUNDED'" class="tag tag-refund">Hoàn tiền</div>
+                <div th:case="*" class="tag tag-other" th:text="${o.status}">Khác</div>
               </div>
             </div>
-          </div>
 
-          <!-- Preview các món trong đơn -->
-          <div class="grid" style="gap:8px">
-            <div class="center-between"
-                 th:each="it,iter : ${o.items}">
-
-              <div class="center" style="gap:8px;justify-content:flex-start">
-                <div class="card"
-                     style="width:44px;height:44px;overflow:hidden">
-                  <img th:src="${it.thumbnailUrl}" alt=""
-                       style="width:100%;height:100%;object-fit:cover">
-                </div>
-
-                <div>
-                  <b th:text="${it.name}">Tên món</b>
-                  <div class="text-muted">
-                    <span th:text="${it.qty}">1</span>
-                    x
-                    <span th:text="${@vnd.format(it.unitPrice)}">0 đ</span>
+            <!-- Preview món -->
+            <div class="grid" style="gap: 8px">
+              <div class="center-between"
+                   th:each="it : ${o.items}"
+                   th:attr="data-item-id=${it.itemId}">
+                <div class="center" style="gap: 8px; justify-content: flex-start">
+                  <div class="card" style="width: 44px; height: 44px; overflow: hidden">
+                    <img th:src="${it.thumbnailUrl}"
+                         alt=""
+                         style="width: 100%; height: 100%; object-fit: cover"
+                         onerror="this.src='/img/placeholder.jpg'"/>
+                  </div>
+                  <div>
+                    <b th:text="${it.name}">Tên món</b>
+                    <div class="text-muted">
+                      <span th:text="${it.qty}">1</span> ×
+                      <span th:text="${@vnd.format(it.unitPrice)}">0 đ</span>
+                    </div>
                   </div>
                 </div>
+                <b th:text="${@vnd.format(it.subtotal)}">0 đ</b>
+              </div>
+            </div>
+
+            <!-- Tổng + hành động -->
+            <div class="center-between" style="margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px;">
+              <div class="text-muted">
+                Tổng: <b th:text="${@vnd.format(o.grandTotal)}">0 đ</b>
               </div>
 
-              <b th:text="${@vnd.format(it.subtotal)}">0 đ</b>
+              <div class="center" style="gap: 8px; flex-wrap: wrap; justify-content: flex-end">
+                <a th:href="@{'/user/order/detail/' + ${o.code}}" class="btn">Xem chi tiết</a>
+
+                <!-- Nút xác nhận -->
+                <button
+                  th:if="${#strings.equalsIgnoreCase(o.status,'DELIVERED') 
+                       or #strings.equalsIgnoreCase(o.status,'READY')}"
+                  class="btn btn-confirm"
+                  th:attr="data-code=${o.code}"
+                  style="background: #16a34a; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-weight: 500;"
+                  onclick="handleConfirmReceived(this)">
+                  Xác nhận đã nhận hàng
+                </button>
+
+                <!-- Nút hiển thị khi đã nhận -->
+                <button
+                  th:if="${#strings.equalsIgnoreCase(o.status,'RECEIVED')}"
+                  class="btn"
+                  style="background: #22c55e; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-weight: 500; cursor: default; opacity: 0.9;"
+                  disabled>
+                  ✅ Đã nhận hàng
+                </button>
+
+                <!-- Hủy đơn -->
+                <a th:if="${o.status=='PENDING' || o.status=='CONFIRMED' || o.status=='PREPARING'}"
+                   th:href="@{'/user/order/detail/' + ${o.code} + '?action=cancel'}"
+                   class="btn">Hủy đơn</a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- ====== POPUP ĐÁNH GIÁ ====== -->
+        <div id="confirmModal" class="modal hidden">
+          <div class="modal-content card pad" style="max-width: 350px; text-align: center">
+            <p style="margin-bottom: 16px">Bạn có muốn đánh giá trải nghiệm sản phẩm không?</p>
+            <div class="center" style="gap: 10px; justify-content: center">
+              <button class="btn" id="yesBtn">Có</button>
+              <button class="btn" id="noBtn">Không</button>
             </div>
           </div>
-
-          <!-- Tổng tiền + hành động -->
-          <div class="center-between"
-               style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
-
-            <div class="text-muted">
-              Tổng:
-              <b th:text="${@vnd.format(o.grandTotal)}">0 đ</b>
-            </div>
-
-            <div class="center" style="gap:8px">
-              <!-- Xem chi tiết -->
-              <a th:href="@{'/user/order/detail/' + ${o.code}}"
-                 class="btn">Xem chi tiết</a>
-
-              <!-- Đánh giá: chỉ show sau khi giao xong -->
-              <a th:if="${o.status=='DELIVERED'}"
-                 th:href="@{'/review/write'(orderCode=${o.code})}"
-                 class="btn">Đánh giá món</a>
-
-              <!-- Hủy đơn: chỉ cho hủy khi đơn chưa chạy kịp -->
-              <a th:if="${o.status=='PENDING' || o.status=='CONFIRMED' || o.status=='PREPARING'}"
-                 th:href="@{'/user/order/detail/' + ${o.code} + '?action=cancel'}"
-                 class="btn">Hủy đơn</a>
-            </div>
-          </div>
-
-        </article>
-
+        </div>
       </div>
-
-      <!-- Phân trang -->
-      <div th:if="${page?.totalPages > 1}"
-           class="center"
-           style="gap:8px;margin-top:16px">
-
-        <!-- Prev -->
-        <a class="btn"
-           th:if="${!page.first}"
-           th:href="@{/user/order/history(
-                        page=${page.number-1},
-                        status=${status},
-                        from=${from},
-                        to=${to}
-                     )}">
-          ← Trước
-        </a>
-
-        <span>
-          Trang
-          <b th:text="${page.number+1}">1</b> /
-          <b th:text="${page.totalPages}">1</b>
-        </span>
-
-        <!-- Next -->
-        <a class="btn"
-           th:if="${!page.last}"
-           th:href="@{/user/order/history(
-                        page=${page.number+1},
-                        status=${status},
-                        from=${from},
-                        to=${to}
-                     )}">
-          Sau →
-        </a>
-      </div>
-
-    </div>
-  </section>
-
-</div>
+    </section>
+  </div>
 </html>

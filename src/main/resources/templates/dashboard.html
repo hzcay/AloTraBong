@@ -324,10 +324,7 @@
           </div>
 
           <!-- Shipper Card -->
-          <div
-            class="role-card shipper-card"
-            sec:authorize="hasRole('SHIPPER')"
-          >
+          <div class="role-card shipper-card" sec:authorize="hasRole('SHIPPER')">
             <div class="role-icon text-info">
               <i class="fas fa-truck"></i>
             </div>
@@ -339,10 +336,11 @@
               <li><i class="fas fa-check"></i>Lịch giao hàng</li>
               <li><i class="fas fa-check"></i>Báo cáo giao hàng</li>
             </ul>
-            <a href="/shipper/dashboard" class="btn-enter">
+            <a href="/shipper/deliveries" class="btn-enter">
               <i class="fas fa-sign-in-alt me-2"></i>Truy cập Shipper
             </a>
           </div>
+
 
           <!-- User Card -->
           <div class="role-card user-card" sec:authorize="hasRole('USER')">

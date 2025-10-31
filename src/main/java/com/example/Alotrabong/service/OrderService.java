@@ -25,4 +25,5 @@ public interface OrderService {
     List<OrderDTO> getOrdersByStatus(OrderStatus status);
     
     BigDecimal getTotalRevenue(String branchId, LocalDateTime startDate, LocalDateTime endDate);
+
 }

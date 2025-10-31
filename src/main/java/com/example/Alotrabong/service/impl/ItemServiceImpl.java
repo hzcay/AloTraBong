@@ -106,9 +106,7 @@ public class ItemServiceImpl implements ItemService {
         @Override
         @Transactional(readOnly = true)
         public List<ItemDTO> getTopSellingItems(int limit) {
-                // Dùng repo: findActiveOrderBySalesDesc(Pageable)
-                Page<Item> page = itemRepository.findActiveOrderBySalesDesc(
-                                PageRequest.of(0, Math.max(1, limit)));
+                Page<Item> page = itemRepository.findTopSellingItems(PageRequest.of(0, limit));
                 return page.getContent().stream()
                                 .map(this::convertToDTO)
                                 .collect(Collectors.toList());
@@ -197,60 +195,16 @@ public class ItemServiceImpl implements ItemService {
                 return convertToDTO(item);
         }
 
-        @Transactional(readOnly = true)
-        public List<ItemDTO> getTopSellingItemsSince(int days, int limit) {
-                LocalDateTime since = LocalDateTime.now().minusDays(Math.max(1, days));
-
-                // chỉ tính các order đã chốt/đang xử lý/đã giao
-                List<OrderStatus> okStatuses = List.of(
-                                OrderStatus.CONFIRMED,
-                                OrderStatus.PREPARING,
-                                OrderStatus.READY,
-                                OrderStatus.DELIVERING,
-                                OrderStatus.DELIVERED);
-
-                Pageable pageable = PageRequest.of(0, Math.max(1, limit));
-                List<Object[]> rows = orderItemRepository.findTopSellingSince(since, okStatuses, pageable);
-
-                List<String> ids = rows.stream().map(r -> (String) r[0]).toList();
-                if (ids.isEmpty())
-                        return List.of();
-
-                Map<String, Item> byId = itemRepository.findAllById(ids).stream()
-                                .collect(Collectors.toMap(Item::getItemId, it -> it));
-
-                return ids.stream()
-                                .map(byId::get)
-                                .filter(Objects::nonNull)
-                                .map(this::convertToDTO)
-                                .toList();
-        }
-
+        @Override
         @Transactional(readOnly = true)
         public List<ItemDTO> getTopFavoritedItems(int limit) {
-                List<Object[]> rows = favoriteRepository.findTopFavorited(PageRequest.of(0, Math.max(1, limit)));
-                List<String> ids = rows.stream().map(r -> (String) r[0]).toList();
-                if (ids.isEmpty())
-                        return List.of();
-
-                Map<String, Item> byId = itemRepository.findAllById(ids).stream()
-                                .collect(Collectors.toMap(Item::getItemId, it -> it));
-
-                return ids.stream()
-                                .map(byId::get)
-                                .filter(Objects::nonNull)
+                Page<Item> page = itemRepository.findTopFavoritedItems(
+                                PageRequest.of(0, Math.max(1, limit)));
+                 System.out.println("=== DEBUG TOP FAV ===");
+                page.getContent().forEach(i -> System.out.println(i.getItemId() + " | " + i.getName()));
+                return page.getContent().stream()
                                 .map(this::convertToDTO)
-                                .toList();
-        }
-
-        @Transactional(readOnly = true)
-        public List<ItemDTO> getUserFavoriteItems(String userId, int limit) {
-                return favoriteRepository
-                                .findByUser_UserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, Math.max(1, limit)))
-                                .stream()
-                                .map(Favorite::getItem)
-                                .map(this::convertToDTO)
-                                .toList();
+                                .collect(Collectors.toList());
         }
 
         // ======================= helper =======================

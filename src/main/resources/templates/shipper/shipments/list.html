@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý giao hàng</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <meta th:if="${_csrf != null}" name="_csrf_parameter" th:content="${_csrf.parameterName}" />
+  <meta th:if="${_csrf != null}" name="_csrf_token" th:content="${_csrf.token}" />
+
+  <style>
+    body {
+      background: #f9fafb;
+      color: #1e293b;
+      font-family: 'Inter', sans-serif;
+      padding: 2rem;
+    }
+    h3 {
+      color: #16a34a;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    /* FILTER BAR */
+    .filter-bar {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .filter-bar label { font-weight: 500; color: #334155; }
+    .filter-bar input,
+    .filter-bar select {
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.95rem;
+      color: #1e293b;
+    }
+
+    /* STATS */
+    .stats-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .stat-box {
+      flex: 1;
+      min-width: 220px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: transform 0.2s ease;
+    }
+    .stat-box:hover { transform: translateY(-2px); }
+    .stat-title { font-size: 0.9rem; color: #64748b; margin-bottom: 0.25rem; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+
+    /* TABLE */
+    table {
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    thead {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 600;
+    }
+    td, th { vertical-align: middle !important; padding: 0.75rem 1rem !important; }
+    tr:hover td { background-color: #f8fafc; }
+
+    /* BUTTONS */
+    .btn-accept {
+      background: #22c55e; color: #fff; border: none; border-radius: 8px;
+      padding: 6px 12px; font-weight: 600; transition: all 0.2s;
+    }
+    .btn-accept:hover { background: #16a34a; }
+    .btn-view {
+      background: #3b82f6; color: #fff; border: none; border-radius: 8px;
+      padding: 6px 12px; font-weight: 600; margin-left: 4px; transition: all 0.2s;
+    }
+    .btn-view:hover { background: #2563eb; }
+
+    /* MODAL */
+    .order-modal {
+      background: #ffffff; color: #1e293b;
+      border-radius: 16px; border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .order-modal .modal-header {
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #16a34a;
+      font-weight: 700;
+    }
+    .order-info .label { color: #64748b; min-width: 150px; display: inline-block; }
+    .order-info .value { color: #0f172a; font-weight: 600; }
+
+    .btn-deliver {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff; border: none; border-radius: 10px;
+      padding: 10px 22px; font-weight: 600;
+      box-shadow: 0 0 10px rgba(34,197,94,0.3);
+      transition: all 0.25s ease;
+    }
+    .btn-deliver:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      box-shadow: 0 0 20px rgba(34,197,94,0.5);
+    }
+  </style>
+</head>
+
+<body>
+  <h3>🚚 Quản lý giao hàng</h3>
+
+  <!-- Bộ lọc -->
+  <form id="filterForm" class="filter-bar" method="get" th:action="@{/shipper/deliveries}">
+    <div>
+      <label for="status">Trạng thái:</label>
+      <select id="status" name="status" class="form-select d-inline-block" style="width:180px;">
+        <option value="">Tất cả</option>
+        <option value="0" th:selected="${status == 0}">Chờ nhận</option>
+        <option value="1" th:selected="${status == 1}">Đang giao</option>
+        <option value="2" th:selected="${status == 2}">Đã giao</option>
+      </select>
+    </div>
+    <div>
+      <label for="fromDate">Từ ngày:</label>
+      <input type="date" id="fromDate" name="fromDate" th:value="${fromDate}">
+    </div>
+    <div>
+      <label for="toDate">Đến ngày:</label>
+      <input type="date" id="toDate" name="toDate" th:value="${toDate}">
+    </div>
+    <button type="submit" class="btn btn-success ms-auto">Lọc</button>
+  </form>
+
+  <!-- Stats -->
+  <div class="stats-container">
+    <div class="stat-box">
+      <div class="stat-title">📦 Tổng đơn đã nhận</div>
+      <div class="stat-value" th:text="${totalReceived}">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-title">✅ Đơn giao thành công</div>
+      <div class="stat-value" th:text="${totalDelivered}">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-title">💰 Tổng tiền giao hàng</div>
+      <div class="stat-value" th:text="${#numbers.formatDecimal(totalMoney,0,'POINT',0,'COMMA')} + '₫'">0₫</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <table class="table align-middle">
+    <thead>
+      <tr><th>Mã đơn</th><th>Ngày tạo</th><th>Chi nhánh</th><th>Trạng thái</th><th>Thao tác</th></tr>
+    </thead>
+    <tbody>
+      <tr th:each="s : ${shipments}">
+        <td th:text="${s.order.orderId}"></td>
+        <td th:text="${#temporals.format(s.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+        <td th:text="${s.order.branch.name}"></td>
+        <td th:text="${s.status == 0 ? 'Chờ nhận' : (s.status == 1 ? 'Đang giao' : 'Đã giao')}"></td>
+        <td>
+          <form th:action="@{'/shipper/shipments/' + ${s.shipmentId} + '/confirm'}" method="post" style="display:inline;">
+            <button type="submit" class="btn-accept"
+              th:attr="data-id=${s.shipmentId}"
+              th:text="${s.status == 0 ? 'Nhận giao hàng' : (s.status == 1 ? 'Xác nhận giao xong' : 'Hoàn tất')}"
+              th:disabled="${s.status == 2}">
+            </button>
+          </form>
+          <button class="btn-view" th:attr="data-order-id=${s.order.orderId}" onclick="viewOrder(this)">
+            Xem chi tiết
+          </button>
+        </td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(shipments)}">
+        <td colspan="5" class="text-center text-secondary py-4">Không có đơn hàng nào 🚫</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Modal -->
+  <div class="modal fade" id="orderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content order-modal">
+        <div class="modal-header">
+          <h5 class="modal-title">Chi tiết đơn hàng</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="orderDetail" class="order-info"></div>
+          <hr class="my-4">
+          <h6 class="text-success fw-bold mb-3">Danh sách sản phẩm</h6>
+          <table class="table table-sm table-products text-dark align-middle">
+            <thead><tr><th>Tên món</th><th class="text-center">SL</th><th class="text-end">Đơn giá</th><th class="text-end">Tổng</th></tr></thead>
+            <tbody id="orderItems"></tbody>
+          </table>
+          <div class="text-end mt-4">
+            <button id="btnConfirmDelivered" class="btn btn-deliver">✅ Xác nhận giao thành công</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Filter auto submit
+    document.querySelectorAll('#status, #fromDate, #toDate').forEach(el => {
+      el.addEventListener('change', () => document.getElementById('filterForm').submit());
+    });
+
+    // View order detail
+    async function viewOrder(btn) {
+      const orderId = btn.getAttribute('data-order-id');
+      const res = await fetch(`/api/orders/${orderId}`);
+      if (!res.ok) return alert('Không tải được chi tiết đơn hàng');
+      const { data } = await res.json();
+      document.getElementById('orderDetail').innerHTML = `
+        <span><span class="label">Mã đơn:</span> <span class="value">${data.orderId}</span></span>
+        <span><span class="label">Trạng thái:</span> <span class="value">${data.status}</span></span>
+        <span><span class="label">Khách hàng:</span> <span class="value">${data.customerName}</span></span>`;
+      document.getElementById('orderItems').innerHTML =
+        data.orderItems.map(i => `<tr><td>${i.itemName}</td><td>${i.quantity}</td>
+        <td class="text-end">${i.unitPrice}₫</td><td class="text-end">${i.totalPrice}₫</td></tr>`).join('');
+      new bootstrap.Modal(document.getElementById('orderModal')).show();
+    }
+
+    // Confirm delivered
+    document.getElementById('btnConfirmDelivered').addEventListener('click', async () => {
+      const shipmentId = document.querySelector('form button.btn-accept').dataset.id;
+      if (!shipmentId) return alert('Không xác định được shipment!');
+      const csrfParam = document.querySelector('meta[name="_csrf_parameter"]')?.content;
+      const csrfToken = document.querySelector('meta[name="_csrf_token"]')?.content;
+      const res = await fetch(`/shipper/shipments/${shipmentId}/confirm-delivered`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', [csrfParam]: csrfToken }
+      });
+      if (res.ok || res.redirected) location.reload();
+      else alert('❌ Giao hàng thất bại!');
+    });
+  </script>
+</body>
+</html>
