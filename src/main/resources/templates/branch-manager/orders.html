@@ -669,7 +669,7 @@
                 select.innerHTML = '<option value="">-- Chọn Shipper --</option>';
                 
                 shippers.filter(s => s.isActive).forEach(shipper => {
-                    select.innerHTML += `<option value="${shipper.shipperId}">${shipper.shipperName} - ${shipper.vehiclePlate}</option>`;
+                    select.innerHTML += `<option value="${shipper.shipperId}">${shipper.fullName} - ${shipper.vehiclePlate}</option>`;
                 });
             })
             .catch(error => {
