@@ -64,6 +64,7 @@ public class UserServiceImpl implements UserService {
         Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
         User user;
 
+        
         if (existingUser.isPresent()) {
             user = existingUser.get();
             if (Boolean.TRUE.equals(user.getIsActive())) {

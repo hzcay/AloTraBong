@@ -55,7 +55,6 @@ public class OtpServiceImpl implements OtpService {
         
         userOtp = userOtpRepository.save(userOtp);
         
-        // Lưu vào Redis với key: otp:{email}:{purpose}
         try {
             String redisKey = String.format("otp:%s:%s", user.getEmail(), purpose.name());
             redisTemplate.opsForValue().set(redisKey, otpCode, 5, TimeUnit.MINUTES);
@@ -63,22 +62,19 @@ public class OtpServiceImpl implements OtpService {
             log.warn("Redis not available, OTP will be stored in database only: {}", e.getMessage());
         }
         
-        log.info("Created OTP for user: {} with purpose: {}", user.getEmail(), purpose);
+        log.info("Created OTP for user: {} with purpose: {}", user.getEmail(), purpose, otpCode);
         return userOtp;
     }
 
     @Override
     public boolean verifyOtp(String email, String otpCode, OtpPurpose purpose) {
         try {
-            // Kiểm tra trong Redis trước
             String redisKey = String.format("otp:%s:%s", email, purpose.name());
             String cachedOtp = redisTemplate.opsForValue().get(redisKey);
             
             if (cachedOtp != null && cachedOtp.equals(otpCode)) {
-                // Xóa OTP khỏi Redis sau khi verify thành công
                 redisTemplate.delete(redisKey);
                 
-                // Cập nhật trong database
                 User user = userRepository.findByEmail(email)
                         .orElseThrow(() -> new RuntimeException("User not found"));
                 
