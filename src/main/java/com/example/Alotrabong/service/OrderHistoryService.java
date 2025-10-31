@@ -86,6 +86,7 @@ public class OrderHistoryService {
                 : unitPrice.multiply(BigDecimal.valueOf(qty));
 
         return new OrderHistoryVM.ItemVM(
+                oi.getItem().getItemId().toString(),
                 itemNameSafe(oi),
                 qty,
                 unitPrice,
@@ -157,6 +158,7 @@ public class OrderHistoryService {
                 deliveryAddress,
                 customerNote,
                 paymentMethod,
+                order.getPaymentStatus(),
                 itemVMs,
                 subtotal,
                 shippingFee,

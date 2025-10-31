@@ -42,6 +42,37 @@ public interface ItemRepository extends JpaRepository<Item, String> {
         Page<Item> findActiveByCategoryId(@Param("categoryId") String categoryId, Pageable pageable);
 
         Optional<Item> findByItemCode(String itemCode);
-        
+
         List<Item> findByIsActive(Boolean isActive);
+
+        // ✅ Lấy top N món mới nhất theo ngày tạo
+        @Query("""
+                        select i from Item i
+                        where i.isActive = true
+                        order by i.createdAt desc
+                        """)
+        List<Item> findTopNewItems(Pageable pageable);
+
+        @Query("""
+                        select i from Item i
+                        where i.isActive = true
+                        order by (
+                            select coalesce(sum(oi.quantity), 0)
+                            from OrderItem oi
+                            where oi.item = i
+                        ) desc
+                        """)
+        Page<Item> findTopSellingItems(Pageable pageable);
+
+        @Query("""
+                        select i
+                        from Item i
+                        where i.isActive = true
+                        order by (
+                            select count(f)
+                            from Favorite f
+                            where f.item = i
+                        ) desc
+                        """)
+        Page<Item> findTopFavoritedItems(Pageable pageable);
 }

@@ -1,6 +1,7 @@
 package com.example.Alotrabong.dto;
 
 import com.example.Alotrabong.entity.OrderStatus;
+import com.example.Alotrabong.entity.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,7 +18,8 @@ public record OrderDetailVM(
         String branchName,               // chi nhánh xử lý / chuẩn bị
         String deliveryAddress,          // địa chỉ giao (nếu là giao hàng)
         String customerNote,             // ghi chú của khách
-        String paymentMethod,            // kiểu thanh toán
+        String paymentMethod,
+        PaymentStatus paymentStatus,            // kiểu thanh toán
         List<ItemVM> items,              // danh sách món
         BigDecimal subtotal,             // tổng tiền món
         BigDecimal shippingFee,          // phí ship

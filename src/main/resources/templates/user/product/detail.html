@@ -83,14 +83,18 @@
             <a href="#reviews" class="text-muted" th:text="${product?.reviewCount + ' đánh giá'}">12 đánh giá</a>
           </div>
 
+          <div th:if="${product.stockQty > 0}" class="text-muted mb-1">
+            <span th:text="'Còn ' + ${product.stockQty} + ' sản phẩm trong kho'"></span>
+          </div>
+          <div th:if="${product != null and !product.available}" class="text-muted">
+            Tạm hết hàng tại chi nhánh này.
+          </div>
+
           <div class="mb-2" style="margin-top:10px">
             <strong style="font-size:22px"
                     th:text="${product != null && product.price != null ? #numbers.formatDecimal(product.price,0,0) + 'đ' : 'Liên hệ'}">
               59.000đ
             </strong>
-            <span class="badge" th:if="${product?.isBestSeller}">Bán chạy</span>
-            <span class="badge" th:if="${product?.isNew}">Mới</span>
-            <span class="badge" th:if="${product?.isFavorite}">Yêu thích</span>
           </div>
 
           <p class="text-muted mb-3" th:text="${product?.shortDesc}">
@@ -113,9 +117,6 @@
               <input type="hidden" name="productId" th:value="${product?.id}" />
               <button class="btn" type="submit" title="Thêm vào yêu thích">❤️</button>
             </form>
-          </div>
-          <div th:if="${product != null and !product.available}" class="text-muted">
-            Tạm hết hàng tại chi nhánh này.
           </div>
 
           <!-- TABS -->

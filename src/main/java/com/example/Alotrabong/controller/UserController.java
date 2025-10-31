@@ -9,19 +9,23 @@ import com.example.Alotrabong.dto.BranchListDTO;
 import com.example.Alotrabong.dto.AddressDTO;
 import com.example.Alotrabong.dto.AddressFormDTO;
 import com.example.Alotrabong.entity.*;
+import com.example.Alotrabong.exception.ResourceNotFoundException;
 import com.example.Alotrabong.repository.*;
 import com.example.Alotrabong.service.CartService;
 import com.example.Alotrabong.service.ItemService;
 import com.example.Alotrabong.service.OrderHistoryService;
+import com.example.Alotrabong.service.OrderService;
 import com.example.Alotrabong.service.AddressService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
+import org.apache.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -53,6 +57,7 @@ public class UserController {
     private final CartService cartService;
     private final OrderHistoryService orderHistoryService;
     private final AddressService addressService;
+    private final OrderService orderService;
 
     // ===== Repositories =====
     private final ItemRepository itemRepository;
@@ -66,6 +71,8 @@ public class UserController {
     private final CouponRepository couponRepository;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final FavoriteRepository favoriteRepo;
+    private final OrderItemRepository orderItemRepository;
 
     // ===========================
     // ====== NAV / HEADER =======
@@ -92,7 +99,6 @@ public class UserController {
                 return fullName;
             }
         }
-
         return "/auth";
     }
 
@@ -111,10 +117,11 @@ public class UserController {
 
         List<HomeItemVM> productsNew = mapItems(itemService.getNewItems(8));
         List<HomeItemVM> productsBest = mapItems(itemService.getTopSellingItems(8));
+        List<HomeItemVM> productsFav = mapItems(itemService.getTopFavoritedItems(8));
 
         model.addAttribute("productsNew", productsNew);
         model.addAttribute("productsBest", productsBest);
-        model.addAttribute("productsFav", productsBest);
+        model.addAttribute("productsFav", productsFav);
         model.addAttribute("recentItems", null);
 
         Branch defBranch = fallbackActiveBranch();
@@ -134,8 +141,8 @@ public class UserController {
 
     // dinh dưỡng mặc định
     private static final Map<String, Object> DEFAULT_NUTRITION = Map.of(
-            "cal", 300,
-            "protein", 6,
+            "cal", 315,
+            "protein", 500,
             "fat", 10,
             "carb", 45,
             "sodium", 160);
@@ -168,7 +175,7 @@ public class UserController {
         return Map.of("items", items);
     }
 
-    // ===== PRODUCT LIST / DETAIL =====
+    // ================== PRODUCT LIST ==================
     @GetMapping("/product/list")
     public String productList(
             @RequestParam(required = false) String q,
@@ -180,10 +187,26 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "9") int size,
             Authentication auth,
+            HttpSession session,
             Model model) {
 
         // tên user cho header
         model.addAttribute("userName", resolveDisplayName(auth));
+
+        // ✅ Lưu hoặc lấy branchId từ session
+        if (branchId != null && !branchId.isBlank()) {
+            session.setAttribute("SELECTED_BRANCH_ID", branchId);
+        } else {
+            branchId = (String) session.getAttribute("SELECTED_BRANCH_ID");
+        }
+
+        // ✅ fallback branch đầu tiên nếu session vẫn null
+        if (branchId == null || branchId.isBlank()) {
+            branchId = branchRepository.findAll().stream()
+                    .findFirst()
+                    .map(Branch::getBranchId)
+                    .orElse(null);
+        }
 
         List<Category> categories = categoryRepository.findAll().stream()
                 .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
@@ -210,6 +233,7 @@ public class UserController {
             itemsPage = itemRepository.findByIsActiveTrue(pageable);
         }
 
+        // ✅ Filter theo giá
         List<Item> filteredItems = itemsPage.getContent();
         if (minPrice != null || maxPrice != null) {
             filteredItems = filteredItems.stream()
@@ -226,6 +250,7 @@ public class UserController {
                     .toList();
         }
 
+        // ✅ Sort theo giá
         if ("price_asc".equals(sort)) {
             filteredItems = filteredItems.stream()
                     .sorted(Comparator.comparing(Item::getPrice,
@@ -238,6 +263,7 @@ public class UserController {
                     .toList();
         }
 
+        // ✅ Map kết quả
         List<Map<String, Object>> productMaps = filteredItems.stream()
                 .map(item -> {
                     Map<String, Object> p = new HashMap<>();
@@ -255,12 +281,13 @@ public class UserController {
 
         Page<Map<String, Object>> resultPage = new PageImpl<>(productMaps, pageable, itemsPage.getTotalElements());
 
+        // ✅ Gửi dữ liệu ra view
         model.addAttribute("page", resultPage);
         model.addAttribute("categories", categories);
         model.addAttribute("branches", branches);
+        model.addAttribute("branchId", branchId);
         model.addAttribute("q", q);
         model.addAttribute("categoryId", categoryId);
-        model.addAttribute("branchId", branchId);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("sort", sort);
@@ -269,13 +296,14 @@ public class UserController {
         return "user/product/list";
     }
 
+    // ================== PRODUCT DETAIL ==================
     @GetMapping("/product/detail/{idOrCode}")
     public String productDetail(@PathVariable String idOrCode,
             @RequestParam(required = false) String branchId,
             Authentication auth,
+            HttpSession session,
             Model model) {
 
-        // tên user cho header
         model.addAttribute("userName", resolveDisplayName(auth));
 
         Item item = tryFindItem(idOrCode).orElse(null);
@@ -283,11 +311,26 @@ public class UserController {
             return "redirect:/user/home";
         }
 
+        // ✅ Lấy branchId từ query hoặc session
+        String selectedBranchId = (branchId != null && !branchId.isBlank())
+                ? branchId
+                : (String) session.getAttribute("SELECTED_BRANCH_ID");
+
+        // ✅ Fallback branch đầu tiên nếu không có
+        if (selectedBranchId == null || selectedBranchId.isBlank()) {
+            selectedBranchId = branchRepository.findAll().stream()
+                    .findFirst()
+                    .map(Branch::getBranchId)
+                    .orElse(null);
+        }
+
         BigDecimal finalPrice = item.getPrice();
         boolean available = Boolean.TRUE.equals(item.getIsActive());
+        int stockQty = 0;
 
-        if (branchId != null && !branchId.isBlank()) {
-            Branch branch = branchRepository.findById(branchId).orElse(null);
+        // ✅ Tính giá & tồn kho theo branch
+        if (selectedBranchId != null) {
+            Branch branch = branchRepository.findById(selectedBranchId).orElse(null);
             if (branch != null) {
                 var bipOpt = branchItemPriceRepository.findByItemAndBranch(item, branch);
                 if (bipOpt.isPresent()) {
@@ -297,21 +340,31 @@ public class UserController {
                     if (bip.getIsAvailable() != null)
                         available = bip.getIsAvailable();
                 }
+
                 var invOpt = inventoryRepository
-                        .findByBranch_BranchIdAndItem_ItemId(branchId, item.getItemId());
+                        .findByBranch_BranchIdAndItem_ItemId(selectedBranchId, item.getItemId());
                 if (invOpt.isPresent() && invOpt.get().getQuantity() != null) {
-                    available = available && invOpt.get().getQuantity() > 0;
+                    stockQty = invOpt.get().getQuantity();
+                    available = available && stockQty > 0;
                 }
             }
         }
 
-        List<ItemMedia> media = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(item.getItemId());
+        // ✅ Debug tồn kho
+        System.out.println("============== DEBUG PRODUCT DETAIL ==============");
+        System.out.println("Branch ID: " + selectedBranchId);
+        System.out.println("Item ID: " + item.getItemId());
+        var invCheck = inventoryRepository.findByBranch_BranchIdAndItem_ItemId(selectedBranchId, item.getItemId());
+        System.out.println("Inventory exists? " + invCheck.isPresent());
+        invCheck.ifPresent(inv -> System.out.println("Quantity in DB: " + inv.getQuantity()));
+        System.out.println("StockQty being sent: " + stockQty);
+        System.out.println("==================================================");
 
+        // ✅ Gallery + review giữ nguyên
+        List<ItemMedia> media = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(item.getItemId());
         List<Map<String, String>> gallery = media.stream()
                 .filter(m -> m.getMediaUrl() != null && !m.getMediaUrl().isBlank())
-                .map(m -> Map.of(
-                        "url", m.getMediaUrl(),
-                        "thumbnailUrl", m.getMediaUrl()))
+                .map(m -> Map.of("url", m.getMediaUrl(), "thumbnailUrl", m.getMediaUrl()))
                 .collect(Collectors.toList());
 
         String mainImageUrl = !gallery.isEmpty()
@@ -319,14 +372,11 @@ public class UserController {
                 : "/img/products/" + item.getItemId() + ".jpg";
 
         List<Review> reviews = reviewRepository.findByItemIdOrderByCreatedAtDesc(item.getItemId());
-
         List<Map<String, Object>> reviewVMs = new ArrayList<>();
         for (Review r : reviews) {
             List<ReviewMedia> rms = reviewMediaRepository.findByReview_ReviewId(r.getReviewId());
             List<Map<String, String>> rmedVM = rms.stream()
-                    .map(x -> Map.of(
-                            "url", x.getMediaUrl(),
-                            "thumbnailUrl", x.getMediaUrl()))
+                    .map(x -> Map.of("url", x.getMediaUrl(), "thumbnailUrl", x.getMediaUrl()))
                     .collect(Collectors.toList());
 
             Map<String, Object> rv = new HashMap<>();
@@ -348,6 +398,7 @@ public class UserController {
         product.put("mainImageUrl", mainImageUrl);
         product.put("gallery", gallery);
         product.put("available", available);
+        product.put("stockQty", stockQty);
         product.put("isBestSeller", false);
         product.put("isNew", false);
         product.put("isFavorite", false);
@@ -374,6 +425,8 @@ public class UserController {
         model.addAttribute("product", product);
         model.addAttribute("reviews", reviewVMs);
         model.addAttribute("related", related);
+        model.addAttribute("branchId", selectedBranchId); // ✅ gửi xuống view
+
         return "user/product/detail";
     }
 
@@ -960,6 +1013,8 @@ public class UserController {
         return "user/order/history";
     }
 
+    
+
     @GetMapping("/order/detail/{code}")
     public String orderDetail(
             @PathVariable String code,
@@ -1008,6 +1063,7 @@ public class UserController {
                     detail.deliveryAddress(),
                     detail.customerNote(),
                     detail.paymentMethod(),
+                    order.getPaymentStatus(),
                     detail.items(),
                     detail.subtotal(),
                     ship,
@@ -1107,73 +1163,128 @@ public class UserController {
 
     @PostMapping("/favorite/add")
     public String addFavorite(@RequestParam("productId") String itemId,
-            HttpSession session,
-            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        var itemOpt = itemRepository.findById(itemId);
-        if (itemOpt.isEmpty()) {
+            Authentication auth,
+            RedirectAttributes ra) {
+
+        if (auth == null || !auth.isAuthenticated()) {
+            ra.addFlashAttribute("toastError", "Bạn cần đăng nhập để thêm yêu thích.");
+            return "redirect:/login";
+        }
+
+        var user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user == null) {
+            ra.addFlashAttribute("toastError", "Không tìm thấy người dùng.");
+            return "redirect:/user/favorite/list";
+        }
+
+        var item = itemRepository.findById(itemId).orElse(null);
+        if (item == null) {
             ra.addFlashAttribute("toastError", "Món không tồn tại.");
             return "redirect:/user/favorite/list";
         }
-        var fav = getFavoriteSet(session);
-        fav.add(itemId);
-        ra.addFlashAttribute("toastSuccess", "Đã thêm vào yêu thích!");
+
+        var existing = favoriteRepo.findByUser_UserIdAndItem_ItemId(user.getUserId(), itemId);
+        if (existing.isPresent()) {
+            ra.addFlashAttribute("toastError", "Món đã có trong yêu thích rồi!");
+        } else {
+            var fav = Favorite.builder()
+                    .user(user)
+                    .item(item)
+                    .build();
+            favoriteRepo.save(fav);
+            ra.addFlashAttribute("toastSuccess", "Đã thêm vào yêu thích!");
+        }
+
         return "redirect:/user/favorite/list";
     }
 
     @PostMapping("/favorite/{id}/remove")
     public String removeFavorite(@PathVariable("id") String itemId,
-            HttpSession session,
-            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        var fav = getFavoriteSet(session);
-        if (fav.remove(itemId)) {
+            Authentication auth,
+            RedirectAttributes ra) {
+
+        if (auth == null || !auth.isAuthenticated()) {
+            ra.addFlashAttribute("toastError", "Bạn cần đăng nhập để xóa yêu thích.");
+            return "redirect:/login";
+        }
+
+        var user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user == null) {
+            ra.addFlashAttribute("toastError", "Không tìm thấy người dùng.");
+            return "redirect:/user/favorite/list";
+        }
+
+        var deletedCount = favoriteRepo.deleteByUser_UserIdAndItem_ItemId(user.getUserId(), itemId);
+        if (deletedCount > 0) {
             ra.addFlashAttribute("toastSuccess", "Đã bỏ khỏi yêu thích!");
         } else {
-            ra.addFlashAttribute("toastError", "Món không nằm trong yêu thích.");
+            ra.addFlashAttribute("toastError", "Món này không nằm trong danh sách yêu thích.");
         }
+
         return "redirect:/user/favorite/list";
     }
 
     @PostMapping("/favorite/toggle")
     public String toggleFavorite(@RequestParam("productId") String itemId,
-            HttpSession session,
-            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        var itemOpt = itemRepository.findById(itemId);
-        if (itemOpt.isEmpty()) {
+            Authentication auth,
+            RedirectAttributes ra) {
+
+        if (auth == null || !auth.isAuthenticated()) {
+            ra.addFlashAttribute("toastError", "Bạn cần đăng nhập để thao tác yêu thích.");
+            return "redirect:/login";
+        }
+
+        var user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user == null) {
+            ra.addFlashAttribute("toastError", "Không tìm thấy người dùng.");
+            return "redirect:/user/favorite/list";
+        }
+
+        var item = itemRepository.findById(itemId).orElse(null);
+        if (item == null) {
             ra.addFlashAttribute("toastError", "Món không tồn tại.");
             return "redirect:/user/favorite/list";
         }
-        var fav = getFavoriteSet(session);
-        if (fav.contains(itemId)) {
-            fav.remove(itemId);
+
+        var existing = favoriteRepo.findByUser_UserIdAndItem_ItemId(user.getUserId(), itemId);
+        if (existing.isPresent()) {
+            favoriteRepo.deleteByUser_UserIdAndItem_ItemId(user.getUserId(), itemId);
             ra.addFlashAttribute("toastSuccess", "Đã bỏ khỏi yêu thích!");
         } else {
-            fav.add(itemId);
+            favoriteRepo.save(Favorite.builder().user(user).item(item).build());
             ra.addFlashAttribute("toastSuccess", "Đã thêm vào yêu thích!");
         }
+
         return "redirect:/user/favorite/list";
     }
 
     @GetMapping("/favorite/list")
-    public String favoriteList(Model model, HttpSession session, Authentication auth) {
+    public String favoriteList(Model model, Authentication auth) {
+
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
 
         // tên user cho header
         model.addAttribute("userName", resolveDisplayName(auth));
 
-        var fav = getFavoriteSet(session);
-
-        if (fav.isEmpty()) {
+        var user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user == null) {
             model.addAttribute("items", java.util.Collections.emptyList());
             model.addAttribute("page", null);
             return "user/favorite/list";
         }
 
-        var items = itemRepository.findAllById(fav).stream().map(i -> {
+        var favorites = favoriteRepo.findByUser_UserId(user.getUserId());
+        var items = favorites.stream().map(f -> {
+            var i = f.getItem();
             var thumb = itemMediaRepository
                     .findByItem_ItemIdOrderBySortOrderAsc(i.getItemId())
                     .stream()
                     .findFirst()
-                    .map(ItemMedia::getMediaUrl)
+                    .map(media -> media.getMediaUrl())
                     .orElse("/img/placeholder-product.jpg");
+
             var m = new java.util.HashMap<String, Object>();
             m.put("id", i.getItemId());
             m.put("name", i.getName());
@@ -1300,14 +1411,14 @@ public class UserController {
         if (currentUser == null) {
             return "redirect:/login";
         }
-        
+
         // Tên user cho header
         model.addAttribute("userName", resolveDisplayName(auth));
         // User ID để phân biệt tin nhắn
         model.addAttribute("currentUserId", currentUser.getUserId());
         // Branch ID từ roomId (có thể là branchId)
         model.addAttribute("branchId", roomId);
-        
+
         // Lấy thông tin branch
         Branch branch = resolveBranch(roomId);
         if (branch != null) {

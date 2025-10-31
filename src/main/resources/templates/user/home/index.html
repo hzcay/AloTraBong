@@ -473,8 +473,11 @@
 
             // show/hide panels
             ["new", "best", "fav"].forEach((k) => {
-              const pane = section.querySelector(`[data-panel="\${k}"]`);
-              if (pane) pane.hidden = k !== key;
+              const pane = section.querySelector(`[data-panel="${k}"]`);
+              if (pane) {
+                pane.hidden = k !== key;
+                pane.style.display = k === key ? "" : "none"; // đảm bảo ẩn/hiện cứng
+              }
             });
           });
 
@@ -570,10 +573,14 @@
                      data-href="/user/product/detail/${p.id}">
               <img src="${img}" alt="" style="width: 100%; border-radius: 8px"
                    onerror="this.onerror=null;this.src='/img/placeholder.jpg'"/>
-              <h3 style="font-weight: 800; margin: 10px 0 4px">${p.name ?? ""}</h3>
+              <h3 style="font-weight: 800; margin: 10px 0 4px">${
+                p.name ?? ""
+              }</h3>
               <div style="display:flex;justify-content:space-between;align-items:center;">
                 <strong>${vnMoney(p.price)}</strong>
-                <button class="btn add-to-cart" type="button" data-id="${p.id}">+ Giỏ</button>
+                <button class="btn add-to-cart" type="button" data-id="${
+                  p.id
+                }">+ Giỏ</button>
               </div>
             </article>`;
         }
@@ -597,7 +604,9 @@
               )
             );
 
-            const fresh = (data.items || []).filter((it) => !existed.has(it.id));
+            const fresh = (data.items || []).filter(
+              (it) => !existed.has(it.id)
+            );
             if (!fresh.length) {
               btn && (btn.textContent = "Đã hiển thị hết");
               return;

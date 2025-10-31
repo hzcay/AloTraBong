@@ -221,6 +221,9 @@ public class OrderServiceImpl implements OrderService {
 		return OrderDTO.builder()
 				.orderId(order.getOrderId())
 				.userId(order.getUser().getUserId())
+				.customerName(order.getUser().getFullName())
+				.customerPhone(order.getUser().getPhone())
+				.paymentMethod(order.getPaymentMethod().toString())
 				.branchId(order.getBranch().getBranchId())
 				.status(order.getStatus().toString())
 				.totalAmount(order.getTotalAmount())
@@ -243,4 +246,5 @@ public class OrderServiceImpl implements OrderService {
 								.multiply(BigDecimal.valueOf(orderItem.getQuantity())))
 				.build();
 	}
+	
 }

@@ -32,4 +32,8 @@ public interface ShipperRepository extends JpaRepository<Shipper, String> {
     
     // Find shipper by user
     Optional<Shipper> findByUser(User user);
+
+    Optional<Shipper> findByUser_UserId(String userId);
+
+    Optional<Shipper> findByUser_Email(String email);
 }

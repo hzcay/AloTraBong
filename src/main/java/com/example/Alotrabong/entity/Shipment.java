@@ -34,7 +34,7 @@ public class Shipment extends Auditable {
     private LocalDateTime deliveredTime;
 
     @Column(name = "status", columnDefinition = "TINYINT")
-    private Integer status; // 0:Assigned,1:Đang giao,2:Đã giao,3:Hủy
+    private Integer status; // 0:Assigned, 1:Đang giao, 2:Đã giao, 3:Hủy
 
     @Column(name = "distance_km", precision = 6, scale = 2)
     private BigDecimal distanceKm;
