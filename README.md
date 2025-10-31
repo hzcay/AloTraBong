@@ -2,15 +2,15 @@
 
 <div align="center">
 
-![Java](https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=java)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen?style=for-the-badge&logo=spring-boot)
-![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-blue?style=for-the-badge&logo=microsoft-sql-server)
-![Redis](https://img.shields.io/badge/Redis-7-red?style=for-the-badge&logo=redis)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker)
+![Java](https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.6-brightgreen?style=for-the-badge&logo=spring&logoColor=white)
+![SQL Server](https://img.shields.io/badge/SQL_Server-2022-blue?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-red?style=for-the-badge&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker&logoColor=white)
 
 **Một quán cơm bình dân vibe chill nhất phố** 🍚✨
 
-[Features](#-tính-năng-chính) • [Tech Stack](#-công-nghệ-sử-dụng) • [Installation](#-cài-đặt) • [API Docs](#-tài-liệu-api)
+[Features](#-tính-năng-chính) • [Tech Stack](#-công-nghệ-sử-dụng) • [Installation](#-cài-đặt) • [API Endpoints](#-api-endpoints)
 
 </div>
 
