@@ -143,14 +143,23 @@ cd AloTraBong
 
 ```bash
 # Khởi động tất cả services (SQL Server + Redis + App)
-docker-compose up -d
+docker-compose up -d --build
 
 # Xem logs
 docker-compose logs -f app
 
 # Dừng services
 docker-compose down
+
+# Rebuild khi có thay đổi code
+docker-compose down
+docker-compose up -d --build
 ```
+
+**Lưu ý**: 
+- Lần đầu chạy nên dùng `--build` để build lại Docker image
+- Ứng dụng sử dụng profile `docker` khi chạy trong Docker
+- Database và Redis sẽ tự động được tạo nếu chưa có
 
 ### 3. Chạy thủ công
 
@@ -231,9 +240,11 @@ AloTraBong/
 │       │   ├── branch-manager/  # Branch Manager pages
 │       │   └── fragments/   # Reusable fragments
 │       ├── static/          # CSS, JS, Images
-│       └── application.properties
+│       ├── application.properties         # Local config
+│       └── application-docker.properties  # Docker config
 ├── docker-compose.yml       # Docker orchestration
 ├── Dockerfile              # Docker image
+├── .dockerignore           # Docker ignore rules
 ├── pom.xml                # Maven dependencies
 └── README.md              # Tài liệu
 ```

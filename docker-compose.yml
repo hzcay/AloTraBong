@@ -13,11 +13,18 @@ services:
       - sqlserver_data:/var/opt/mssql
     networks:
       - springnet
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '123456@Abc' -Q 'SELECT 1' -C || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   db-init:
     image: mcr.microsoft.com/mssql-tools
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
     entrypoint: ["/bin/bash", "-c"]
     command: >
       "
@@ -45,21 +52,31 @@ services:
       - "6379:6379"
     networks:
       - springnet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   app:
     build: .
     container_name: alotrabong
     restart: unless-stopped
     depends_on:
-      - sqlserver
-      - redis
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     environment:
+      SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: "jdbc:sqlserver://sqlserver:1433;databaseName=Alotrabong;encrypt=false"
       SPRING_DATASOURCE_USERNAME: "sa"
       SPRING_DATASOURCE_PASSWORD: "123456@Abc"
-      EMBED_API_URL: "http://embed:8000/embed"
-      QDRANT_API_URL: "http://qdrant:6333"
-      GROQ_API_KEY: "sk-xxxx"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
     ports:
       - "8080:8080"
     networks:

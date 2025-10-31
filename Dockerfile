@@ -1,5 +1,5 @@
 # --- Stage 1: Build ---
-FROM maven:3.9-amazoncorretto-17 AS builder
+FROM maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /app
 
 # Copy file pom để preload dependency
@@ -11,7 +11,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # --- Stage 2: Runtime ---
-FROM amazoncorretto:17-alpine
+FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 
 # Cài font hỗ trợ tiếng Việt và emoji (Excel, PDF, UI)
