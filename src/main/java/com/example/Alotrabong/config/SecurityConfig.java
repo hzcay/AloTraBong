@@ -82,7 +82,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/items/**",
                                 "/api/categories/**",
-                                "/api/branches/**")
+                                "/api/branches/**",
+                                "/api/chatbot/**")
                         .permitAll()
 
                         // ===== AUTH REQUIRED =====

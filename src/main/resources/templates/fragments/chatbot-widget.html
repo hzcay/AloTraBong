@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<div th:fragment="chatbotWidget">
+<style>
+.chatbot-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.chatbot-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.3s ease;
+}
+
+.chatbot-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.chatbot-window {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 380px;
+  height: 600px;
+  max-height: 80vh;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chatbot-window.active {
+  display: flex;
+}
+
+.chatbot-header {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatbot-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.chatbot-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chatbot-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chatbot-message {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  word-wrap: break-word;
+}
+
+.chatbot-message.user {
+  align-self: flex-end;
+  background: #f97316;
+  color: white;
+}
+
+.chatbot-message.bot {
+  align-self: flex-start;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.chatbot-input-container {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.chatbot-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  outline: none;
+  font-size: 14px;
+}
+
+.chatbot-input:focus {
+  border-color: #f97316;
+}
+
+.chatbot-send {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #f97316;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.chatbot-send:hover {
+  background: #ea580c;
+}
+
+.chatbot-loading {
+  display: none;
+  align-self: flex-start;
+  padding: 12px 16px;
+  background: #f1f5f9;
+  border-radius: 12px;
+}
+
+.chatbot-loading span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  margin: 0 2px;
+  animation: bounce 1.4s infinite;
+}
+
+.chatbot-loading span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.chatbot-loading span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (max-width: 480px) {
+  .chatbot-window {
+    width: calc(100vw - 40px);
+    right: 20px;
+    left: 20px;
+  }
+}
+</style>
+
+<div class="chatbot-container" id="chatbotContainer">
+  <!-- Chatbot Button -->
+  <button class="chatbot-button" id="chatbotToggle">
+    🤖
+  </button>
+
+  <!-- Chatbot Window -->
+  <div class="chatbot-window" id="chatbotWindow">
+    <div class="chatbot-header">
+      <h3>Trợ lý AI AloTraBong</h3>
+      <button class="chatbot-close" id="chatbotClose">×</button>
+    </div>
+
+    <div class="chatbot-messages" id="chatbotMessages">
+      <div class="chatbot-message bot">
+        👋 Xin chào bạn! Mình là AI của AloTraBong — quán cơm bình dân vibe chill nhất phố! 🍚✨
+        <br><br>
+        Mình có thể giúp bạn:
+        • Tìm hiểu thực đơn, combo hot 🔥
+        • Gợi ý món theo mood của bạn 😋
+        • Xem khuyến mãi đang có
+        • Hướng dẫn đặt món siêu dễ
+        <br><br>
+        Cứ hỏi mình bất cứ gì nhé! Mình luôn sẵn sàng 💪
+      </div>
+    </div>
+
+    <div class="chatbot-loading" id="chatbotLoading">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+    <div class="chatbot-input-container">
+      <input 
+        type="text" 
+        class="chatbot-input" 
+        id="chatbotInput" 
+        placeholder="Nhập câu hỏi..."
+        autocomplete="off"
+      />
+      <button class="chatbot-send" id="chatbotSend">➤</button>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+(function() {
+  const CSRF_TOKEN = /*[[${_csrf.token}]]*/ '';
+  const CSRF_HEADER = /*[[${_csrf.headerName}]]*/ '';
+  
+  const toggle = document.getElementById('chatbotToggle');
+  const window = document.getElementById('chatbotWindow');
+  const close = document.getElementById('chatbotClose');
+  const messages = document.getElementById('chatbotMessages');
+  const input = document.getElementById('chatbotInput');
+  const send = document.getElementById('chatbotSend');
+  const loading = document.getElementById('chatbotLoading');
+  
+  // Toggle window
+  toggle.addEventListener('click', () => {
+    window.classList.toggle('active');
+    if (window.classList.contains('active')) {
+      input.focus();
+    }
+  });
+  
+  close.addEventListener('click', () => {
+    window.classList.remove('active');
+  });
+
+  // Send message
+  function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    
+    // Add user message
+    addMessage(text, 'user');
+    input.value = '';
+    
+    // Show loading
+    loading.style.display = 'block';
+    loading.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    
+    // Call API
+    fetch('/api/chatbot/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [CSRF_HEADER]: CSRF_TOKEN
+      },
+      body: JSON.stringify({
+        message: text
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      loading.style.display = 'none';
+      if (data.success && data.response) {
+        addMessage(data.response, 'bot');
+      } else {
+        addMessage('Xin lỗi, tôi không thể xử lý câu hỏi này lúc này. Vui lòng thử lại sau.', 'bot');
+      }
+    })
+    .catch(error => {
+      loading.style.display = 'none';
+      addMessage('Có lỗi xảy ra. Vui lòng kiểm tra kết nối và thử lại.', 'bot');
+      console.error('Chatbot error:', error);
+    });
+  }
+
+  // Add message to UI
+  function addMessage(text, type) {
+    const msg = document.createElement('div');
+    msg.className = 'chatbot-message ' + type;
+    msg.textContent = text;
+    messages.appendChild(msg);
+    msg.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  // Send on button click
+  send.addEventListener('click', sendMessage);
+
+  // Send on Enter key
+  input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+})();
+</script>
+</div>
+
