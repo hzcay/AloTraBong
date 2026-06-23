@@ -38,4 +38,7 @@ public class Shipment extends Auditable {
 
     @Column(name = "distance_km", precision = 6, scale = 2)
     private BigDecimal distanceKm;
+
+    @Column(name = "checkin_photo_url")
+    private String checkinPhotoUrl;
 }

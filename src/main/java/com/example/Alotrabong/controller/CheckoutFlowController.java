@@ -379,4 +379,28 @@ public class CheckoutFlowController {
 
         return "user/checkout/checkout";
     }
+
+    @GetMapping("/success")
+    public String success(@RequestParam(required = false) String code,
+            HttpSession session,
+            Model model) {
+        // dọn session checkout để không bị apply coupon/shipping lại
+        clearCheckoutSession(session);
+
+        model.addAttribute("orderCode", code);
+        model.addAttribute("redirectTo", "/user/order/history");
+        model.addAttribute("delayMs", 2000);
+        return "user/checkout/success"; // templates/user/checkout/success.html
+    }
+
+    @GetMapping("/fail")
+    public String fail(HttpSession session, Model model) {
+        // có thể dọn luôn, tuỳ gu
+        clearCheckoutSession(session);
+
+        model.addAttribute("redirectTo", "/user/order/history");
+        model.addAttribute("delayMs", 2500);
+        return "user/checkout/fail"; // templates/user/checkout/fail.html
+    }
+
 }

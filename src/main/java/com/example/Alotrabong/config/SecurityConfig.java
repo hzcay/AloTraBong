@@ -40,7 +40,8 @@ public class SecurityConfig {
         "/h2-console/**",
         "/api/**",
         "/ws/**",
-        "/shipper/**" // 👈 thêm dòng này
+        "/shipper/**",
+        "/vnpay/**"  
 ))
 
                 .cors(Customizer.withDefaults())
@@ -64,7 +65,8 @@ public class SecurityConfig {
                                 "/api/orders",
                                 "/shipper/shipments/**",
                                 "/test/**",
-                                "/ws/**")
+                                "/ws/**",
+                                "/vnpay/**" )
                         .permitAll()
 
                         // ===== PUBLIC PAGES =====

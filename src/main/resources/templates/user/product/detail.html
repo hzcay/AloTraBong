@@ -53,6 +53,24 @@
       </div>
     </section>
 
+    <style>
+  :root{
+    /* đổi 4/3, 3/2, 16/9… nếu muốn */
+    --card-thumb-ratio: 1/1;
+    --card-thumb-radius: 14px;
+  }
+  /* Ảnh trong card: đồng nhất tỉ lệ + crop đẹp */
+  .thumb-fit{
+    width: 100%;
+    aspect-ratio: var(--card-thumb-ratio);
+    object-fit: cover;            /* lấp đầy khung, cắt phần dư */
+    display: block;
+    border-radius: var(--card-thumb-radius);
+    background: #f3f4f6;          /* nền lúc ảnh chưa load */
+  }
+</style>
+
+
     <!-- PRODUCT DETAIL -->
     <section class="section">
       <div class="container grid" style="grid-template-columns: 1.05fr 0.95fr; align-items: start; gap: 28px;">
@@ -194,7 +212,7 @@
 
         <div class="grid grid-4">
           <article class="card pad" th:each="p : ${related}">
-            <img th:src="${p.thumbnailUrl}" alt="" onerror="this.onerror=null;this.src='/img/placeholder.jpg'"/>
+            <img class="thumb-fit" th:src="${p.thumbnailUrl}" alt="" onerror="this.onerror=null;this.src='/img/placeholder.jpg'"/>
             <h3 class="m-0 mb-1 bold" th:text="${p.name}">Tên món</h3>
             <div class="center-between">
               <strong th:text="${p.price != null ? #numbers.formatDecimal(p.price,0,0) + 'đ' : 'Liên hệ'}">49.000đ</strong>

@@ -63,13 +63,13 @@ public class VnpayServiceImpl implements VnpayService {
         params.put("vnp_IpAddr", clientIp(request));
 
         // (Tùy chọn) ép kênh thanh toán:
-        // params.put("vnp_BankCode", "VNBANK");  // ATM nội địa
+        // params.put("vnp_BankCode", "VNBANK"); // ATM nội địa
         // params.put("vnp_BankCode", "INTCARD"); // thẻ quốc tế
         // params.put("vnp_BankCode", "VNPAYQR"); // QR
 
         // 8) Build hashData (US-ASCII) & query (UTF-8) theo key sort ASC
         String hashData = buildPair(params, true);
-        String query    = buildPair(params, false);
+        String query = buildPair(params, false);
 
         // 9) Ký HMAC → append vào query
         String secureHash = hmacSHA512(vnpayConfig.getHashSecret(), hashData);
@@ -83,13 +83,54 @@ public class VnpayServiceImpl implements VnpayService {
         return url;
     }
 
+    @Override
+    public boolean validateReturnData(Map<String, String> params) {
+        if (params == null || params.isEmpty())
+            return false;
+
+        String vnpSecureHash = params.get("vnp_SecureHash");
+        if (vnpSecureHash == null || vnpSecureHash.isEmpty())
+            return false;
+
+        // copy & loại trừ các field hash
+        Map<String, String> signData = new TreeMap<>(String::compareTo);
+        signData.putAll(params);
+        signData.remove("vnp_SecureHash");
+        signData.remove("vnp_SecureHashType");
+
+        // Build hashData (US-ASCII) giống lúc request
+        String hashData = buildPair(signData, true);
+        String myHash = hmacSHA512(vnpayConfig.getHashSecret(), hashData);
+
+        // Log dev (tuỳ bạn giữ hay tắt)
+        System.out.println("VNPAY hashData(RET): " + hashData);
+        System.out.println("VNPAY secureHash(RET.mine): " + myHash);
+        System.out.println("VNPAY secureHash(RET.vnp):  " + vnpSecureHash);
+
+        return myHash.equalsIgnoreCase(vnpSecureHash);
+    }
+
+    /** Map trạng thái trả về từ VNPAY → "SUCCESS" | "FAILED" */
+    @Override
+    public String getPaymentStatus(Map<String, String> params) {
+        String resp = params.getOrDefault("vnp_ResponseCode", "");
+        String trans = params.getOrDefault("vnp_TransactionStatus", "");
+        // Theo tài liệu, "00" là ok; nhiều case chỉ có vnp_ResponseCode
+        if ("00".equals(resp) && (trans.isEmpty() || "00".equals(trans))) {
+            return "SUCCESS";
+        }
+        return "FAILED";
+    }
+
     /** Verify kết quả khi browser redirect về từ VNPAY (returnUrl) */
     @Override
     public boolean handleReturn(Map<String, String> params) {
-        if (params == null || params.isEmpty()) return false;
+        if (params == null || params.isEmpty())
+            return false;
 
         String vnpSecureHash = params.get("vnp_SecureHash");
-        if (vnpSecureHash == null || vnpSecureHash.isEmpty()) return false;
+        if (vnpSecureHash == null || vnpSecureHash.isEmpty())
+            return false;
 
         // Copy & loại trừ các field không ký
         Map<String, String> signData = new TreeMap<>(String::compareTo);
@@ -117,7 +158,10 @@ public class VnpayServiceImpl implements VnpayService {
 
     // ========= Helpers =========
 
-    /** Ghép key=value theo key sort ASC; ascii=true → US-ASCII (hash), false → UTF-8 (query) */
+    /**
+     * Ghép key=value theo key sort ASC; ascii=true → US-ASCII (hash), false → UTF-8
+     * (query)
+     */
     private static String buildPair(Map<String, String> map, boolean ascii) {
         List<String> keys = new ArrayList<>(map.keySet());
         Collections.sort(keys);
@@ -125,16 +169,18 @@ public class VnpayServiceImpl implements VnpayService {
         int n = 0;
         for (String k : keys) {
             String v = map.get(k);
-            if (v == null || v.isEmpty()) continue;
-            if (n++ > 0) sb.append('&');
+            if (v == null || v.isEmpty())
+                continue;
+            if (n++ > 0)
+                sb.append('&');
             if (ascii) {
                 sb.append(URLEncoder.encode(k, StandardCharsets.US_ASCII))
-                  .append('=')
-                  .append(URLEncoder.encode(v, StandardCharsets.US_ASCII));
+                        .append('=')
+                        .append(URLEncoder.encode(v, StandardCharsets.US_ASCII));
             } else {
                 sb.append(URLEncoder.encode(k, StandardCharsets.UTF_8))
-                  .append('=')
-                  .append(URLEncoder.encode(v, StandardCharsets.UTF_8));
+                        .append('=')
+                        .append(URLEncoder.encode(v, StandardCharsets.UTF_8));
             }
         }
         return sb.toString();
@@ -143,12 +189,14 @@ public class VnpayServiceImpl implements VnpayService {
     /** HMAC-SHA512 (UTF-8) – trả "" nếu lỗi để dễ debug mà không ném exception */
     private static String hmacSHA512(final String key, final String data) {
         try {
-            if (key == null || data == null) throw new NullPointerException();
+            if (key == null || data == null)
+                throw new NullPointerException();
             Mac mac = Mac.getInstance("HmacSHA512");
             mac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512"));
             byte[] raw = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder(raw.length * 2);
-            for (byte b : raw) sb.append(String.format("%02x", b & 0xff));
+            for (byte b : raw)
+                sb.append(String.format("%02x", b & 0xff));
             return sb.toString();
         } catch (Exception ex) {
             return "";
@@ -158,10 +206,10 @@ public class VnpayServiceImpl implements VnpayService {
     /** Lấy IP client có xét proxy headers; map ::1 -> 127.0.0.1 */
     private static String clientIp(HttpServletRequest req) {
         String[] headers = {
-            "X-Forwarded-For", "Proxy-Client-IP", "WL-Proxy-Client-IP",
-            "HTTP_X_FORWARDED_FOR", "HTTP_X_FORWARDED", "HTTP_X_CLUSTER_CLIENT_IP",
-            "HTTP_CLIENT_IP", "HTTP_FORWARDED_FOR", "HTTP_FORWARDED", "HTTP_VIA",
-            "REMOTE_ADDR"
+                "X-Forwarded-For", "Proxy-Client-IP", "WL-Proxy-Client-IP",
+                "HTTP_X_FORWARDED_FOR", "HTTP_X_FORWARDED", "HTTP_X_CLUSTER_CLIENT_IP",
+                "HTTP_CLIENT_IP", "HTTP_FORWARDED_FOR", "HTTP_FORWARDED", "HTTP_VIA",
+                "REMOTE_ADDR"
         };
         for (String h : headers) {
             String v = req.getHeader(h);

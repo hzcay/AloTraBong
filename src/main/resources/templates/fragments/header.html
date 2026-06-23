@@ -39,11 +39,10 @@
               aria-expanded="false"
               aria-controls="accountDropdown"
             >
-              <span
-                class="account-avatar"
-                th:text="${#strings.substring((userName?:'U'),0,1)}"
-                >U</span
-              >
+              <span class="account-avatar"
+      th:text="${(userName == null or #strings.isEmpty(#strings.trim(userName))) 
+                  ? 'U' 
+                  : #strings.substring(#strings.trim(userName),0,1)}">U</span>
             </button>
 
             <!-- Nếu chưa đăng nhập -->
