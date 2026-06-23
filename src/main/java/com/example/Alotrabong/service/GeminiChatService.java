@@ -108,7 +108,7 @@ public class GeminiChatService {
         
         // Generation config
         Map<String, Object> generationConfig = new HashMap<>();
-        generationConfig.put("maxOutputTokens", maxTokens);
+        generationConfig.put("maxOutputTokens",4000);
         generationConfig.put("temperature", temperature);
         generationConfig.put("topP", 0.95);
         generationConfig.put("topK", 40);

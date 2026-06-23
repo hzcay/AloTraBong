@@ -130,13 +130,35 @@ public class UserController {
         return "user/home/index";
     }
 
+    private String resolveThumb(ItemDTO i) {
+        // 1) Ưu tiên mediaUrls từ DTO
+        var urls = i.getMediaUrls();
+        if (urls != null) {
+            for (String u : urls) {
+                if (u != null && !u.isBlank())
+                    return u;
+            }
+        }
+        // 2) Rớt xuống DB: lấy ảnh đầu tiên của item
+        return itemMediaRepository
+                .findFirstByItem_ItemIdAndMediaTypeOrderBySortOrderAscMediaIdAsc(i.getItemId(), MediaType.IMAGE)
+                .map(ItemMedia::getMediaUrl)
+                .filter(u -> u != null && !u.isBlank())
+                // 3) Cuối cùng: placeholder theo itemId (tùy bạn đổi sang /img/placeholder.jpg)
+                .orElse("/img/products/" + i.getItemId() + ".jpg");
+    }
+
     private List<HomeItemVM> mapItems(List<ItemDTO> src) {
-        return src.stream().map(i -> HomeItemVM.builder()
-                .id(i.getItemId())
-                .name(i.getName())
-                .price(i.getPrice())
-                .thumbnailUrl("/img/products/" + i.getItemId() + ".jpg")
-                .build()).collect(Collectors.toList());
+        if (src == null)
+            return List.of();
+        return src.stream()
+                .map(i -> HomeItemVM.builder()
+                        .id(i.getItemId())
+                        .name(i.getName())
+                        .price(i.getPrice())
+                        .thumbnailUrl(resolveThumb(i)) // ✅ an toàn, không index 0
+                        .build())
+                .collect(Collectors.toList());
     }
 
     // dinh dưỡng mặc định
@@ -273,7 +295,7 @@ public class UserController {
                     p.put("priceText", item.getPrice() != null
                             ? String.format("%,dđ", item.getPrice().longValue())
                             : "—");
-                    p.put("thumbnailUrl", "/img/products/" + item.getItemId() + ".jpg");
+                    p.put("thumbnailUrl", item.getThumbnailUrl());
                     p.put("slug", item.getItemCode() != null ? item.getItemCode() : item.getItemId());
                     return p;
                 })
@@ -350,26 +372,19 @@ public class UserController {
             }
         }
 
-        // ✅ Debug tồn kho
-        System.out.println("============== DEBUG PRODUCT DETAIL ==============");
-        System.out.println("Branch ID: " + selectedBranchId);
-        System.out.println("Item ID: " + item.getItemId());
-        var invCheck = inventoryRepository.findByBranch_BranchIdAndItem_ItemId(selectedBranchId, item.getItemId());
-        System.out.println("Inventory exists? " + invCheck.isPresent());
-        invCheck.ifPresent(inv -> System.out.println("Quantity in DB: " + inv.getQuantity()));
-        System.out.println("StockQty being sent: " + stockQty);
-        System.out.println("==================================================");
-
         // ✅ Gallery + review giữ nguyên
-        List<ItemMedia> media = itemMediaRepository.findByItem_ItemIdOrderBySortOrderAsc(item.getItemId());
+        List<ItemMedia> media = itemMediaRepository
+                .findByItem_ItemIdAndMediaTypeOrderBySortOrderAscMediaIdAsc(item.getItemId(), MediaType.IMAGE);
+
         List<Map<String, String>> gallery = media.stream()
                 .filter(m -> m.getMediaUrl() != null && !m.getMediaUrl().isBlank())
                 .map(m -> Map.of("url", m.getMediaUrl(), "thumbnailUrl", m.getMediaUrl()))
-                .collect(Collectors.toList());
+                .toList();
 
-        String mainImageUrl = !gallery.isEmpty()
-                ? gallery.get(0).get("url")
-                : "/img/products/" + item.getItemId() + ".jpg";
+        String mainImageUrl = media.stream()
+                .findFirst()
+                .map(ItemMedia::getMediaUrl)
+                .orElse("/img/placeholder.jpg");
 
         List<Review> reviews = reviewRepository.findByItemIdOrderByCreatedAtDesc(item.getItemId());
         List<Map<String, Object>> reviewVMs = new ArrayList<>();
@@ -430,14 +445,19 @@ public class UserController {
         return "user/product/detail";
     }
 
-    private Map<String, Object> mapRelated(Item i) {
+    private Map<String, Object> mapRelated(Item it) {
         Map<String, Object> m = new HashMap<>();
-        m.put("id", i.getItemId());
-        m.put("name", i.getName());
-        m.put("price", i.getPrice());
-        m.put("priceText", formatVnCurrency(i.getPrice()));
-        m.put("thumbnailUrl", "/img/products/" + i.getItemId() + ".jpg");
-        m.put("slug", i.getItemCode());
+        m.put("id", it.getItemId());
+        m.put("name", it.getName());
+        m.put("price", it.getPrice());
+        m.put("slug", it.getItemCode() != null ? it.getItemCode() : it.getItemId());
+
+        String thumb = itemMediaRepository
+                .findFirstByItem_ItemIdAndMediaTypeOrderBySortOrderAscMediaIdAsc(it.getItemId(), MediaType.IMAGE)
+                .map(ItemMedia::getMediaUrl)
+                .orElse("/img/placeholder.jpg");
+
+        m.put("thumbnailUrl", thumb);
         return m;
     }
 
@@ -1012,8 +1032,6 @@ public class UserController {
 
         return "user/order/history";
     }
-
-    
 
     @GetMapping("/order/detail/{code}")
     public String orderDetail(

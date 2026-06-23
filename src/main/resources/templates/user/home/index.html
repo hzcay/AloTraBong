@@ -31,6 +31,20 @@
       .page-overlay[aria-hidden="true"] {
         pointer-events: none !important;
       }
+      :root {
+        --thumb-h: 250px; /* chỉnh chiều cao ảnh tại đây */
+        --thumb-radius: 10px; /* bo góc cho đẹp */
+      }
+
+      /* Đè lên inline style cũ bằng !important cho chắc */
+      .product-card > img {
+        width: 100% !important;
+        height: var(--thumb-h) !important;
+        display: block;
+        object-fit: cover; /* crop phần dư, giữ tỉ lệ */
+        object-position: center; /* canh giữa */
+        border-radius: var(--thumb-radius) !important;
+      }
     </style>
 
     <!-- HERO -->

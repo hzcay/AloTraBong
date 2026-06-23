@@ -107,6 +107,9 @@ public class ItemServiceImpl implements ItemService {
         @Transactional(readOnly = true)
         public List<ItemDTO> getTopSellingItems(int limit) {
                 Page<Item> page = itemRepository.findTopSellingItems(PageRequest.of(0, limit));
+                                for(Item i : page.getContent()) {
+                        i.getMediaList().size(); 
+                }
                 return page.getContent().stream()
                                 .map(this::convertToDTO)
                                 .collect(Collectors.toList());
@@ -118,6 +121,9 @@ public class ItemServiceImpl implements ItemService {
                 // Dùng repo: findActiveOrderByCreatedAtDesc(Pageable)
                 Page<Item> page = itemRepository.findActiveOrderByCreatedAtDesc(
                                 PageRequest.of(0, Math.max(1, limit)));
+                for(Item i : page.getContent()) {
+                        i.getMediaList().size(); 
+                }
                 return page.getContent().stream()
                                 .map(this::convertToDTO)
                                 .collect(Collectors.toList());
@@ -200,8 +206,9 @@ public class ItemServiceImpl implements ItemService {
         public List<ItemDTO> getTopFavoritedItems(int limit) {
                 Page<Item> page = itemRepository.findTopFavoritedItems(
                                 PageRequest.of(0, Math.max(1, limit)));
-                 System.out.println("=== DEBUG TOP FAV ===");
-                page.getContent().forEach(i -> System.out.println(i.getItemId() + " | " + i.getName()));
+                                
+                                for(Item i : page.getContent()) {
+                        i.getMediaList().size(); }
                 return page.getContent().stream()
                                 .map(this::convertToDTO)
                                 .collect(Collectors.toList());
@@ -218,6 +225,10 @@ public class ItemServiceImpl implements ItemService {
                                 .categoryName(item.getCategory() != null ? item.getCategory().getName() : null)
                                 .isActive(item.getIsActive())
                                 .createdAt(item.getCreatedAt())
+                                .mediaUrls(item.getMediaList() != null ? 
+                                        item.getMediaList().stream()
+                                        .map(ItemMedia::getMediaUrl)
+                                        .collect(Collectors.toList()) : Collections.emptyList())
                                 .updatedAt(item.getUpdatedAt())
                                 .build();
         }

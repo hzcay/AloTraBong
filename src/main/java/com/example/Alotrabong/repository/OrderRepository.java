@@ -22,114 +22,118 @@ import org.springframework.data.repository.query.Param;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, String> {
 
-        // ===== Lọc nhanh theo user/branch/status (sort mới nhất) =====
-        List<Order> findByUserOrderByCreatedAtDesc(User user);
+  // ===== Lọc nhanh theo user/branch/status (sort mới nhất) =====
+  List<Order> findByUserOrderByCreatedAtDesc(User user);
 
-        List<Order> findByBranchOrderByCreatedAtDesc(Branch branch);
+  List<Order> findByBranchOrderByCreatedAtDesc(Branch branch);
 
-        List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
+  List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
 
-        List<Order> findByBranchAndStatusAndCreatedAtBetween(
-                        Branch branch,
-                        OrderStatus status,
-                        LocalDateTime startDate,
-                        LocalDateTime endDate);
+  List<Order> findByBranchAndStatusAndCreatedAtBetween(
+      Branch branch,
+      OrderStatus status,
+      LocalDateTime startDate,
+      LocalDateTime endDate);
 
-        // ===== Phân trang theo user (tránh N+1 khi cần items + item) =====
-        @EntityGraph(attributePaths = { "items", "items.item" })
-        Page<Order> findByUser(User user, Pageable pageable);
+  // ===== Phân trang theo user (tránh N+1 khi cần items + item) =====
+  @EntityGraph(attributePaths = { "items", "items.item" })
+  Page<Order> findByUser(User user, Pageable pageable);
 
-        @EntityGraph(attributePaths = { "items", "items.item" })
-        Page<Order> findByUserAndStatus(User user, OrderStatus status, Pageable pageable);
+  @EntityGraph(attributePaths = { "items", "items.item" })
+  Page<Order> findByUserAndStatus(User user, OrderStatus status, Pageable pageable);
 
-        // ===== Phân trang + lọc theo khoảng thời gian =====
-        @EntityGraph(attributePaths = { "items", "items.item" })
-        Page<Order> findByUserAndCreatedAtBetween(
-                        User user,
-                        LocalDateTime start,
-                        LocalDateTime end,
-                        Pageable pageable);
+  // ===== Phân trang + lọc theo khoảng thời gian =====
+  @EntityGraph(attributePaths = { "items", "items.item" })
+  Page<Order> findByUserAndCreatedAtBetween(
+      User user,
+      LocalDateTime start,
+      LocalDateTime end,
+      Pageable pageable);
 
-        @EntityGraph(attributePaths = { "items", "items.item" })
-        Page<Order> findByUserAndStatusAndCreatedAtBetween(
-                        User user,
-                        OrderStatus status,
-                        LocalDateTime start,
-                        LocalDateTime end,
-                        Pageable pageable);
+  @EntityGraph(attributePaths = { "items", "items.item" })
+  Page<Order> findByUserAndStatusAndCreatedAtBetween(
+      User user,
+      OrderStatus status,
+      LocalDateTime start,
+      LocalDateTime end,
+      Pageable pageable);
 
-        // ===== Doanh thu nhanh gọn (sum) =====
-        @Query("""
-                        select coalesce(sum(o.totalAmount), 0)
-                        from Order o
-                        where o.branch = :branch
-                          and o.createdAt >= :start
-                          and o.createdAt < :end
-                          and o.status in (
-                             com.example.Alotrabong.entity.OrderStatus.DELIVERED,
-                             com.example.Alotrabong.entity.OrderStatus.REFUNDED
-                          )
-                        """)
-        BigDecimal sumRevenueByBranchAndDate(
-                        Branch branch,
-                        LocalDateTime start,
-                        LocalDateTime end);
+  // ===== Doanh thu nhanh gọn (sum) =====
+  @Query("""
+      select coalesce(sum(o.totalAmount), 0)
+      from Order o
+      where o.branch = :branch
+        and o.createdAt >= :start
+        and o.createdAt < :end
+        and o.status in (
+           com.example.Alotrabong.entity.OrderStatus.DELIVERED,
+           com.example.Alotrabong.entity.OrderStatus.REFUNDED
+        )
+      """)
+  BigDecimal sumRevenueByBranchAndDate(
+      Branch branch,
+      LocalDateTime start,
+      LocalDateTime end);
 
-        // ===== Tìm theo code/ID =====
-        Order findFirstByOrderId(String orderId);
+  // ===== Tìm theo code/ID =====
+  Order findFirstByOrderId(String orderId);
 
-        // ===== Revenue reporting methods =====
-        List<Order> findByStatusAndUpdatedAtBetween(OrderStatus status, LocalDateTime start, LocalDateTime end);
+  // ===== Revenue reporting methods =====
+  List<Order> findByStatusAndUpdatedAtBetween(OrderStatus status, LocalDateTime start, LocalDateTime end);
 
-        List<Order> findByUpdatedAtBetween(LocalDateTime start, LocalDateTime end);
+  List<Order> findByUpdatedAtBetween(LocalDateTime start, LocalDateTime end);
 
-        // ===== Branch Manager specific methods =====
+  // ===== Branch Manager specific methods =====
 
-        // Count methods
-        Long countByBranch_BranchId(String branchId);
+  // Count methods
+  Long countByBranch_BranchId(String branchId);
 
-        Long countByBranch_BranchIdAndStatus(String branchId, OrderStatus status);
+  Long countByBranch_BranchIdAndStatus(String branchId, OrderStatus status);
 
-        // Revenue methods
-        @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(o.createdAt AS date) = CURRENT_DATE AND o.status = :status")
-        BigDecimal getTodayRevenue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
+  // Revenue methods
+  @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(o.createdAt AS date) = CURRENT_DATE AND o.status = :status")
+  BigDecimal getTodayRevenue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
 
-        @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND YEAR(o.createdAt) = YEAR(CURRENT_DATE) AND MONTH(o.createdAt) = MONTH(CURRENT_DATE) AND o.status = :status")
-        BigDecimal getMonthlyRevenue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
+  @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND YEAR(o.createdAt) = YEAR(CURRENT_DATE) AND MONTH(o.createdAt) = MONTH(CURRENT_DATE) AND o.status = :status")
+  BigDecimal getMonthlyRevenue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
 
-        @Query("SELECT COALESCE(AVG(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status")
-        BigDecimal getAvgOrderValue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
+  @Query("SELECT COALESCE(AVG(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status")
+  BigDecimal getAvgOrderValue(@Param("branchId") String branchId, @Param("status") OrderStatus status);
 
-        // Recent orders
-        List<Order> findTop5ByBranch_BranchIdOrderByCreatedAtDesc(String branchId);
+  // Recent orders
+  List<Order> findTop5ByBranch_BranchIdOrderByCreatedAtDesc(String branchId);
 
-        // Date range methods - using updatedAt like admin, exclude REFUNDED payments
-        @Query("SELECT COUNT(o) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
-        Long countByBranchAndDateRange(@Param("branchId") String branchId, @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
+  // Date range methods - using updatedAt like admin, exclude REFUNDED payments
+  @Query("SELECT COUNT(o) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
+  Long countByBranchAndDateRange(@Param("branchId") String branchId, @Param("startDate") LocalDate startDate,
+      @Param("endDate") LocalDate endDate);
 
-        @Query("SELECT COUNT(o) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
-        Long countByBranchAndStatusAndDateRange(@Param("branchId") String branchId, @Param("status") OrderStatus status,
-                        @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+  @Query("SELECT COUNT(o) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
+  Long countByBranchAndStatusAndDateRange(@Param("branchId") String branchId, @Param("status") OrderStatus status,
+      @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
-        @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND o.status = :status AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
-        BigDecimal getRevenueByBranchAndDateRange(@Param("branchId") String branchId,
-                        @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate,
-                        @Param("status") OrderStatus status);
+  @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND o.status = :status AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
+  BigDecimal getRevenueByBranchAndDateRange(@Param("branchId") String branchId,
+      @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate,
+      @Param("status") OrderStatus status);
 
-        @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
-        BigDecimal getRevenueByBranchAndStatusAndDateRange(@Param("branchId") String branchId,
-                        @Param("status") OrderStatus status, @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
+  @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.branch.branchId = :branchId AND o.status = :status AND CAST(COALESCE(o.updatedAt, o.createdAt) AS date) BETWEEN :startDate AND :endDate AND (o.paymentStatus IS NULL OR o.paymentStatus != com.example.Alotrabong.entity.PaymentStatus.REFUNDED)")
+  BigDecimal getRevenueByBranchAndStatusAndDateRange(@Param("branchId") String branchId,
+      @Param("status") OrderStatus status, @Param("startDate") LocalDate startDate,
+      @Param("endDate") LocalDate endDate);
 
-        // Find by ID and branch
-        Order findByOrderIdAndBranch_BranchId(String orderId, String branchId);
+  // Find by ID and branch
+  Order findByOrderIdAndBranch_BranchId(String orderId, String branchId);
 
-        // Additional methods for BranchManager
-        Page<Order> findByBranch(Branch branch, Pageable pageable);
+  // Additional methods for BranchManager
+  Page<Order> findByBranch(Branch branch, Pageable pageable);
 
-        Page<Order> findByBranchAndStatus(Branch branch, OrderStatus status, Pageable pageable);
+  Page<Order> findByBranchAndStatus(Branch branch, OrderStatus status, Pageable pageable);
 
-        Optional<Order> findByOrderId(String orderId);
+  Optional<Order> findByOrderId(String orderId);
+
+  // OrderRepository.java
+  @Query("SELECT o FROM Order o WHERE function('REPLACE', o.orderId, '-', '') = :ref")
+  Optional<Order> findByOrderIdNoDash(@Param("ref") String ref);
 
 }

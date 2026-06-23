@@ -179,4 +179,13 @@ public class ShipperServiceImpl implements ShipperService {
         }
     }
 
+    @Override
+    @Transactional
+    public void saveCheckinPhoto(String shipmentId, String photoUrl) {
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy shipment: " + shipmentId));
+        shipment.setCheckinPhotoUrl(photoUrl);
+        shipmentRepository.save(shipment);
+    }
+
 }

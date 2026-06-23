@@ -8,16 +8,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/shipper")
@@ -38,7 +44,7 @@ public class ShipperController {
     }
 
     /**
-     * Hiển thị danh sách shipment được phân công (status = 0)
+     * Hiển thị danh sách shipment được phân công
      */
     @GetMapping("/deliveries")
     public String deliveries(
@@ -54,7 +60,7 @@ public class ShipperController {
 
         List<Shipment> shipments = shipperService.filterShipments(shipper.getShipperId(), status, fromDate, toDate);
 
-        // ✅ Add stats
+        // ✅ Thống kê
         long totalReceived = shipperService.countPickedUp(shipper.getShipperId());
         long totalDelivered = shipperService.countDelivered(shipper.getShipperId());
         BigDecimal totalMoney = shipperService.totalDeliveredAmount(shipper.getShipperId());
@@ -81,6 +87,9 @@ public class ShipperController {
         return "redirect:/shipper/deliveries";
     }
 
+    /**
+     * Xác nhận giao hàng hoàn tất
+     */
     @PostMapping("/shipments/{id}/confirm-delivered")
     public String confirmShipmentDelivered(@PathVariable("id") String shipmentId,
             RedirectAttributes ra) {
@@ -90,7 +99,50 @@ public class ShipperController {
     }
 
     /**
-     * Lịch sử giao hàng (dự phòng cho bước sau)
+     * ✅ Upload ảnh check-in (tạm thời lưu local)
+     */
+    @PostMapping("/shipments/{id}/checkin")
+    @ResponseBody
+    public ResponseEntity<?> uploadCheckinPhoto(
+            @PathVariable("id") String shipmentId,
+            @RequestParam("photo") MultipartFile photo) {
+
+        if (photo == null || photo.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Thiếu ảnh check-in"));
+        }
+
+        try {
+            // Tạo thư mục lưu nếu chưa có
+            Path uploadDir = Paths.get("uploads/checkins/");
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+
+            // Tạo tên file duy nhất
+            String filename = UUID.randomUUID() + "_" + photo.getOriginalFilename();
+            Path filePath = uploadDir.resolve(filename);
+
+            // Ghi file vào thư mục uploads/checkins
+            Files.copy(photo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // URL truy cập ảnh (tạm /uploads/checkins/...)
+            String url = "/uploads/checkins/" + filename;
+
+            // Lưu đường dẫn ảnh vào shipment
+            shipperService.saveCheckinPhoto(shipmentId, url);
+
+            log.info("✅ Check-in ảnh thành công cho shipment {} -> {}", shipmentId, url);
+            return ResponseEntity.ok(Map.of("success", true, "url", url));
+
+        } catch (IOException e) {
+            log.error("❌ Lỗi upload ảnh check-in", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Lịch sử giao hàng
      */
     @GetMapping("/history")
     public String deliveryHistory(Model model) {

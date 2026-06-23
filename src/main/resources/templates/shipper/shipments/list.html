@@ -210,6 +210,14 @@
             <thead><tr><th>Tên món</th><th class="text-center">SL</th><th class="text-end">Đơn giá</th><th class="text-end">Tổng</th></tr></thead>
             <tbody id="orderItems"></tbody>
           </table>
+
+          <!-- Check-in ảnh -->
+          <div class="mt-4">
+            <label for="checkinPhoto" class="form-label fw-semibold text-success">📸 Ảnh check-in khi nhận hàng:</label>
+            <input type="file" id="checkinPhoto" accept="image/*" capture="environment" class="form-control">
+            <div id="previewBox" class="mt-2 text-center"></div>
+          </div>
+
           <div class="text-end mt-4">
             <button id="btnConfirmDelivered" class="btn btn-deliver">✅ Xác nhận giao thành công</button>
           </div>
@@ -220,7 +228,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Filter auto submit
+    // Auto filter submit
     document.querySelectorAll('#status, #fromDate, #toDate').forEach(el => {
       el.addEventListener('change', () => document.getElementById('filterForm').submit());
     });
@@ -232,8 +240,8 @@
       if (!res.ok) return alert('Không tải được chi tiết đơn hàng');
       const { data } = await res.json();
       document.getElementById('orderDetail').innerHTML = `
-        <span><span class="label">Mã đơn:</span> <span class="value">${data.orderId}</span></span>
-        <span><span class="label">Trạng thái:</span> <span class="value">${data.status}</span></span>
+        <span><span class="label">Mã đơn:</span> <span class="value">${data.orderId}</span></span><br>
+        <span><span class="label">Trạng thái:</span> <span class="value">${data.status}</span></span><br>
         <span><span class="label">Khách hàng:</span> <span class="value">${data.customerName}</span></span>`;
       document.getElementById('orderItems').innerHTML =
         data.orderItems.map(i => `<tr><td>${i.itemName}</td><td>${i.quantity}</td>
@@ -241,18 +249,43 @@
       new bootstrap.Modal(document.getElementById('orderModal')).show();
     }
 
-    // Confirm delivered
+    // Preview check-in ảnh
+    const fileInput = document.getElementById('checkinPhoto');
+    const previewBox = document.getElementById('previewBox');
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return previewBox.innerHTML = '';
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewBox.innerHTML = `<img src="${e.target.result}" style="max-width:200px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.2)">`;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Confirm delivered + upload ảnh
     document.getElementById('btnConfirmDelivered').addEventListener('click', async () => {
       const shipmentId = document.querySelector('form button.btn-accept').dataset.id;
       if (!shipmentId) return alert('Không xác định được shipment!');
+      const file = fileInput.files[0];
+      if (!file) return alert('⚠️ Hãy chụp hoặc chọn ảnh check-in trước khi xác nhận!');
+
       const csrfParam = document.querySelector('meta[name="_csrf_parameter"]')?.content;
       const csrfToken = document.querySelector('meta[name="_csrf_token"]')?.content;
-      const res = await fetch(`/shipper/shipments/${shipmentId}/confirm-delivered`, {
+      const formData = new FormData();
+      formData.append('photo', file);
+      if (csrfParam && csrfToken) formData.append(csrfParam, csrfToken);
+
+      const res = await fetch(`/shipper/shipments/${shipmentId}/checkin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', [csrfParam]: csrfToken }
+        body: formData
       });
-      if (res.ok || res.redirected) location.reload();
-      else alert('❌ Giao hàng thất bại!');
+
+      if (res.ok || res.redirected) {
+        alert('✅ Ảnh check-in đã được lưu, giao hàng thành công!');
+        location.reload();
+      } else {
+        alert('❌ Không thể gửi ảnh check-in!');
+      }
     });
   </script>
 </body>

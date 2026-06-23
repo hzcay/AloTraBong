@@ -32,4 +32,6 @@ public interface ShipperService {
     BigDecimal totalDeliveredAmount(String shipperId);
     
     List<Shipment> filterShipments(String shipperId, Integer status, LocalDate fromDate, LocalDate toDate);
+
+    void saveCheckinPhoto(String shipmentId, String photoUrl);
 }
